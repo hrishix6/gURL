@@ -1,0 +1,25 @@
+networks:
+  gurl_net:
+    driver: bridge
+services:
+  gurl-ui:
+    container_name: gurl_ui
+    image: gurl_ui:1.0.0
+    build: 
+      context: ui 
+      dockerfile: Dockerfile
+    ports:
+      - '4200:80'
+    networks:
+      - gurl_net
+
+  gurl-server:
+    container_name: gurl_server
+    image: gurl_server:1.0.0
+    build: 
+      context: server 
+      dockerfile: Dockerfile
+    networks:
+      - gurl_net
+    ports:
+      - '8080:8080'

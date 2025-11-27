@@ -1,0 +1,13 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "gurl",
+  "outputfilename": "gurl",
+  "frontend:install": "pnpm install",
+  "frontend:build": "pnpm run build",
+  "frontend:dev:watcher": "pnpm start",
+  "frontend:dev:serverUrl": "auto",
+  "author": {
+    "name": "Hrishikesh Pethe",
+    "email": "contact@hrishikesh.dev"
+  }
+}

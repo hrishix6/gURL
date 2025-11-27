@@ -1,0 +1,5 @@
+<div role="tablist" class="tabs tabs-border">
+     @for (tabItem of tabs(); track tabItem.id) {
+        <a role="tab" (click)="handleClick(tabItem.id)" [ngClass]="{'tab': true, 'tab-active': tabItem.id === active()}">{{tabItem.Name}}</a>
+     }
+</div>
