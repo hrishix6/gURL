@@ -14,22 +14,22 @@ var assets embed.FS
 
 func main() {
 	// Create an instance of the app structure
-	app := NewApp()
+	gurl := NewGurl()
 
 	// Create application with options
 	err := wails.Run(&options.App{
-		Title: "gurl",
+		Title: "gURL",
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},
 		BackgroundColour: &options.RGBA{R: 27, G: 38, B: 54, A: 1},
-		OnStartup:        app.startup,
+		OnStartup:        gurl.startup,
 		WindowStartState: options.Maximised,
 		MinWidth:         667,
-		MinHeight:        768,
+		MinHeight:        1000,
 		DisableResize:    false,
 		Bind: []interface{}{
-			app,
+			gurl,
 		},
 		Linux: &linux.Options{
 			WebviewGpuPolicy:    linux.WebviewGpuPolicyAlways,
