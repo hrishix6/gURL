@@ -1,6 +1,7 @@
-build/bin
 node_modules/
 frontend/dist
 frontend/.angular
-
+bin/
 *md5
+*.env
+*.db

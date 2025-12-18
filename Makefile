@@ -1,5 +1,8 @@
 .DEFAULT_GOAL := build
 .PHONY:fmt vet build
+-include .env
+export
+
 fmt:
 		go fmt ./...
 
