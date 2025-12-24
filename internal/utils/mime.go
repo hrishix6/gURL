@@ -28,7 +28,6 @@ func NormalizeContentType(ctype string) string {
 	return strings.TrimSpace(ctype)
 }
 
-
 func IsTextContent(cType string) bool {
 
 	if cType == "" {
