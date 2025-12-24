@@ -28,7 +28,7 @@ type Gurl struct {
 	tmpDir         string
 	gurlResBuilder *response.GurlResponseBuilder
 	storage        *db.Storage
-	name 			string
+	name           string
 }
 
 func NewGurl(dbConn *gorm.DB, version string) *Gurl {
@@ -41,7 +41,7 @@ func NewGurl(dbConn *gorm.DB, version string) *Gurl {
 			Timeout: 5 * time.Minute,
 		},
 		version:        version,
-		name : fmt.Sprintf("%s_%s", internal.APP_NAME, version),
+		name:           fmt.Sprintf("%s_%s", internal.APP_NAME, version),
 		store:          request.NewGurlReqContextStore(),
 		gurlResBuilder: response.NewGurlResponseBuilder(storage),
 		storage:        storage,
@@ -290,30 +290,53 @@ func (g *Gurl) ReadFileText(src string) (string, error) {
 }
 
 // db
-func (g *Gurl) RemoveReq(id string) error {
-	return g.storage.DeleteReq(id)
+func (g *Gurl) RemoveDraft(id string) error {
+	return g.storage.DeleteDraft(id)
 }
 
-func (g *Gurl) FindReqById(id string) (*models.RequestDTO, error) {
-	found, err := g.storage.FindReq(id)
+func (g *Gurl) GetSavedRequests() ([]models.RequestDTO, error) {
+
+	records, err := g.storage.GetSavedRequests()
+
+	if err != nil {
+		return []models.RequestDTO{}, err
+	}
+
+	var results []models.RequestDTO
+
+	for _, record := range records {
+
+		results = append(results, *record.ToRequestDTO())
+	}
+
+	return results, nil
+}
+
+func (g *Gurl) FindDraftById(id string) (*models.RequestDraftDTO, error) {
+	found, err := g.storage.FindDraft(id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}
 		return nil, err
 	}
-	return found.ToRequestDTO(), nil
+	return found.ToRequestDraftDTO(), nil
 }
 
-func (g *Gurl) AddReq(dto models.AddReqDTO) error {
-	return g.storage.AddReq(&models.Request{
-		Id:           dto.Id,
-		CollectionId: dto.CollectionId,
+func (g *Gurl) AddFreshDraft(dto models.AddFreshDraftDTO) error {
+	return g.storage.AddDraft(&models.RequestDraft{
+		Id: dto.Id,
 	})
 }
 
-func (g *Gurl) UpdateReqUrl(dto models.UpdateReqUrlDTO) error {
-	_, err := g.storage.UpdateReqUrl(dto.RequestId, dto.Url)
+func (g *Gurl) AddDraft(dto models.RequestDraftDTO) error {
+	var dr models.RequestDraft
+	dr.FromRequestDraftDTO(&dto)
+	return g.storage.AddDraft(&dr)
+}
+
+func (g *Gurl) UpdateDraftUrl(dto models.UpdateDraftUrlDTO) error {
+	_, err := g.storage.UpdateDraftUrl(dto.RequestId, dto.Url)
 
 	if err != nil {
 		return err
@@ -322,8 +345,8 @@ func (g *Gurl) UpdateReqUrl(dto models.UpdateReqUrlDTO) error {
 	return nil
 }
 
-func (g *Gurl) UpdateReqQuery(dto models.UpdateReqQueryDTO) error {
-	_, err := g.storage.UpdateReqQuery(dto.RequestId, dto.QueryJSON)
+func (g *Gurl) UpdateDraftQuery(dto models.UpdateDraftQueryDTO) error {
+	_, err := g.storage.UpdateDraftQuery(dto.RequestId, dto.QueryJSON)
 
 	if err != nil {
 		return err
@@ -332,19 +355,9 @@ func (g *Gurl) UpdateReqQuery(dto models.UpdateReqQueryDTO) error {
 	return nil
 }
 
-func (g *Gurl) UpdateReqHeaders(dto models.UpdateReqHeadersDTO) error {
+func (g *Gurl) UpdateDraftHeaders(dto models.UpdateDraftHeadersDTO) error {
 
-	_, err := g.storage.UpdateReqHeaders(dto.RequestId, dto.HeadersJSON)
-
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (g *Gurl) UpdateReqMultipartForm(dto models.UpdateReqMultipartFormDTO) error {
-	_, err := g.storage.UpdateReqMultipartForm(dto.RequestId, dto.MultipartJSON)
+	_, err := g.storage.UpdateDraftHeaders(dto.RequestId, dto.HeadersJSON)
 
 	if err != nil {
 		return err
@@ -353,8 +366,8 @@ func (g *Gurl) UpdateReqMultipartForm(dto models.UpdateReqMultipartFormDTO) erro
 	return nil
 }
 
-func (g *Gurl) UpdateReqUrlEncodedForm(dto models.UpdateReqUrlEncodedFormDTO) error {
-	_, err := g.storage.UpdateReqUrlEncodedForm(dto.RequestId, dto.UrlEncodedFormJSON)
+func (g *Gurl) UpdateDraftMultipartForm(dto models.UpdateDraftMultipartFormDTO) error {
+	_, err := g.storage.UpdateDraftMultipartForm(dto.RequestId, dto.MultipartJSON)
 
 	if err != nil {
 		return err
@@ -363,8 +376,8 @@ func (g *Gurl) UpdateReqUrlEncodedForm(dto models.UpdateReqUrlEncodedFormDTO) er
 	return nil
 }
 
-func (g *Gurl) UpdateReqTextBody(dto models.UpdateReqTextBodyDTO) error {
-	_, err := g.storage.UpdateReqTextBody(dto.RequestId, dto.TextBody)
+func (g *Gurl) UpdateDraftUrlEncodedForm(dto models.UpdateDraftUrlEncodedFormDTO) error {
+	_, err := g.storage.UpdateDraftUrlEncodedForm(dto.RequestId, dto.UrlEncodedFormJSON)
 
 	if err != nil {
 		return err
@@ -373,8 +386,8 @@ func (g *Gurl) UpdateReqTextBody(dto models.UpdateReqTextBodyDTO) error {
 	return nil
 }
 
-func (g *Gurl) UpdateReqBinaryBody(dto models.UpdateReqBinaryBodyDTO) error {
-	_, err := g.storage.UpdateReqBinaryBody(dto.RequestId, dto.BinaryBodyJSON)
+func (g *Gurl) UpdateDraftTextBody(dto models.UpdateDraftTextBodyDTO) error {
+	_, err := g.storage.UpdateDraftTextBody(dto.RequestId, dto.TextBody)
 
 	if err != nil {
 		return err
@@ -383,8 +396,8 @@ func (g *Gurl) UpdateReqBinaryBody(dto models.UpdateReqBinaryBodyDTO) error {
 	return nil
 }
 
-func (g *Gurl) UpdateReqMethod(dto models.UpdateReqMethodDTO) error {
-	_, err := g.storage.UpdateReqMethod(dto.RequestId, dto.Method)
+func (g *Gurl) UpdateDraftBinaryBody(dto models.UpdateDraftBinaryBodyDTO) error {
+	_, err := g.storage.UpdateDraftBinaryBody(dto.RequestId, dto.BinaryBodyJSON)
 
 	if err != nil {
 		return err
@@ -393,8 +406,8 @@ func (g *Gurl) UpdateReqMethod(dto models.UpdateReqMethodDTO) error {
 	return nil
 }
 
-func (g *Gurl) UpdateReqBodyType(dto models.UpdateReqBodyTypeDTO) error {
-	_, err := g.storage.UpdateReqBodyType(dto.RequestId, dto.BodyType)
+func (g *Gurl) UpdateDraftMethod(dto models.UpdateDraftMethodDTO) error {
+	_, err := g.storage.UpdateDraftMethod(dto.RequestId, dto.Method)
 
 	if err != nil {
 		return err
@@ -403,14 +416,37 @@ func (g *Gurl) UpdateReqBodyType(dto models.UpdateReqBodyTypeDTO) error {
 	return nil
 }
 
-func (g *Gurl) UpdateReqCollection(dto models.UpdateReqCollectionDTO) error {
-	_, err := g.storage.UpdateReqCollection(dto.RequestId, dto.CollectionId)
+func (g *Gurl) UpdateDraftBodyType(dto models.UpdateDraftBodyTypeDTO) error {
+	_, err := g.storage.UpdateDraftBodyType(dto.RequestId, dto.BodyType)
 
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func (g *Gurl) AddCollection(dto models.AddCollectionDTO) error {
+	return g.storage.AddCollection(&models.Collection{
+		Id:   dto.Id,
+		Name: dto.Name,
+	})
+}
+
+func (g *Gurl) GetAllCollections() ([]models.CollectionDTO, error) {
+	records, err := g.storage.GetAllCollections()
+
+	if err != nil {
+		return []models.CollectionDTO{}, err
+	}
+
+	var results []models.CollectionDTO
+
+	for _, record := range records {
+		results = append(results, *record.ToCollectionDTO())
+	}
+
+	return results, nil
 }
 
 // tabs
@@ -424,4 +460,8 @@ func (g *Gurl) GetOpenTabs() (string, error) {
 		return "", err
 	}
 	return string(r.OpenTabs), nil
+}
+
+func (g *Gurl) SaveDraftAsRequest(dto models.SaveDraftAsReqDTO) error {
+	return g.storage.SaveDraftAsRequest(&dto)
 }
