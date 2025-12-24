@@ -32,7 +32,7 @@ func TestMain(m *testing.M) {
 		panic(err)
 	}
 
-	d.AutoMigrate(&models.Collection{}, &models.Request{})
+	d.AutoMigrate(&models.Collection{}, &models.RequestDraft{})
 	testDb = d
 
 	gorm.G[models.Collection](testDb).Create(context.Background(), &models.Collection{
@@ -77,34 +77,32 @@ func TestAddReq(t *testing.T) {
 
 	wantReqId := "add_req"
 
-	r := &models.Request{
-		Id:           wantReqId,
-		CollectionId: models.DEFAULT_COLLECTION,
+	r := &models.RequestDraft{
+		Id: wantReqId,
 	}
 
-	err := storage.AddReq(r)
+	err := storage.AddDraft(r)
 
 	if err != nil {
 		t.Errorf("failed to create request")
 	}
 }
 
-func TestFindReq(t *testing.T) {
+func TestFindDraft(t *testing.T) {
 
 	wantReqId := "get_req"
 
-	r := &models.Request{
-		Id:           wantReqId,
-		CollectionId: models.DEFAULT_COLLECTION,
+	r := &models.RequestDraft{
+		Id: wantReqId,
 	}
 
-	err := storage.AddReq(r)
+	err := storage.AddDraft(r)
 
 	if err != nil {
 		t.Errorf("failed to create request")
 	}
 
-	got, err := storage.FindReq(wantReqId)
+	got, err := storage.FindDraft(wantReqId)
 
 	if err != nil {
 		t.Errorf("failed to find request %s", err.Error())
@@ -127,18 +125,17 @@ func TestUpdateReqHeaders(t *testing.T) {
 
 	wantReqId := "update_header_test"
 
-	r := &models.Request{
-		Id:           wantReqId,
-		CollectionId: models.DEFAULT_COLLECTION,
+	r := &models.RequestDraft{
+		Id: wantReqId,
 	}
 
-	err := storage.AddReq(r)
+	err := storage.AddDraft(r)
 
 	if err != nil {
 		t.Errorf("failed to create request")
 	}
 
-	s, err := storage.UpdateReqHeaders(wantReqId, `[{"id":"1","key":"content-type","value":"application/json","enabled":"on"}]`)
+	s, err := storage.UpdateDraftHeaders(wantReqId, `[{"id":"1","key":"content-type","value":"application/json","enabled":"on"}]`)
 
 	if err != nil {
 		t.Errorf("failed to update headers request")
