@@ -1,11 +1,11 @@
-import { Component, HostBinding, inject } from '@angular/core';
-import { KeyValFormItem } from '../../common/components/form/key.val.form.item';
-import { HID_PLACEHOLDER } from '../../constants';
-import { FormService } from '../../services';
+import { Component, HostBinding, inject } from "@angular/core";
+import { KeyValFormItem } from "../common/components";
+import { HID_PLACEHOLDER } from "../../constants";
+import { FormService } from "../services";
 
 @Component({
-  selector: 'app-req-headers',
-  template: `
+	selector: "app-req-headers",
+	template: `
     <app-keyval-item
       [placeholderId]="placeHolderHeaderId"
       [items]="formSvc.headers()"
@@ -17,12 +17,12 @@ import { FormService } from '../../services';
     >
     </app-keyval-item>
   `,
-  imports: [KeyValFormItem],
+	imports: [KeyValFormItem],
 })
 export class ReqHeaders {
-  @HostBinding('class')
-  defaultClass = 'flex-1 p-2 overflow-y-auto';
+	@HostBinding("class")
+	defaultClass = "flex-1 py-2 px-1 overflow-y-auto";
 
-  readonly placeHolderHeaderId = HID_PLACEHOLDER;
-  readonly formSvc = inject(FormService);
+	readonly placeHolderHeaderId = HID_PLACEHOLDER;
+	readonly formSvc = inject(FormService);
 }
