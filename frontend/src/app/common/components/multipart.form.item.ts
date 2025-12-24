@@ -1,14 +1,14 @@
-import { NgClass } from '@angular/common';
-import { Component, HostBinding, input, output } from '@angular/core';
-import { Eraser, LucideAngularModule, Paperclip, X } from 'lucide-angular';
-import { ChooseFile } from '../../../../wailsjs/go/main/Gurl';
-import { main } from '../../../../wailsjs/go/models';
-import { MultipartItem } from '../../../app/models';
-import { BytesPipe } from '../../pipes/bytes.pipe';
+import { NgClass } from "@angular/common";
+import { Component, HostBinding, input, output } from "@angular/core";
+import { Eraser, LucideAngularModule, Paperclip, X } from "lucide-angular";
+import { ChooseFile } from "../../../../wailsjs/go/main/Gurl";
+import type { models } from "../../../../wailsjs/go/models";
+import type { MultipartItem } from "../../../types";
+import { humanBytes } from "../utils/time";
 
 @Component({
-  selector: 'app-multipart-item',
-  template: `
+	selector: "app-multipart-item",
+	template: `
     @for (item of items(); track item.id) {
     <div class="flex gap-2.5 items-center">
       <input
@@ -22,7 +22,7 @@ import { BytesPipe } from '../../pipes/bytes.pipe';
         <input
           type="text"
           placeholder="key"
-          class="input input-sm w-full input-primary xl:input-md"
+          class="input input-sm w-full input-ghost bg-base-300 input-primary xl:input-md"
           [value]="item.key"
           (input)="handleUpdateKey(item.id, $event.target.value)"
           (blur)="handleBlur()"
@@ -33,7 +33,7 @@ import { BytesPipe } from '../../pipes/bytes.pipe';
         <input
           type="text"
           placeholder="value"
-          class="input input-sm w-full input-primary xl:input-md"
+          class="input input-sm w-full input-ghost bg-base-300 input-primary xl:input-md"
           [disabled]="item.key == '' || item.key.trim() == ''"
           [value]="item.val"
           (input)="handleUpdateVal(item.id, $event.target.value)"
@@ -42,7 +42,7 @@ import { BytesPipe } from '../../pipes/bytes.pipe';
         }@else {
         <input
           type="text"
-          class="input input-sm w-full input-primary xl:input-md"
+          class="input input-sm w-full input-ghost bg-base-300 input-primary xl:input-md"
           [disabled]="item.key == '' || item.key.trim() == ''"
           [readOnly]="true"
           [value]="fileDisplayName(item.val)"
@@ -62,7 +62,7 @@ import { BytesPipe } from '../../pipes/bytes.pipe';
             <lucide-angular [img]="BinaryIcon" class="size-4" />
           </button>
           <button
-            [ngClass]="{
+            [ngClass]="{  
             'btn btn-xs btn-ghost xl:btn-sm': true,
             'hidden': typeof item.val === 'string' || !item.val
             }"
@@ -75,7 +75,7 @@ import { BytesPipe } from '../../pipes/bytes.pipe';
       </div>
       <button
         [ngClass]="{
-          'btn btn-xs btn-ghost xm:btn-sm': true,
+          'btn btn-xs btn-ghost xl:btn-sm': true,
         }"
         [disabled]="item.id === placeholderId()"
         (click)="handleDeleteItem(item.id)"
@@ -85,60 +85,60 @@ import { BytesPipe } from '../../pipes/bytes.pipe';
     </div>
     }
   `,
-  imports: [LucideAngularModule, NgClass],
+	imports: [LucideAngularModule, NgClass],
 })
 export class MultiPartFormItem {
-  @HostBinding('class')
-  hostClass = 'flex flex-col gap-2.5';
+	@HostBinding("class")
+	hostClass = "flex flex-col gap-2.5";
 
-  readonly CanceIcon = X;
-  readonly BinaryIcon = Paperclip;
-  readonly ClearFileIcon = Eraser;
-  items = input.required<MultipartItem[]>();
-  placeholderId = input.required<string>();
-  onKeyUpdate = output<{ id: string; v: string }>();
-  onEnabledUpdate = output<{ id: string; v: string }>();
-  onValUpdate = output<{ id: string; v: string | main.FileStats }>();
-  onClearFileInput = output<{ id: string }>();
-  onBlur = output();
-  onDelete = output<string>();
+	readonly CanceIcon = X;
+	readonly BinaryIcon = Paperclip;
+	readonly ClearFileIcon = Eraser;
+	items = input.required<MultipartItem[]>();
+	placeholderId = input.required<string>();
+	onKeyUpdate = output<{ id: string; v: string }>();
+	onEnabledUpdate = output<{ id: string; v: string }>();
+	onValUpdate = output<{ id: string; v: string | models.FileStats }>();
+	onClearFileInput = output<{ id: string }>();
+	onBlur = output();
+	onDelete = output<string>();
 
-  async openFileDialogue(id: string) {
-    try {
-      const file = await ChooseFile();
+	async openFileDialogue(id: string) {
+		try {
+			const file = await ChooseFile();
 
-      this.onValUpdate.emit({ id, v: file });
-    } catch (error) {
-      console.error(error);
-    }
-  }
+			this.onValUpdate.emit({ id, v: file });
+		} catch (error) {
+			console.error(error);
+		}
+	}
 
-  handleUpdateKey(id: string, v: string) {
-    this.onKeyUpdate.emit({ id, v });
-  }
+	handleUpdateKey(id: string, v: string) {
+		this.onKeyUpdate.emit({ id, v });
+	}
 
-  fileDisplayName(fileStats: main.FileStats) {
-    return `${fileStats.name} (${new BytesPipe().transform(fileStats.size)})`;
-  }
+	fileDisplayName(fileStats: models.FileStats) {
+		return `${fileStats.name} (${humanBytes(fileStats.size)})`;
+	}
 
-  handleUpdateVal(id: string, v: string | main.FileStats) {
-    this.onValUpdate.emit({ id, v });
-  }
+	handleUpdateVal(id: string, v: string | models.FileStats) {
+		this.onValUpdate.emit({ id, v });
+	}
 
-  handleClearFileField(id: string) {
-    this.onClearFileInput.emit({ id });
-  }
+	handleClearFileField(id: string) {
+		this.onClearFileInput.emit({ id });
+	}
 
-  handleDeleteItem(id: string) {
-    this.onDelete.emit(id);
-  }
+	handleDeleteItem(id: string) {
+		this.onDelete.emit(id);
+	}
 
-  handleBlur() {
-    this.onBlur.emit();
-  }
+	handleBlur() {
+		this.onBlur.emit();
+	}
 
-  handleEnable(id: string, e: Event) {
-    const target = e.target as HTMLInputElement;
-    this.onEnabledUpdate.emit({ id, v: target.value });
-  }
+	handleEnable(id: string, e: Event) {
+		const target = e.target as HTMLInputElement;
+		this.onEnabledUpdate.emit({ id, v: target.checked ? "on" : "off" });
+	}
 }

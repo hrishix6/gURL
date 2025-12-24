@@ -1,10 +1,10 @@
-import { NgClass } from '@angular/common';
-import { Component, input, output } from '@angular/core';
-import { TabItem } from '../../../app/models';
+import { NgClass } from "@angular/common";
+import { Component, input, output } from "@angular/core";
+import type { TabItem } from "../../../types";
 
 @Component({
-  selector: 'app-tab',
-  template: `
+	selector: "app-section-tab",
+	template: `
     <div role="tablist" class="tabs tabs-sm tabs-border xl:tabs-md">
       @for (tabItem of tabs(); track tabItem.id) {
       <a
@@ -24,15 +24,15 @@ import { TabItem } from '../../../app/models';
       }
     </div>
   `,
-  imports: [NgClass],
+	imports: [NgClass],
 })
 export class Tab<T extends string> {
-  defaultActive = input.required<T>();
-  activeTab = input.required<T>();
-  onActiveChange = output<T>();
-  tabs = input.required<readonly TabItem<T>[]>();
+	defaultActive = input.required<T>();
+	activeTab = input.required<T>();
+	onActiveChange = output<T>();
+	tabs = input.required<readonly TabItem<T>[]>();
 
-  handleClick(id: T) {
-    this.onActiveChange.emit(id);
-  }
+	handleClick(id: T) {
+		this.onActiveChange.emit(id);
+	}
 }
