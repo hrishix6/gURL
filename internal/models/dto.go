@@ -1,0 +1,110 @@
+package models
+
+type RequestDraftDTO struct {
+	Id                 string `json:"id"`
+	Url                string `json:"url"`
+	Method             string `json:"method"`
+	Query              string `json:"query"`
+	Headers            string `json:"headers"`
+	BodyType           string `json:"bodyType"`
+	MultipartFormBody  string `json:"multipart"`
+	UrlEncodedFormBody string `json:"urlencoded"`
+	TextBody           string `json:"text"`
+	BinaryBody         string `json:"binary"`
+	ParentRequestId    string `json:"parentRequestId"`
+	ParentRequestName  string `json:"parentRequestName"`
+	ParentCollectionId string `json:"parentCollectionId"`
+}
+
+type RequestDTO struct {
+	Id                 string `json:"id"`
+	Url                string `json:"url"`
+	Name               string `json:"name"`
+	Method             string `json:"method"`
+	Query              string `json:"query"`
+	Headers            string `json:"headers"`
+	BodyType           string `json:"bodyType"`
+	MultipartFormBody  string `json:"multipart"`
+	UrlEncodedFormBody string `json:"urlencoded"`
+	TextBody           string `json:"text"`
+	BinaryBody         string `json:"binary"`
+	CollectionId       string `json:"collectionId"`
+}
+
+type AddFreshDraftDTO struct {
+	Id string `json:"id"`
+}
+
+type UpdateDraftUrlDTO struct {
+	RequestId string `json:"requestId"`
+	Url       string `json:"url"`
+}
+
+type UpdateDraftQueryDTO struct {
+	RequestId string `json:"requestId"`
+	QueryJSON string `json:"queryJson"`
+}
+
+type UpdateDraftHeadersDTO struct {
+	RequestId   string `json:"requestId"`
+	HeadersJSON string `json:"headersJson"`
+}
+
+type UpdateDraftMultipartFormDTO struct {
+	RequestId     string `json:"requestId"`
+	MultipartJSON string `json:"multipartJson"`
+}
+
+type UpdateDraftUrlEncodedFormDTO struct {
+	RequestId          string `json:"requestId"`
+	UrlEncodedFormJSON string `json:"urlencodedJson"`
+}
+
+type UpdateDraftTextBodyDTO struct {
+	RequestId string `json:"requestId"`
+	TextBody  string `json:"textBody"`
+}
+
+type UpdateDraftBinaryBodyDTO struct {
+	RequestId      string `json:"requestId"`
+	BinaryBodyJSON string `json:"binaryJson"`
+}
+
+type UpdateDraftMethodDTO struct {
+	RequestId string `json:"requestId"`
+	Method    string `json:"method"`
+}
+
+type UpdateDraftBodyTypeDTO struct {
+	RequestId string `json:"requestId"`
+	BodyType  string `json:"bodyType"`
+}
+
+type UpdateDraftCollectionDTO struct {
+	RequestId    string `json:"requestId"`
+	CollectionId string `json:"collectionId"`
+}
+
+//tabs
+
+type UpdateOpenTabsDTO struct {
+	OpenTabsJSON string `json:"openTabsJson"`
+}
+
+// collections
+type AddCollectionDTO struct {
+	Id   string `json:"id"`
+	Name string `json:"name"`
+}
+
+type CollectionDTO struct {
+	Id   string `json:"id"`
+	Name string `json:"name"`
+}
+
+type SaveDraftAsReqDTO struct {
+	DraftId      string `json:"draftId"`
+	RequestId    string `json:"requestId"`
+	CollectionId string `json:"collectionId"`
+	Name         string `json:"name"`
+}

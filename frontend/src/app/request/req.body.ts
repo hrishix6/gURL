@@ -1,15 +1,20 @@
-import { Component, HostBinding, inject } from '@angular/core';
-import { Ban, LucideAngularModule } from 'lucide-angular';
-import { KeyValFormItem, MultiPartFormItem } from '../../common/components';
-import { MULTIPART_ID_PLACEHOLDER, URLENCODED_ID_PLACEHOLDER } from '../../constants';
-import { FormService } from '../../services';
-import { RequestBodySwitcher } from './body.switcher';
-import { FileInput } from './file.input';
+import { Component, HostBinding, inject } from "@angular/core";
+import { Ban, LucideAngularModule } from "lucide-angular";
+import { KeyValFormItem, MultiPartFormItem } from "../common/components";
+import { AppDropdown } from "../common/components/dropdown";
+import {
+	MULTIPART_ID_PLACEHOLDER,
+	REQ_BODY_TYPES,
+	URLENCODED_ID_PLACEHOLDER,
+} from "../../constants";
+import { FormService } from "../services";
+import type { ReqBodyType } from "../../types";
+import { FileInput } from "./file.input";
 
 @Component({
-  selector: 'app-req-body',
-  template: `
-    <div class="flex-1 p-2 overflow-y-auto relative">
+	selector: "app-req-body",
+	template: `
+    <div class="flex-1 overflow-y-auto relative px-1 py-2">
       @switch (formSvc.bodyType().id) { @case("none") {
       <div class="absolute top-0 left-0 w-full h-full flex items-center justify-center opacity-10">
         <lucide-angular [img]="NoneIcon" class="size-16 -z-10" />
@@ -34,23 +39,22 @@ import { FileInput } from './file.input';
         (onValUpdate)="formSvc.updateUrlEncodedField($event.id, 'val', $event.v)"
         (onBlur)="formSvc.addUrlEncodedField()"
         (onEnabledUpdate)="formSvc.updateUrlEncodedField($event.id, 'enabled', $event.v)"
-      >
-      </app-keyval-item>
+      />
       } @case("json"){
       <textarea
-        class="textarea textarea-primary xl:textarea-lg w-full h-full"
+        class="textarea textarea-ghost textarea-primary bg-base-300 xl:textarea-lg w-full h-full"
         (input)="handleTextBodyUpdate($event)"
         [value]="formSvc.textBody()"
       ></textarea>
       } @case("xml") {
       <textarea
-        class="textarea textarea-primary xl:textarea-lg w-full h-full"
+        class="textarea textarea-ghost textarea-primary bg-base-300 xl:textarea-lg w-full h-full"
         (input)="handleTextBodyUpdate($event)"
         [value]="formSvc.textBody()"
       ></textarea>
       } @case ("plaintext") {
       <textarea
-        class="textarea textarea-primary xl:textarea-lg w-full h-full"
+        class="textarea textarea-ghost textarea-primary bg-base-300 xl:textarea-lg w-full h-full"
         (input)="handleTextBodyUpdate($event)"
         [value]="formSvc.textBody()"
       ></textarea>
@@ -60,24 +64,43 @@ import { FileInput } from './file.input';
       </div>
       } }
     </div>
-    <footer class="flex px-2 justify-end">
-      <app-req-body-switcher></app-req-body-switcher>
+    <footer class="flex p-2">
+       <app-dropdown
+        [items]="reqBodyTypes"
+        [activeItem]="formSvc.bodyType()"
+        [direction]="'top'"
+        [align]="'start'" 
+        [size]="'sm'"
+        (onItemSelection)="handleActiveItemSelection($event)"
+       >
+       </app-dropdown>
     </footer>
   `,
-  imports: [KeyValFormItem, MultiPartFormItem, LucideAngularModule, FileInput, RequestBodySwitcher],
+	imports: [
+		KeyValFormItem,
+		MultiPartFormItem,
+		LucideAngularModule,
+		FileInput,
+		AppDropdown,
+	],
 })
 export class ReqBody {
-  readonly NoneIcon = Ban;
-  readonly placeHolderUrlEncodedId = URLENCODED_ID_PLACEHOLDER;
-  readonly placeHolderMultipartId = MULTIPART_ID_PLACEHOLDER;
+	readonly NoneIcon = Ban;
+	readonly placeHolderUrlEncodedId = URLENCODED_ID_PLACEHOLDER;
+	readonly placeHolderMultipartId = MULTIPART_ID_PLACEHOLDER;
+	readonly reqBodyTypes = REQ_BODY_TYPES;
 
-  @HostBinding('class')
-  defaultClass = 'flex-1 flex flex-col gap-2 overflow-hidden';
+	@HostBinding("class")
+	defaultClass = "flex-1 flex flex-col overflow-hidden";
 
-  readonly formSvc = inject(FormService);
+	readonly formSvc = inject(FormService);
 
-  handleTextBodyUpdate(e: Event) {
-    const target = e.target as HTMLInputElement;
-    this.formSvc.setTextBody(target.value);
-  }
+	handleTextBodyUpdate(e: Event) {
+		const target = e.target as HTMLInputElement;
+		this.formSvc.setTextBody(target.value);
+	}
+
+	handleActiveItemSelection(id: ReqBodyType) {
+		this.formSvc.setBodyType(id);
+	}
 }
