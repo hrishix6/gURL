@@ -1,41 +1,48 @@
-import type {
-	AppTheme,
-	DropDownItem,
-	ReqBodyType,
-	ReqTabId,
-	RequestMethod,
-	ResTabId,
-	TabItem,
-	ThemeLabel,
+import {
+	type AppTheme,
+	type DropDownItem,
+	FormLayout,
+	type ReqBodyType,
+	type ReqTabId,
+	type RequestMethod,
+	type ResTabId,
+	type TabItem,
+	type ThemeLabel,
 } from "./types";
 
 export const DEFAULT_THEME: AppTheme = "mountain";
 export const THEME_LOCALSTORAGE_KEY = "gurl_theme";
 
+export const SUPPORTED_LAYOUTS: DropDownItem<FormLayout>[] = [
+	{ id: FormLayout.Horizontal, displayName: "Horizontal" },
+	{ id: FormLayout.Vertical, displayName: "Vertical" },
+	{ id: FormLayout.Responsive, displayName: "Responsive" },
+];
+
 export const SUPPORTED_THEMES: ThemeLabel[] = [
-	{
-		id: "water",
-		label: "Water",
-	},
-	{
-		id: "mountain",
-		label: "Mountain",
-	},
 	{
 		id: "dracula",
 		label: "Dracula",
-	},
-	{
-		id: "lavender",
-		label: "Lavender",
 	},
 	{
 		id: "forest",
 		label: "Forest",
 	},
 	{
+		id: "lavender",
+		label: "Lavender",
+	},
+	{
+		id: "mountain",
+		label: "Mountain",
+	},
+	{
 		id: "night",
 		label: "Night",
+	},
+	{
+		id: "water",
+		label: "Water",
 	},
 ];
 
@@ -56,6 +63,10 @@ export const REQ_DETAILS_TABS: Readonly<TabItem<ReqTabId>[]> = [
 		id: "req_auth",
 		Name: "Auth",
 	},
+	{
+		id: "req_cookies",
+		Name: "Cookies",
+	},
 ];
 
 export const RES_DETAILS_TABS: readonly TabItem<ResTabId>[] = [
@@ -66,6 +77,10 @@ export const RES_DETAILS_TABS: readonly TabItem<ResTabId>[] = [
 	{
 		id: "res_headers",
 		Name: "Headers",
+	},
+	{
+		id: "res_cookies",
+		Name: "Cookies",
 	},
 	{
 		id: "res_console",
@@ -135,16 +150,22 @@ export const REQ_METHODS: readonly DropDownItem<RequestMethod>[] = [
 	},
 ];
 
+export const BULK_EDIT_INSTRUCTION =
+	"Keep each entry on new line\nKey & value are delimited by ' : '\nStart row with ' # ' to keep entry disabled";
+export const BULK_EDIT_COOKIES_INSTRUCTION =
+	"Keep entries separated by ' ; '\nName & Value are delimited by ' = '";
+
 export const DEFAULT_REQ_TAB: ReqTabId = "req_headers";
 export const DEFAULT_RES_TAB: ResTabId = "res_body";
 export const DEFAULT_COLLECTION_ID = "gurl_default_collection";
 
 export const QID_PLACEHOLDER = "qid_default";
 export const HID_PLACEHOLDER = "hid_default";
+export const COOKIE_PLACEHOLDER = "cookie_default";
 export const MULTIPART_ID_PLACEHOLDER = "mid_default";
 export const URLENCODED_ID_PLACEHOLDER = "uid_default";
 export const DB_NAME = "gurl-db";
 export const DB_VERSION = 4;
 export const ROOT_USER = "gurl-default-user";
 export const MIME_JSON_FILE = "/mime.db.json";
-export const APP_VERSION = "v0.3";
+export const APP_VERSION = "v0.4.0";
