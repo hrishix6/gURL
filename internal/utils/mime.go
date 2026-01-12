@@ -27,17 +27,3 @@ func NormalizeContentType(ctype string) string {
 
 	return strings.TrimSpace(ctype)
 }
-
-func IsTextContent(cType string) bool {
-
-	if cType == "" {
-		return false
-	}
-
-	return strings.HasPrefix(cType, "text/") ||
-		cType == "application/json" ||
-		cType == "application/xml" ||
-		cType == "application/javascript" ||
-		cType == "application/x-www-form-urlencoded" ||
-		cType == "image/svg+xml"
-}

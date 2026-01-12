@@ -1,6 +1,7 @@
-package models
+package db
 
 import (
+	"gurl/internal/models"
 	"strings"
 
 	"gorm.io/datatypes"
@@ -16,7 +17,7 @@ type MimeRecord struct {
 	Extensions string //comma separated list of extensions
 }
 
-func (mr *MimeRecord) FromJsonRecord(key string, record MimeData) MimeRecord {
+func (mr *MimeRecord) FromJsonRecord(key string, record models.MimeData) MimeRecord {
 
 	var extensions string
 
@@ -31,11 +32,13 @@ func (mr *MimeRecord) FromJsonRecord(key string, record MimeData) MimeRecord {
 }
 
 type UIState struct {
-	Id        string         `gorm:"primaryKey;column:id"`
-	OpenTabs  datatypes.JSON `gorm:"column:openTabs;default:'[]'"`
-	ActiveTab string         `gorm:"column:activeTab"`
-	Created   int            `gorm:"autoCreateTime;column:created"`
-	UpdatedAt int            `gorm:"autoUpdateTime;column:updated"`
+	Id            string         `gorm:"primaryKey;column:id"`
+	OpenTabs      datatypes.JSON `gorm:"column:openTabs;default:'[]'"`
+	ActiveTab     string         `gorm:"column:activeTab"`
+	IsSidebarOpen bool           `gorm:"column:sidebarOpen;default:false"`
+	Layout        string         `gorm:"column:layout;default:r"`
+	Created       int            `gorm:"autoCreateTime;column:created"`
+	UpdatedAt     int            `gorm:"autoUpdateTime;column:updated"`
 }
 
 type Collection struct {
@@ -45,9 +48,9 @@ type Collection struct {
 	UpdatedAt int    `gorm:"autoUpdateTime;column:updated"`
 }
 
-func (c *Collection) ToCollectionDTO() *CollectionDTO {
+func (c *Collection) ToCollectionDTO() *models.CollectionDTO {
 
-	o := &CollectionDTO{
+	o := &models.CollectionDTO{
 		Id:   c.Id,
 		Name: c.Name,
 	}
@@ -60,6 +63,7 @@ type RequestDraft struct {
 	Url                string         `gorm:"column:url"`
 	Query              datatypes.JSON `gorm:"column:query;default:'[]'"`
 	Headers            datatypes.JSON `gorm:"column:headers;default:'[]'"`
+	Cookies            datatypes.JSON `gorm:"column:cookies;default:'[]'"`
 	MultipartForm      datatypes.JSON `gorm:"column:multipart;default:'[]'"`
 	UrlEncodedForm     datatypes.JSON `gorm:"column:urlencoded;default:'[]'"`
 	TextBody           string         `gorm:"column:textbody"`
@@ -73,79 +77,7 @@ type RequestDraft struct {
 	UpdatedAt          int            `gorm:"autoUpdateTime;column:updated"`
 }
 
-type Request struct {
-	Id             string         `gorm:"primaryKey;column:id"`
-	Url            string         `gorm:"column:url"`
-	Name           string         `gorm:"column:name;not null"`
-	Query          datatypes.JSON `gorm:"column:query;default:'[]'"`
-	Headers        datatypes.JSON `gorm:"column:headers;default:'[]'"`
-	MultipartForm  datatypes.JSON `gorm:"column:multipart;default:'[]'"`
-	UrlEncodedForm datatypes.JSON `gorm:"column:urlencoded;default:'[]'"`
-	TextBody       string         `gorm:"column:textbody"`
-	BinaryBody     datatypes.JSON `gorm:"column:binarybody"`
-	Method         string         `gorm:"column:method;default:GET"`
-	BodyType       string         `gorm:"column:bodyType;default:none"`
-	CollectionId   string         `gorm:"not null"`
-	Collection     Collection     `gorm:"constraint:OnDelete:CASCADE;"`
-	Created        int            `gorm:"autoCreateTime;column:created"`
-	UpdatedAt      int            `gorm:"autoUpdateTime;column:updated"`
-}
-
-func (r *RequestDraft) ToRequestDraftDTO() *RequestDraftDTO {
-	return &RequestDraftDTO{
-		Id:                 r.Id,
-		Url:                r.Url,
-		Method:             r.Method,
-		Query:              string(r.Query),
-		Headers:            string(r.Headers),
-		BodyType:           r.BodyType,
-		MultipartFormBody:  string(r.MultipartForm),
-		UrlEncodedFormBody: string(r.UrlEncodedForm),
-		TextBody:           r.TextBody,
-		BinaryBody:         string(r.BinaryBody),
-		ParentRequestId:    r.ParentRequestId,
-		ParentRequestName:  r.ParentRequestName,
-		ParentCollectionId: r.ParentCollectionId,
-	}
-}
-
-func (r *Request) ToRequestDTO() *RequestDTO {
-	return &RequestDTO{
-		Id:                 r.Id,
-		Url:                r.Url,
-		Method:             r.Method,
-		Name:               r.Name,
-		Query:              string(r.Query),
-		Headers:            string(r.Headers),
-		BodyType:           r.BodyType,
-		MultipartFormBody:  string(r.MultipartForm),
-		UrlEncodedFormBody: string(r.UrlEncodedForm),
-		TextBody:           r.TextBody,
-		BinaryBody:         string(r.BinaryBody),
-		CollectionId:       r.CollectionId,
-	}
-}
-
-func (r *Request) FromRequestDraft(payload *SaveDraftAsReqDTO, dto *RequestDraft) {
-	if r == nil {
-		r = &Request{}
-	}
-
-	r.Id = payload.RequestId
-	r.Url = dto.Url
-	r.Method = dto.Method
-	r.Query = dto.Query
-	r.Headers = dto.Headers
-	r.BodyType = dto.BodyType
-	r.TextBody = dto.TextBody
-	r.UrlEncodedForm = dto.UrlEncodedForm
-	r.MultipartForm = dto.MultipartForm
-	r.BinaryBody = dto.BinaryBody
-	r.CollectionId = payload.CollectionId
-	r.Name = payload.Name
-}
-
-func (r *RequestDraft) FromRequestDraftDTO(dto *RequestDraftDTO) {
+func (r *RequestDraft) FromRequestDraftDTO(dto *models.RequestDraftDTO) {
 
 	if r == nil {
 		r = &RequestDraft{}
@@ -159,9 +91,86 @@ func (r *RequestDraft) FromRequestDraftDTO(dto *RequestDraftDTO) {
 	r.Method = dto.Method
 	r.Query = datatypes.JSON([]byte(dto.Query))
 	r.Headers = datatypes.JSON([]byte(dto.Headers))
+	r.Cookies = datatypes.JSON([]byte(dto.Cookies))
 	r.BodyType = dto.BodyType
 	r.TextBody = dto.TextBody
 	r.UrlEncodedForm = datatypes.JSON([]byte(dto.UrlEncodedFormBody))
 	r.MultipartForm = datatypes.JSON([]byte(dto.MultipartFormBody))
 	r.BinaryBody = datatypes.JSON([]byte(dto.BinaryBody))
+}
+
+func (r *RequestDraft) ToRequestDraftDTO() *models.RequestDraftDTO {
+	return &models.RequestDraftDTO{
+		Id:                 r.Id,
+		Url:                r.Url,
+		Method:             r.Method,
+		Query:              string(r.Query),
+		Headers:            string(r.Headers),
+		Cookies:            string(r.Cookies),
+		BodyType:           r.BodyType,
+		MultipartFormBody:  string(r.MultipartForm),
+		UrlEncodedFormBody: string(r.UrlEncodedForm),
+		TextBody:           r.TextBody,
+		BinaryBody:         string(r.BinaryBody),
+		ParentRequestId:    r.ParentRequestId,
+		ParentRequestName:  r.ParentRequestName,
+		ParentCollectionId: r.ParentCollectionId,
+	}
+}
+
+type Request struct {
+	Id             string         `gorm:"primaryKey;column:id"`
+	Url            string         `gorm:"column:url"`
+	Name           string         `gorm:"column:name;not null"`
+	Query          datatypes.JSON `gorm:"column:query;default:'[]'"`
+	Headers        datatypes.JSON `gorm:"column:headers;default:'[]'"`
+	Cookies        datatypes.JSON `gorm:"column:cookies;default:'[]'"`
+	MultipartForm  datatypes.JSON `gorm:"column:multipart;default:'[]'"`
+	UrlEncodedForm datatypes.JSON `gorm:"column:urlencoded;default:'[]'"`
+	TextBody       string         `gorm:"column:textbody"`
+	BinaryBody     datatypes.JSON `gorm:"column:binarybody"`
+	Method         string         `gorm:"column:method;default:GET"`
+	BodyType       string         `gorm:"column:bodyType;default:none"`
+	CollectionId   string         `gorm:"not null"`
+	Collection     Collection     `gorm:"constraint:OnDelete:CASCADE;"`
+	Created        int            `gorm:"autoCreateTime;column:created"`
+	UpdatedAt      int            `gorm:"autoUpdateTime;column:updated"`
+}
+
+func (r *Request) ToRequestDTO() *models.RequestDTO {
+	return &models.RequestDTO{
+		Id:                 r.Id,
+		Url:                r.Url,
+		Method:             r.Method,
+		Name:               r.Name,
+		Query:              string(r.Query),
+		Headers:            string(r.Headers),
+		Cookies:            string(r.Cookies),
+		BodyType:           r.BodyType,
+		MultipartFormBody:  string(r.MultipartForm),
+		UrlEncodedFormBody: string(r.UrlEncodedForm),
+		TextBody:           r.TextBody,
+		BinaryBody:         string(r.BinaryBody),
+		CollectionId:       r.CollectionId,
+	}
+}
+
+func (r *Request) FromRequestDraft(payload *models.SaveDraftAsReqDTO, dto *RequestDraft) {
+	if r == nil {
+		r = &Request{}
+	}
+
+	r.Id = payload.RequestId
+	r.Url = dto.Url
+	r.Method = dto.Method
+	r.Query = dto.Query
+	r.Headers = dto.Headers
+	r.BodyType = dto.BodyType
+	r.Cookies = dto.Cookies
+	r.TextBody = dto.TextBody
+	r.UrlEncodedForm = dto.UrlEncodedForm
+	r.MultipartForm = dto.MultipartForm
+	r.BinaryBody = dto.BinaryBody
+	r.CollectionId = payload.CollectionId
+	r.Name = payload.Name
 }
