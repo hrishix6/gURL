@@ -1,9 +1,9 @@
 import { NgClass } from "@angular/common";
 import { Component, HostBinding, input, output } from "@angular/core";
+import type { models } from "@wailsjs/go/models";
+import { ChooseFile } from "@wailsjs/go/storage/Storage";
 import { Eraser, LucideAngularModule, Paperclip, X } from "lucide-angular";
-import { ChooseFile } from "../../../../wailsjs/go/main/Gurl";
-import type { models } from "../../../../wailsjs/go/models";
-import type { MultipartItem } from "../../../types";
+import type { MultipartItem } from "@/types";
 import { humanBytes } from "../utils/time";
 
 @Component({
@@ -28,7 +28,7 @@ import { humanBytes } from "../utils/time";
           (blur)="handleBlur()"
         />
       </div>
-      <div class="flex-1 relative">
+      <div class="flex-2 relative">
         @if(typeof item.val === 'string'){
         <input
           type="text"

@@ -1,6 +1,6 @@
 import { NgClass } from "@angular/common";
 import { Component, input, output } from "@angular/core";
-import type { TabItem } from "../../../types";
+import type { TabItem } from "@/types";
 
 @Component({
 	selector: "app-section-tab",

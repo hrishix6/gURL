@@ -1,14 +1,15 @@
 import { NgClass } from "@angular/common";
 import { Component, input, output } from "@angular/core";
 import { Check, ChevronsUpDown, LucideAngularModule } from "lucide-angular";
-import type { DropDownItem } from "../../../types";
+import type { DropDownItem } from "@/types";
 
 @Component({
 	selector: `app-dropdown`,
 	template: `
         <div class="dropdown dropdown-{{direction()}} dropdown-{{align()}}">
             <div tabindex="0" role="button" [ngClass]="{
-              'btn btn-primary': true,
+              'btn': true,
+              'btn-primary': primary(),
               'btn-sm': size() === 'sm',
               'btn-xl': size() === 'xl',
               'btn-md': size() === 'md',
@@ -51,6 +52,7 @@ export class AppDropdown<T> {
 	align = input<"start" | "end">("start");
 	size = input<"sm" | "md" | "lg" | "xl">("md");
 	varient = input<"soft" | "ghost" | "default">("default");
+	primary = input<boolean>(true);
 
 	onItemSelection = output<T>();
 
