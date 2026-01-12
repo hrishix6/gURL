@@ -7,27 +7,39 @@ import {
 	signal,
 } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import { nanoid } from "nanoid";
-import { debounceTime, Subject } from "rxjs";
+import type { models } from "@wailsjs/go/models";
 import {
 	AddCollection,
+	ClearCollection,
+	DeleteCollection,
+	DeleteDraftsUnderCollection,
+	DeleteRequestDrafts,
+	DeleteSavedReq,
 	GetAllCollections,
 	GetSavedRequests,
-} from "../../../wailsjs/go/main/Gurl";
-import type { models } from "../../../wailsjs/go/models";
+	GetUIState,
+	RenameCollection,
+	SaveRequestCopy,
+	UpdateLayoutPreference,
+	UpdateSideBarPreference,
+} from "@wailsjs/go/storage/Storage";
+import { nanoid } from "nanoid";
+import { debounceTime, Subject } from "rxjs";
 import {
 	DEFAULT_THEME,
 	SUPPORTED_THEMES,
 	THEME_LOCALSTORAGE_KEY,
-} from "../../constants";
-import type { DropDownItem } from "../../types";
+} from "@/constants";
 import {
+	type ActiveItemInfo,
 	AppSidebarContent,
 	type AppState,
+	AppTabType,
 	type AppTheme,
+	type DropDownItem,
 	FormLayout,
 	type ReqHistoryItem,
-} from "../../types";
+} from "@/types";
 import { TabsService } from "./tabs.service";
 
 @Injectable({
@@ -38,6 +50,13 @@ export class AppService {
 	public appState = computed(() => this._appState());
 	private tabSvc = inject(TabsService);
 	private destoyRef = inject(DestroyRef);
+
+	public activeItemInfo = signal<ActiveItemInfo>({
+		show: false,
+		child: "",
+		parent: "",
+		type: AppTabType.Req,
+	});
 
 	//#region environments
 	private _environments = signal<DropDownItem<string>[]>([
@@ -107,6 +126,29 @@ export class AppService {
 				req.url?.toLocaleLowerCase().includes(normalizedKey),
 		);
 	});
+
+	public async deleteRequest(requestId: string) {
+		try {
+			await DeleteSavedReq(requestId);
+			await DeleteRequestDrafts(requestId);
+			//refresh from db
+			await this.initializeSavedRequests();
+			this.tabSvc.refreshNotifier.next();
+		} catch (error) {
+			console.error(error);
+		}
+	}
+
+	public async copyRequest(sourceId: string, name: string) {
+		try {
+			await SaveRequestCopy({ id: nanoid(), name, sourceId });
+			//refresh from db
+			await this.initializeSavedRequests();
+		} catch (error) {
+			console.error(error);
+		}
+	}
+
 	//#endregion requests
 
 	//#region collections
@@ -130,6 +172,43 @@ export class AppService {
 			this._collectionModalOpen.set(false);
 		}
 	}
+
+	public async deleteCollection(id: string) {
+		try {
+			await DeleteCollection(id);
+			await DeleteDraftsUnderCollection(id);
+			//refresh from db
+
+			await this.initializeCollections();
+			await this.initializeSavedRequests();
+			this.tabSvc.refreshNotifier.next();
+		} catch (error) {
+			console.error(error);
+		}
+	}
+
+	public async renameCollection(id: string, name: string) {
+		try {
+			await RenameCollection(id, name);
+			this.refreshCollections$.next();
+		} catch (error) {
+			console.error(error);
+		}
+	}
+
+	public async clearCollection(id: string) {
+		try {
+			await ClearCollection(id);
+			await DeleteDraftsUnderCollection(id);
+
+			//refresh from db
+			await this.initializeSavedRequests();
+			this.tabSvc.refreshNotifier.next();
+		} catch (error) {
+			console.error(error);
+		}
+	}
+
 	//#endregion collections
 
 	//#region Modals
@@ -142,15 +221,12 @@ export class AppService {
 	//#endregion Modals
 
 	//#region layout
-	private _formLayout = signal<FormLayout>(FormLayout.Horizontal);
+	private _formLayout = signal<FormLayout>(FormLayout.Responsive);
+	private layoutChange$ = new Subject<FormLayout>();
 	public formLayout = computed(() => this._formLayout());
-	public toggleLayout() {
-		this._formLayout.update((prev) => {
-			if (prev === FormLayout.Horizontal) {
-				return FormLayout.Vertical;
-			}
-			return FormLayout.Horizontal;
-		});
+	public setLayout(l: FormLayout) {
+		this._formLayout.set(l);
+		this.layoutChange$.next(l);
 	}
 
 	//#endregion layout
@@ -173,6 +249,9 @@ export class AppService {
 		AppSidebarContent.Collections,
 	);
 	public appSidebarContent = computed(() => this._appSidebarContent());
+
+	private desktopSidebarChange$ = new Subject<boolean>();
+
 	public setCurrentSidebarContent(contentType: AppSidebarContent) {
 		this._appSidebarContent.set(contentType);
 	}
@@ -182,7 +261,10 @@ export class AppService {
 	public isDesktopSidebarOpen = computed(() => this._isDesktopSidebarOpen());
 
 	public toggleDesktopSidebar() {
-		this._isDesktopSidebarOpen.update((x) => !x);
+		this._isDesktopSidebarOpen.update((x) => {
+			this.desktopSidebarChange$.next(!x);
+			return !x;
+		});
 	}
 	//#endregion desktop-sidebar
 
@@ -238,6 +320,13 @@ export class AppService {
 			}
 		});
 
+		this.layoutChange$.pipe(takeUntilDestroyed(this.destoyRef)).subscribe({
+			next: (v) => {
+				console.log(`saving layout preference ${v} in db`);
+				UpdateLayoutPreference(v);
+			},
+		});
+
 		this.searchHistoryKeyChange$
 			.pipe(takeUntilDestroyed(this.destoyRef), debounceTime(500))
 			.subscribe({
@@ -271,6 +360,16 @@ export class AppService {
 					this._collectionSearchKey.set(v);
 				},
 			});
+
+		this.desktopSidebarChange$
+			.pipe(takeUntilDestroyed(this.destoyRef))
+			.subscribe({
+				next: (v) => {
+					UpdateSideBarPreference(v).then(() => {
+						console.log(`sidebar preference saved to db`);
+					});
+				},
+			});
 	}
 
 	//#region init
@@ -289,21 +388,37 @@ export class AppService {
 			const collections = await GetAllCollections();
 			if (Array.isArray(collections) && collections.length) {
 				this._collections.set(collections);
+			} else {
+				this._collections.set([]);
 			}
-		} catch (error) {
-			console.error(error);
+		} catch (_error) {
+			this._appState.set("error");
 		}
 	}
 
 	async initializeSavedRequests() {
 		try {
 			const savedRequests = await GetSavedRequests();
-
 			if (Array.isArray(savedRequests) && savedRequests.length) {
 				this._savedRequests.set(savedRequests);
+			} else {
+				this._savedRequests.set([]);
 			}
-		} catch (error) {
-			console.error(error);
+		} catch (_error) {
+			this._appState.set("error");
+		}
+	}
+
+	async initializeUIState() {
+		try {
+			const uiState = await GetUIState();
+			this._formLayout.set(
+				(uiState.layout as FormLayout) || FormLayout.Responsive,
+			);
+			this._isDesktopSidebarOpen.set(uiState.isSidebarOpen);
+			await this.tabSvc.init(uiState);
+		} catch (_error) {
+			this._appState.set("error");
 		}
 	}
 
@@ -313,8 +428,7 @@ export class AppService {
 			//initialize collections + saved requests
 			await this.initializeCollections();
 			await this.initializeSavedRequests();
-			//initialize tabs
-			await this.tabSvc.init();
+			await this.initializeUIState();
 			this._appState.set("loaded");
 		} catch (_error) {
 			this._appState.set("error");

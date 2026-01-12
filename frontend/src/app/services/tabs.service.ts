@@ -6,17 +6,17 @@ import {
 	signal,
 } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import { nanoid } from "nanoid";
-import { debounceTime, Subject } from "rxjs";
+import type { models } from "@wailsjs/go/models";
 import {
 	AddDraft,
 	AddFreshDraft,
-	GetOpenTabs,
 	RemoveDraft,
+	UpdateActiveTab,
 	UpdateOpenTabs,
-} from "../../../wailsjs/go/main/Gurl";
-import type { models } from "../../../wailsjs/go/models";
-import { type ApplicationTab, AppTabType, type ReqHistoryItem } from "../../types";
+} from "@wailsjs/go/storage/Storage";
+import { nanoid } from "nanoid";
+import { debounceTime, Subject } from "rxjs";
+import { type ApplicationTab, AppTabType, type ReqHistoryItem } from "@/types";
 
 @Injectable({
 	providedIn: "root",
@@ -28,8 +28,11 @@ export class TabsService {
 	public activeTab = computed(() => this._activeTab());
 	public destoyRef = inject(DestroyRef);
 	private tabChanges$ = new Subject<ApplicationTab[]>();
+	private activeTabChanges$ = new Subject<string>();
 	private reqChanges$ = new Subject<string>();
 	public tabCount = computed(() => this._openTabs().length);
+
+	public refreshNotifier = new Subject<void>();
 
 	constructor() {
 		this.tabChanges$
@@ -59,6 +62,13 @@ export class TabsService {
 					});
 			},
 		});
+
+		this.activeTabChanges$.pipe(takeUntilDestroyed(this.destoyRef)).subscribe({
+			next: (v) => {
+				console.log(`saving tab ${v} as active in db`);
+				UpdateActiveTab(v);
+			},
+		});
 	}
 
 	public async createTabFromSaved(item: models.RequestDTO) {
@@ -73,11 +83,14 @@ export class TabsService {
 				query: item.query,
 				bodyType: item.bodyType,
 				headers: item.headers,
+				cookies: item.cookies,
 				binary: item.binary,
 				multipart: item.multipart,
 				text: item.text,
 				urlencoded: item.urlencoded,
 			};
+
+			console.dir(newDraft);
 
 			await AddDraft(newDraft);
 
@@ -95,7 +108,31 @@ export class TabsService {
 				return copy;
 			});
 
-			this._activeTab.set(newTab.id);
+			this.setActiveTab(newTab.id);
+		} catch (error) {
+			console.error(error);
+		}
+	}
+
+	public async createDuplicateTab(newDraft: models.RequestDraftDTO) {
+		try {
+			await AddDraft(newDraft);
+
+			const newTab: ApplicationTab = {
+				id: nanoid(),
+				name: newDraft.url,
+				tag: newDraft.method,
+				entityId: newDraft.id,
+				entityType: AppTabType.Req,
+			};
+
+			this._openTabs.update((prev) => {
+				const copy = [...prev, newTab];
+				this.tabChanges$.next(copy);
+				return copy;
+			});
+
+			this.setActiveTab(newTab.id);
 		} catch (error) {
 			console.error(error);
 		}
@@ -111,6 +148,7 @@ export class TabsService {
 				parentRequestName: "",
 				parentCollectionId: "",
 				query: JSON.stringify(item.queryParams),
+				cookies: JSON.stringify(item.cookies),
 				bodyType: item.bodyType,
 				headers: JSON.stringify(item.headers),
 				binary: item.binaryBody ? JSON.stringify(item.binaryBody) : "",
@@ -135,7 +173,7 @@ export class TabsService {
 				return copy;
 			});
 
-			this._activeTab.set(newTab.id);
+			this.setActiveTab(newTab.id);
 		} catch (error) {
 			console.error(error);
 		}
@@ -163,7 +201,7 @@ export class TabsService {
 				return copy;
 			});
 
-			this._activeTab.set(newTab.id);
+			this.setActiveTab(newTab.id);
 		} catch (error) {
 			console.error(error);
 		}
@@ -171,6 +209,9 @@ export class TabsService {
 
 	public deleteTab(id: string) {
 		this._openTabs.update((prev) => {
+			if (prev.length === 1) {
+				return prev;
+			}
 			const i = prev.findIndex((x) => x.id === id);
 			if (i === -1) {
 				return prev;
@@ -180,7 +221,8 @@ export class TabsService {
 				const nextTab = prev[i + 1];
 				const prevTab = prev[i - 1];
 				const newTabId = nextTab?.id || prevTab?.id || null;
-				this._activeTab.set(newTabId);
+				console.log(`new active tab id after closing current is ${newTabId}`);
+				this.setActiveTab(newTabId);
 			}
 
 			this.reqChanges$.next(prev[i].entityId);
@@ -192,10 +234,8 @@ export class TabsService {
 	}
 
 	public setActiveTab(id: string | null) {
-		const i = this._openTabs().findIndex((x) => x.id === id);
-		if (i >= 0) {
-			this._activeTab.set(id);
-		}
+		this._activeTab.set(id);
+		this.activeTabChanges$.next(id || "");
 	}
 
 	public updateActiveTab(
@@ -216,13 +256,44 @@ export class TabsService {
 		});
 	}
 
-	async init() {
+	public closeTabs(deletedEntities: string[]) {
+		this._openTabs.update((prev) => {
+			const copy = prev.filter((x) => !deletedEntities.includes(x.entityId));
+
+			const currentActiveTab = prev.find((x) => x.id === this.activeTab());
+
+			if (
+				currentActiveTab &&
+				deletedEntities.includes(currentActiveTab.entityId)
+			) {
+				if (copy.length) {
+					this.setActiveTab(copy[0].id);
+				}
+			}
+
+			this.tabChanges$.next(copy);
+
+			if (!copy.length) {
+				this.createFreshTab();
+			}
+
+			return copy;
+		});
+	}
+
+	async init(uiState: models.UIStateDTO) {
 		try {
-			const savedTabs = await GetOpenTabs();
-			const parsedTabs: ApplicationTab[] = JSON.parse(savedTabs);
+			const { openTabsJson, activeTab } = uiState;
+			const parsedTabs: ApplicationTab[] = JSON.parse(openTabsJson);
 			if (Array.isArray(parsedTabs) && parsedTabs.length) {
+				console.log(`populating tabs`);
 				this._openTabs.set(parsedTabs);
-				this._activeTab.set(parsedTabs[0].id);
+
+				if (parsedTabs.findIndex((x) => x.id === activeTab) > -1) {
+					this._activeTab.set(activeTab);
+				} else {
+					this._activeTab.set(parsedTabs[0].id);
+				}
 			} else {
 				this.createFreshTab();
 			}
