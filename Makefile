@@ -12,8 +12,11 @@ vet: fmt
 clean: vet
 		rm -rf build/bin/*
 
-build: clean
-		wails build -tags webkit2_41
+gen:  vet
+		wails generate module
 
-dev: clean
-		wails dev -tags webkit2_41
+build: clean
+		wails build -tags webkit2_41 -skipbindings
+
+dev: vet
+		wails dev -tags webkit2_41 -skipbindings
