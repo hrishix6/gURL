@@ -1,7 +1,8 @@
 import { Component, inject, signal } from "@angular/core";
 import { Ellipsis, LucideAngularModule } from "lucide-angular";
-import { AppDropdown } from "../../common/components";
-import { AppService } from "../../services";
+import { AppEntityCreationButton } from "@/app.entity.create";
+import { AppDropdown } from "@/common/components";
+import { AppService } from "@/services";
 
 @Component({
 	selector: `div[appSidebarHeader]`,
@@ -13,20 +14,16 @@ import { AppService } from "../../services";
         [activeItem]="appSvc.activeWorkSpace()"
         [align]="'start'"
         [direction]="'down'"
-        [varient]="'ghost'"
         [size]="'sm'"
+        [varient]="'soft'"
         (onItemSelection)="handleActiveItemSelection($event)"
         >
         </app-dropdown>
-        <div>
-          <button class="btn btn-sm btn-ghost btn-square">
-            <lucide-angular [img]="WorkspaceOptsIcon" class="size-4" />
-          </button>
-        </div>
+        <div appEntityCreation></div>
       </div>
     </header>
   `,
-	imports: [LucideAngularModule, AppDropdown],
+	imports: [LucideAngularModule, AppDropdown, AppEntityCreationButton],
 })
 export class AppSidebarHeader {
 	readonly WorkspaceOptsIcon = Ellipsis;

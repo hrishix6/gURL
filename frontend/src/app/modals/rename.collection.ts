@@ -4,18 +4,19 @@ import {
 	Component,
 	type ElementRef,
 	HostBinding,
-	inject,
+	input,
+	type OnInit,
+	output,
 	signal,
 	viewChild,
 } from "@angular/core";
-import { AppService } from "@/services";
 
 @Component({
-	selector: `dialog[newCollectionModal]`,
+	selector: `dialog[mvCollectionModal]`,
 	template: `
     <div class="modal-box">
       <div class="flex flex-col gap-2">
-        <h3 class="text-lg font-bold">Create New Collection</h3>
+        <h3 class="text-lg font-bold">Rename Collection</h3>
         <div class="flex flex-col gap-4">
           <input
             [ngClass]="{
@@ -32,31 +33,46 @@ import { AppService } from "@/services";
         </div>
       </div>
       <div class="modal-action">
-        <button class="btn btn-soft btn-primary" (click)="onSubmit()">Create</button>
-        <button class="btn" (click)="onClose()">Cancel</button>
+        <button class="btn btn-soft btn-primary" (click)="onSubmit()" [disabled]="actionInProgress()">
+            @if(actionInProgress()) {
+                <span class="loading loading-spinner"></span>
+            }
+            Rename
+        </button>
+        <button class="btn" (click)="onClose()" [disabled]="actionInProgress()">Cancel</button>
       </div>
     </div>
     <div class="modal-backdrop">
-      <button (click)="onClose()">close</button>
+      <button (click)="onClose()" [disabled]="actionInProgress()">close</button>
     </div>
   `,
 	imports: [NgClass],
 })
-export class NewCollectionModal implements AfterViewChecked {
+export class RenameCollectionModal implements OnInit, AfterViewChecked {
 	firstInputEl = viewChild.required<ElementRef<HTMLInputElement>>("firstInput");
-
-	ngAfterViewChecked(): void {
-		this.firstInputEl()?.nativeElement.focus();
-	}
 
 	@HostBinding("class")
 	def = "modal";
 
 	@HostBinding("attr.open") get checkOpen() {
-		return this.appSvc.isCollectionModalOpen() ? "" : null;
+		return this.isOpen() ? "" : null;
 	}
 
+	actionInProgress = input.required<boolean>();
+	isOpen = input.required<boolean>();
+	initialValue = input.required<string>();
 	collectionName = signal<string>("");
+	onCancel = output<void>();
+	onConfirm = output<string>();
+
+	ngOnInit(): void {
+		this.collectionName.set(this.initialValue());
+	}
+
+	ngAfterViewChecked(): void {
+		this.firstInputEl()?.nativeElement.focus();
+	}
+
 	error = signal<boolean>(false);
 
 	onInput(text: string) {
@@ -65,7 +81,7 @@ export class NewCollectionModal implements AfterViewChecked {
 	}
 
 	onClose() {
-		this.appSvc.toggleCollectionModal();
+		this.onCancel.emit();
 	}
 
 	onSubmit() {
@@ -74,8 +90,6 @@ export class NewCollectionModal implements AfterViewChecked {
 			return;
 		}
 
-		this.appSvc.addCollection(this.collectionName());
+		this.onConfirm.emit(this.collectionName());
 	}
-
-	appSvc = inject(AppService);
 }

@@ -8,13 +8,13 @@ import {
 	type OnInit,
 	signal,
 } from "@angular/core";
-import { humanTime } from "../../../common/utils/time";
-import { TabsService } from "../../../services";
-import type { ReqHistoryItem } from "../../../../types";
-import { ReqMethodTag } from "../../../request/method.tag";
+import { humanTime } from "@/common/utils/time";
+import { ReqMethodTag } from "@/request/method.tag";
+import { TabsService } from "@/services";
+import type { ReqHistoryItem } from "@/types";
 
 @Component({
-	selector: `div[gurlReqHistoryItem]`,
+	selector: `a[gurlReqHistoryItem]`,
 	template: `
     <div class="flex items-center gap-2">
       <div methodTag [size]="'xs'" [method]="data().method"></div>
@@ -38,7 +38,7 @@ export class RequestHistoryItem implements OnInit, OnDestroy {
 
 	@HostBinding("class")
 	def =
-		"flex shrink-0 bg-base-200 grow-0 flex-col gap-4 rounded-box p-2 overflow-hidden hover:bg-base-100 hover:border-primary transition-all cursor-pointer";
+		"flex shrink-0 border-2 border-base-100 shadow-md grow-0 flex-col gap-4 rounded-box p-2 overflow-hidden hover:bg-base-100 focus:outline-none focus:ring-2 focus:ring-primary hover:cursor-pointer transition-all delay-50 ease-in-out";
 
 	ngOnInit(): void {
 		this.timeSince.set(humanTime(this.data().executed));
