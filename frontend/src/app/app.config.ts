@@ -5,8 +5,8 @@ import {
 	provideBrowserGlobalErrorListeners,
 } from "@angular/core";
 import { provideRouter } from "@angular/router";
-import { routes } from "./app.routes";
 import { AppService } from "@/services";
+import { routes } from "./app.routes";
 
 async function initializeApp() {
 	const appSvc = inject(AppService);
