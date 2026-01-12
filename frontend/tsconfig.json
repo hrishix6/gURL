@@ -14,7 +14,12 @@
 		"importHelpers": true,
 		"target": "ES2022",
 		"module": "preserve",
-		"strictPropertyInitialization": false
+		"strictPropertyInitialization": false,
+		"baseUrl": "./",
+		"paths": {
+			"@/*": ["src/app/*"],
+			"@wailsjs/*": ["wailsjs/*"]
+		}
 	},
 	"angularCompilerOptions": {
 		"enableI18nLegacyMessageIdFormat": false,
