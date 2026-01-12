@@ -1,8 +1,8 @@
 import { Component, inject } from "@angular/core";
+import { ChooseFile } from "@wailsjs/go/storage/Storage";
 import { LucideAngularModule, Paperclip, X } from "lucide-angular";
-import { ChooseFile } from "../../../wailsjs/go/main/Gurl";
-import { BytesPipe } from "../common/pipes/bytes.pipe";
-import { FormService } from "../services";
+import { BytesPipe } from "@/common/pipes/bytes.pipe";
+import { FormService } from "@/services";
 
 @Component({
 	selector: "app-file-input",
@@ -10,7 +10,7 @@ import { FormService } from "../services";
     <div class="flex">
       @if(formSvc.binaryBody()){
       <div class="flex gap-2 items-center">
-        <button class="btn btn-primary xl:btn-lg" (click)="openFileDialogue()">
+        <button class="btn btn-soft btn-primary xl:btn-lg" (click)="openFileDialogue()">
           <lucide-angular [img]="BinaryIcon" size="24" />
           {{ formSvc.binaryBody()!.name }}{{ ' ' }} ({{ formSvc.binaryBody()!.size | bytes }})
         </button>
@@ -20,7 +20,7 @@ import { FormService } from "../services";
       </div>
 
       } @else{
-      <button class="btn btn-primary xl:btn-lg" (click)="openFileDialogue()">
+      <button class="btn btn-soft btn-primary xl:btn-lg" (click)="openFileDialogue()">
         <lucide-angular [img]="BinaryIcon" size="24" />
         Choose a File
       </button>

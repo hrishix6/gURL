@@ -1,13 +1,13 @@
 import { Component, HostBinding, inject, signal } from "@angular/core";
 import { Ban, LucideAngularModule, Search } from "lucide-angular";
-import { AppService } from "../../../services";
+import { AppService } from "@/services";
 import { RequestHistoryItem } from "./history.item";
 
 @Component({
 	selector: `div[gurlReqHistory]`,
 	template: `
     <div class="px-2 pt-2">
-      <label class="input input-ghost input-primary bg-base-300">
+      <label class="input input-ghost w-full input-primary bg-base-300">
         <lucide-angular [img]="SearchIcon" class="size-4" />
         <input
           type="search"
@@ -19,15 +19,16 @@ import { RequestHistoryItem } from "./history.item";
       </label>
     </div>
     @if (appSvc.historyItems().length) {
-    <div class="flex-1 flex flex-col overflow-y-auto gap-2 p-2">
+    <div class="flex-1 flex flex-col overflow-y-auto gap-1 p-2">
       @for (item of appSvc.historyItems(); track item.id) {
-      <div [data]="item" gurlReqHistoryItem></div>
+      <a href="#" role="button" [data]="item" gurlReqHistoryItem></a>
       }
     </div>
     }@else {
-    <div class="flex items-center gap-2 justify-center opacity-25">
-      <lucide-angular [img]="NoneIcon" class="size-4" />
-    </div>
+    <div class="flex items-center gap-2 my-2 justify-center text-sm opacity-25">
+        <lucide-angular [img]="NoneIcon" class="size-4" />
+		    No items
+      </div>
     }
   `,
 	imports: [RequestHistoryItem, LucideAngularModule],
@@ -39,7 +40,7 @@ export class AppRequestHistory {
 	appSvc = inject(AppService);
 
 	@HostBinding("class")
-	def = "flex flex-1 flex-col gap-2 overflow-hidden";
+	def = "flex flex-1 flex-col overflow-hidden";
 
 	searchInput = signal<string>("");
 

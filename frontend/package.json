@@ -1,6 +1,6 @@
 {
 	"name": "gurl",
-	"version": "0.0.0",
+	"version": "0.4.0",
 	"scripts": {
 		"ng": "ng",
 		"start": "ng serve",
@@ -9,18 +9,6 @@
 		"test": "ng test",
 		"check": "biome check --write",
 		"check-unsafe": "biome check --write --unsafe"
-	},
-	"prettier": {
-		"printWidth": 100,
-		"singleQuote": true,
-		"overrides": [
-			{
-				"files": "*.html",
-				"options": {
-					"parser": "angular"
-				}
-			}
-		]
 	},
 	"private": true,
 	"packageManager": "pnpm@10.17.0",

@@ -8,31 +8,45 @@ export function AddDraft(arg1:models.RequestDraftDTO):Promise<void>;
 
 export function AddFreshDraft(arg1:models.AddFreshDraftDTO):Promise<void>;
 
-export function CancelReq(arg1:string):Promise<void>;
-
 export function ChooseFile():Promise<models.FileStats>;
+
+export function ClearCollection(arg1:string):Promise<void>;
+
+export function DeleteCollection(arg1:string):Promise<void>;
+
+export function DeleteDraftsUnderCollection(arg1:string):Promise<void>;
+
+export function DeleteRequestDrafts(arg1:string):Promise<void>;
+
+export function DeleteSavedReq(arg1:string):Promise<void>;
 
 export function FindDraftById(arg1:string):Promise<models.RequestDraftDTO>;
 
-export function GetAllCollections():Promise<Array<models.CollectionDTO>>;
+export function FindDraftIdsByCollection(arg1:string):Promise<Array<string>>;
 
-export function GetOpenTabs():Promise<string>;
+export function GetAllCollections():Promise<Array<models.CollectionDTO>>;
 
 export function GetSavedRequests():Promise<Array<models.RequestDTO>>;
 
-export function ReadFileText(arg1:string):Promise<string>;
+export function GetUIState():Promise<models.UIStateDTO>;
 
 export function RemoveDraft(arg1:string):Promise<void>;
 
+export function RenameCollection(arg1:string,arg2:string):Promise<void>;
+
 export function SaveDraftAsRequest(arg1:models.SaveDraftAsReqDTO):Promise<void>;
 
-export function SaveFile(arg1:string,arg2:string):Promise<void>;
+export function SaveFile(arg1:string):Promise<void>;
 
-export function SendReq(arg1:models.GurlReq):Promise<models.GurlRes>;
+export function SaveRequestCopy(arg1:models.SaveRequestCopyDTO):Promise<void>;
+
+export function UpdateActiveTab(arg1:string):Promise<void>;
 
 export function UpdateDraftBinaryBody(arg1:models.UpdateDraftBinaryBodyDTO):Promise<void>;
 
 export function UpdateDraftBodyType(arg1:models.UpdateDraftBodyTypeDTO):Promise<void>;
+
+export function UpdateDraftCookies(arg1:models.UpdateDraftCookiesDTO):Promise<void>;
 
 export function UpdateDraftHeaders(arg1:models.UpdateDraftHeadersDTO):Promise<void>;
 
@@ -48,4 +62,8 @@ export function UpdateDraftUrl(arg1:models.UpdateDraftUrlDTO):Promise<void>;
 
 export function UpdateDraftUrlEncodedForm(arg1:models.UpdateDraftUrlEncodedFormDTO):Promise<void>;
 
+export function UpdateLayoutPreference(arg1:string):Promise<void>;
+
 export function UpdateOpenTabs(arg1:models.UpdateOpenTabsDTO):Promise<void>;
+
+export function UpdateSideBarPreference(arg1:boolean):Promise<void>;

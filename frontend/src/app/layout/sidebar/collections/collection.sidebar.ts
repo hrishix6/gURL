@@ -1,13 +1,13 @@
 import { Component, HostBinding, inject, signal } from "@angular/core";
 import { LucideAngularModule, Search } from "lucide-angular";
-import { AppService } from "../../../services";
+import { AppService } from "@/services";
 import { CollectionList } from "./collection.item";
 
 @Component({
 	selector: `app-collections`,
 	template: `
     <div class="px-2 pt-2">
-      <label class="input input-ghost input-primary bg-base-300">
+      <label class="input input-ghost w-full input-primary bg-base-300">
         <lucide-angular [img]="SearchIcon" class="size-4" />
         <input
           type="search"
@@ -18,7 +18,7 @@ import { CollectionList } from "./collection.item";
         />
       </label>
     </div>
-    <section class="flex flex-1 flex-col gap-2 overflow-y-auto p-2">
+    <section class="flex flex-1 flex-col gap-1 overflow-y-auto p-2">
       @for (collection of appSvc.collections(); track collection.id) {
       <div collectionItem [data]="collection" role="button"></div>
       }

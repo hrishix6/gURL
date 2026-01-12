@@ -1,4 +1,4 @@
-import type { models } from "../wailsjs/go/models";
+import type { models } from "@wailsjs/go/models";
 
 export type ReqState = "idle" | "progress" | "aborted" | "error" | "success";
 
@@ -22,8 +22,17 @@ export type ReqBodyType =
 	| "txt"
 	| "form";
 
-export type ReqTabId = "req_headers" | "req_query" | "req_body" | "req_auth";
-export type ResTabId = "res_headers" | "res_body" | "res_console";
+export type ReqTabId =
+	| "req_headers"
+	| "req_query"
+	| "req_body"
+	| "req_auth"
+	| "req_cookies";
+export type ResTabId =
+	| "res_headers"
+	| "res_body"
+	| "res_console"
+	| "res_cookies";
 export type RequestAuthType = "no_auth" | "basic" | "bearer" | "api_key";
 
 export type AppTheme =
@@ -32,7 +41,9 @@ export type AppTheme =
 	| "water"
 	| "mountain"
 	| "lavender"
-	| "night";
+	| "night"
+	| "space"
+	| "sunset";
 
 export interface ThemeLabel {
 	id: AppTheme;
@@ -55,6 +66,7 @@ export interface MultipartItem {
 
 export type RequestHeaders = KeyValItem[];
 export type RequestQuery = KeyValItem[];
+export type ReqCookies = KeyValItem[];
 
 export interface TabItem<T> {
 	id: T;
@@ -65,7 +77,13 @@ export interface TabItem<T> {
 
 export type ResStatsType = Pick<
 	models.GurlRes,
-	"size" | "status" | "statusText" | "time" | "success"
+	| "size"
+	| "status"
+	| "statusText"
+	| "time"
+	| "success"
+	| "ttfbMs"
+	| "uploadSize"
 > | null;
 
 export interface RequestTabItem {
@@ -127,6 +145,13 @@ export interface ApplicationTab {
 	entityId: string;
 }
 
+export interface ActiveItemInfo {
+	show: boolean;
+	parent: string;
+	child: string;
+	type: AppTabType;
+}
+
 export enum AppSidebarContent {
 	History = "history",
 	Collections = "collections",
@@ -139,6 +164,7 @@ export interface ReqHistoryItem {
 	headers: RequestHeaders;
 	queryParams: RequestQuery;
 	bodyType: ReqBodyType;
+	cookies: ReqCookies;
 	multiPartBody: MultipartItem[];
 	urlEncodedBody: KeyValItem[];
 	binaryBody: models.FileStats | null;

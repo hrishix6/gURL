@@ -56,29 +56,10 @@ export namespace models {
 	        this.path = source["path"];
 	    }
 	}
-	export class GurlBody {
-	    isText: boolean;
-	    filepath: string;
-	    suggestedName: string;
-	    extension: string;
-	    textContent: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new GurlBody(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.isText = source["isText"];
-	        this.filepath = source["filepath"];
-	        this.suggestedName = source["suggestedName"];
-	        this.extension = source["extension"];
-	        this.textContent = source["textContent"];
-	    }
-	}
 	export class GurlKeyValItem {
 	    key: string;
 	    value: string;
+	    enabled: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new GurlKeyValItem(source);
@@ -88,11 +69,13 @@ export namespace models {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.key = source["key"];
 	        this.value = source["value"];
+	        this.enabled = source["enabled"];
 	    }
 	}
 	export class GurlKeyValMultiPartItem {
 	    key: string;
 	    value: string;
+	    enabled: boolean;
 	    isFile: boolean;
 	
 	    static createFrom(source: any = {}) {
@@ -103,7 +86,32 @@ export namespace models {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.key = source["key"];
 	        this.value = source["value"];
+	        this.enabled = source["enabled"];
 	        this.isFile = source["isFile"];
+	    }
+	}
+	export class GurlRenderMeta {
+	    html5Element: string;
+	    src: string;
+	    canRender: boolean;
+	    filepath: string;
+	    detectedMimeType: string;
+	    reportedMileType: string;
+	    extension: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new GurlRenderMeta(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.html5Element = source["html5Element"];
+	        this.src = source["src"];
+	        this.canRender = source["canRender"];
+	        this.filepath = source["filepath"];
+	        this.detectedMimeType = source["detectedMimeType"];
+	        this.reportedMileType = source["reportedMileType"];
+	        this.extension = source["extension"];
 	    }
 	}
 	export class GurlReq {
@@ -111,7 +119,9 @@ export namespace models {
 	    method: string;
 	    url: string;
 	    bodyType: string;
+	    query: GurlKeyValItem[];
 	    headers: GurlKeyValItem[];
+	    cookies: GurlKeyValItem[];
 	    urlencoded: GurlKeyValItem[];
 	    multipart: GurlKeyValMultiPartItem[];
 	    plaintext: string;
@@ -127,7 +137,9 @@ export namespace models {
 	        this.method = source["method"];
 	        this.url = source["url"];
 	        this.bodyType = source["bodyType"];
+	        this.query = this.convertValues(source["query"], GurlKeyValItem);
 	        this.headers = this.convertValues(source["headers"], GurlKeyValItem);
+	        this.cookies = this.convertValues(source["cookies"], GurlKeyValItem);
 	        this.urlencoded = this.convertValues(source["urlencoded"], GurlKeyValItem);
 	        this.multipart = this.convertValues(source["multipart"], GurlKeyValMultiPartItem);
 	        this.plaintext = source["plaintext"];
@@ -152,16 +164,53 @@ export namespace models {
 		    return a;
 		}
 	}
+	export class GurlResCookie {
+	    name: string;
+	    value: string;
+	    path: string;
+	    domain: string;
+	    expires: string;
+	    maxAge: number;
+	    secure: boolean;
+	    httpOnly: boolean;
+	    sameSite: number;
+	    raw: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new GurlResCookie(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.value = source["value"];
+	        this.path = source["path"];
+	        this.domain = source["domain"];
+	        this.expires = source["expires"];
+	        this.maxAge = source["maxAge"];
+	        this.secure = source["secure"];
+	        this.httpOnly = source["httpOnly"];
+	        this.sameSite = source["sameSite"];
+	        this.raw = source["raw"];
+	    }
+	}
 	export class GurlRes {
 	    id: string;
 	    status: number;
 	    statusText: string;
 	    success: boolean;
 	    headers: GurlKeyValItem[];
-	    body?: GurlBody;
+	    body?: GurlRenderMeta;
+	    cookies: GurlResCookie[];
 	    isFile: boolean;
 	    size: number;
+	    uploadSize: number;
 	    time: number;
+	    ttfbMs: number;
+	    dlMs: number;
+	    limitExceeded: boolean;
+	    reportedSize: number;
+	    sizeNotReported: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new GurlRes(source);
@@ -174,10 +223,17 @@ export namespace models {
 	        this.statusText = source["statusText"];
 	        this.success = source["success"];
 	        this.headers = this.convertValues(source["headers"], GurlKeyValItem);
-	        this.body = this.convertValues(source["body"], GurlBody);
+	        this.body = this.convertValues(source["body"], GurlRenderMeta);
+	        this.cookies = this.convertValues(source["cookies"], GurlResCookie);
 	        this.isFile = source["isFile"];
 	        this.size = source["size"];
+	        this.uploadSize = source["uploadSize"];
 	        this.time = source["time"];
+	        this.ttfbMs = source["ttfbMs"];
+	        this.dlMs = source["dlMs"];
+	        this.limitExceeded = source["limitExceeded"];
+	        this.reportedSize = source["reportedSize"];
+	        this.sizeNotReported = source["sizeNotReported"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -198,6 +254,7 @@ export namespace models {
 		    return a;
 		}
 	}
+	
 	export class RequestDTO {
 	    id: string;
 	    url: string;
@@ -205,6 +262,7 @@ export namespace models {
 	    method: string;
 	    query: string;
 	    headers: string;
+	    cookies: string;
 	    bodyType: string;
 	    multipart: string;
 	    urlencoded: string;
@@ -224,6 +282,7 @@ export namespace models {
 	        this.method = source["method"];
 	        this.query = source["query"];
 	        this.headers = source["headers"];
+	        this.cookies = source["cookies"];
 	        this.bodyType = source["bodyType"];
 	        this.multipart = source["multipart"];
 	        this.urlencoded = source["urlencoded"];
@@ -238,6 +297,7 @@ export namespace models {
 	    method: string;
 	    query: string;
 	    headers: string;
+	    cookies: string;
 	    bodyType: string;
 	    multipart: string;
 	    urlencoded: string;
@@ -258,6 +318,7 @@ export namespace models {
 	        this.method = source["method"];
 	        this.query = source["query"];
 	        this.headers = source["headers"];
+	        this.cookies = source["cookies"];
 	        this.bodyType = source["bodyType"];
 	        this.multipart = source["multipart"];
 	        this.urlencoded = source["urlencoded"];
@@ -286,6 +347,40 @@ export namespace models {
 	        this.name = source["name"];
 	    }
 	}
+	export class SaveRequestCopyDTO {
+	    sourceId: string;
+	    id: string;
+	    name: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new SaveRequestCopyDTO(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.sourceId = source["sourceId"];
+	        this.id = source["id"];
+	        this.name = source["name"];
+	    }
+	}
+	export class UIStateDTO {
+	    openTabsJson: string;
+	    layout: string;
+	    activeTab: string;
+	    isSidebarOpen: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new UIStateDTO(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.openTabsJson = source["openTabsJson"];
+	        this.layout = source["layout"];
+	        this.activeTab = source["activeTab"];
+	        this.isSidebarOpen = source["isSidebarOpen"];
+	    }
+	}
 	export class UpdateDraftBinaryBodyDTO {
 	    requestId: string;
 	    binaryJson: string;
@@ -312,6 +407,20 @@ export namespace models {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.requestId = source["requestId"];
 	        this.bodyType = source["bodyType"];
+	    }
+	}
+	export class UpdateDraftCookiesDTO {
+	    requestId: string;
+	    cookiesJSON: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new UpdateDraftCookiesDTO(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.requestId = source["requestId"];
+	        this.cookiesJSON = source["cookiesJSON"];
 	    }
 	}
 	export class UpdateDraftHeadersDTO {

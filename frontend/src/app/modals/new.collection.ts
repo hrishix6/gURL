@@ -1,6 +1,14 @@
 import { NgClass } from "@angular/common";
-import { Component, HostBinding, inject, signal } from "@angular/core";
-import { AppService } from "../services";
+import {
+	type AfterViewChecked,
+	Component,
+	type ElementRef,
+	HostBinding,
+	inject,
+	signal,
+	viewChild,
+} from "@angular/core";
+import { AppService } from "@/services";
 
 @Component({
 	selector: `dialog[newCollectionModal]`,
@@ -19,11 +27,12 @@ import { AppService } from "../services";
             required
             [value]="collectionName()"
             (input)="onInput($event.target.value)"
+            #firstInput
           />
         </div>
       </div>
       <div class="modal-action">
-        <button class="btn btn-soft btn-primary" (click)="onSubmit()">Submit</button>
+        <button class="btn btn-soft btn-primary" (click)="onSubmit()">Create</button>
         <button class="btn" (click)="onClose()">Cancel</button>
       </div>
     </div>
@@ -33,7 +42,13 @@ import { AppService } from "../services";
   `,
 	imports: [NgClass],
 })
-export class NewCollectionModal {
+export class NewCollectionModal implements AfterViewChecked {
+	firstInputEl = viewChild.required<ElementRef<HTMLInputElement>>("firstInput");
+
+	ngAfterViewChecked(): void {
+		this.firstInputEl()?.nativeElement.focus();
+	}
+
 	@HostBinding("class")
 	def = "modal";
 

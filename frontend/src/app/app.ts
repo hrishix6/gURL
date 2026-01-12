@@ -1,15 +1,7 @@
-import {
-	Component,
-	HostBinding,
-	inject,
-	type OnInit,
-	signal,
-} from "@angular/core";
+import { Component, HostBinding, inject, type OnInit } from "@angular/core";
 import { LucideAngularModule } from "lucide-angular";
-import { AppDropdown } from "./common/components/dropdown";
-import { APP_VERSION } from "../constants";
-import { AppService, TabsService } from "./services";
-import { AppEntityCreationButton } from "./app.entity.create";
+import { APP_VERSION } from "@/constants";
+import { AppService, TabsService } from "@/services";
 import { AppHome } from "./app.home";
 import { AppSpinner } from "./app.spinner";
 import { AppFooter } from "./layout/footer/footer";
@@ -41,18 +33,9 @@ import { AppTabsWrapper } from "./tabs/req.tabs.container";
           <!-- Main header -->
           <header class="flex basis-12 grow-0 shrink-0 items-center p-2">
             @if(tabsSvc.tabCount()){
-            <div class="flex-1"></div>
+            <div class="flex-1 px-2">
+            </div>
             <div class="flex items-center gap-2 px-2">
-              <app-dropdown
-              [activeItem]="appSvc.activeEnvironment()"
-              [items]="appSvc.environments()"
-              (onItemSelection)="appSvc.setActiveEnvironment($event)"
-              [size]="'md'"
-              [varient]="'ghost'"
-              >
-              </app-dropdown>
-
-              <div appEntityCreation></div>
             </div>
             }
           </header>
@@ -89,15 +72,12 @@ import { AppTabsWrapper } from "./tabs/req.tabs.container";
 		MobileSidebar,
 		AppTabsWrapper,
 		AppHome,
-		AppEntityCreationButton,
 		NewCollectionModal,
-		AppDropdown,
 	],
 })
 export class App implements OnInit {
 	@HostBinding("class")
 	def = "drawer";
-
 	tabsSvc = inject(TabsService);
 	appSvc = inject(AppService);
 

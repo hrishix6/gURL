@@ -6,16 +6,15 @@ import {
 	signal,
 } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import { nanoid } from "nanoid";
-import { debounceTime, Subject } from "rxjs";
+import { CancelReq, SendHttpReq } from "@wailsjs/go/executor/Executor";
+import type { models } from "@wailsjs/go/models";
 import {
-	CancelReq,
 	FindDraftById,
 	SaveDraftAsRequest,
 	SaveFile,
-	SendReq,
 	UpdateDraftBinaryBody,
 	UpdateDraftBodyType,
+	UpdateDraftCookies,
 	UpdateDraftHeaders,
 	UpdateDraftMethod,
 	UpdateDraftMultipartForm,
@@ -23,11 +22,12 @@ import {
 	UpdateDraftTextBody,
 	UpdateDraftUrl,
 	UpdateDraftUrlEncodedForm,
-} from "../../../wailsjs/go/main/Gurl";
-import type { models } from "../../../wailsjs/go/models";
-import { ClipboardSetText } from "../../../wailsjs/runtime";
+} from "@wailsjs/go/storage/Storage";
+import { nanoid } from "nanoid";
+import { debounceTime, Subject } from "rxjs";
 
 import {
+	COOKIE_PLACEHOLDER,
 	DEFAULT_REQ_TAB,
 	DEFAULT_RES_TAB,
 	HID_PLACEHOLDER,
@@ -38,23 +38,22 @@ import {
 	REQ_METHODS,
 	RES_DETAILS_TABS,
 	URLENCODED_ID_PLACEHOLDER,
-} from "../../constants";
+} from "@/constants";
+import { AppService, TabsService } from "@/services";
 import type {
 	DraftParentMetadata,
 	DropDownItem,
 	KeyValItem,
 	MultipartItem,
 	ReqBodyType,
+	ReqCookies,
 	ReqState,
 	ReqTabId,
 	RequestHeaders,
 	RequestMethod,
 	RequestQuery,
-	ResStatsType,
 	ResTabId,
-} from "../../types";
-import { AppService } from "./app.service";
-import { TabsService } from "./tabs.service";
+} from "@/types";
 
 @Injectable()
 export class FormService {
@@ -82,6 +81,16 @@ export class FormService {
 	private textBChange$ = new Subject<string>();
 
 	constructor() {
+		//tab refresh notification
+		this._tabSvc.refreshNotifier
+			.pipe(takeUntilDestroyed(this.destroyRef))
+			.subscribe({
+				next: () => {
+					console.log(`received signal to refresh self`);
+					this.initializeReqForm(this._requestId);
+				},
+			});
+
 		//body type
 		this.bodyTypeChange$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
 			next: (v) => {
@@ -131,6 +140,20 @@ export class FormService {
 						headersJson: JSON.stringify(payload),
 					}).then(() => {
 						console.log(`[${this._requestId}] headers updated in SQlite`);
+					});
+				},
+			});
+
+		this.cookieChange$
+			.pipe(takeUntilDestroyed(this.destroyRef), debounceTime(500))
+			.subscribe({
+				next: (v) => {
+					const payload = v.filter((x) => x.id !== COOKIE_PLACEHOLDER);
+					UpdateDraftCookies({
+						requestId: this._requestId,
+						cookiesJSON: JSON.stringify(payload),
+					}).then(() => {
+						console.log(`[${this._requestId}] cookies updated in SQlite`);
 					});
 				},
 			});
@@ -185,16 +208,18 @@ export class FormService {
 			});
 
 		//text body
-		this.textBChange$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-			next: (v) => {
-				UpdateDraftTextBody({
-					requestId: this._requestId,
-					textBody: v,
-				}).then(() => {
-					console.log(`[${this._requestId}] text body updated in SQlite`);
-				});
-			},
-		});
+		this.textBChange$
+			.pipe(takeUntilDestroyed(this.destroyRef), debounceTime(500))
+			.subscribe({
+				next: (v) => {
+					UpdateDraftTextBody({
+						requestId: this._requestId,
+						textBody: v,
+					}).then(() => {
+						console.log(`[${this._requestId}] text body updated in SQlite`);
+					});
+				},
+			});
 
 		//binary body
 		this.binaryBChange$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
@@ -209,7 +234,7 @@ export class FormService {
 		});
 	}
 
-	//#region save-request
+	//#region request-ops
 	private _saveRequestModalOpen = signal<boolean>(false);
 	public isSaveRequestModalOpen = computed(() => this._saveRequestModalOpen());
 
@@ -256,7 +281,40 @@ export class FormService {
 			this.toggleSaveRequestModal();
 		}
 	}
-	//#endregion save-request
+
+	public async copyRequest() {
+		const newDraft: models.RequestDraftDTO = {
+			id: nanoid(),
+			bodyType: this._bodyType().id,
+			url: this._url(),
+			method: this._method().id,
+			headers: JSON.stringify(
+				this._headers().filter((x) => x.id !== HID_PLACEHOLDER),
+			),
+			cookies: JSON.stringify(
+				this._cookies().filter((x) => x.id !== COOKIE_PLACEHOLDER),
+			),
+			urlencoded: JSON.stringify(
+				this._urlEncodedParams().filter(
+					(x) => x.id !== URLENCODED_ID_PLACEHOLDER,
+				),
+			),
+			multipart: JSON.stringify(
+				this._multiPartForm().filter((x) => x.id !== MULTIPART_ID_PLACEHOLDER),
+			),
+			query: JSON.stringify(
+				this._queryParams().filter((x) => x.id !== QID_PLACEHOLDER),
+			),
+			binary: this._binaryBody() ? JSON.stringify(this._binaryBody()) : "",
+			text: this._textBody(),
+			parentCollectionId: "",
+			parentRequestId: "",
+			parentRequestName: "",
+		};
+		await this._tabSvc.createDuplicateTab(newDraft);
+	}
+
+	//#endregion request-ops
 
 	//#region tab-management
 	private _activeRequestTab = signal<ReqTabId>(DEFAULT_REQ_TAB);
@@ -278,6 +336,120 @@ export class FormService {
 	}
 	//#endregion tab-management
 
+	//#region cookies
+	private cookieChange$ = new Subject<KeyValItem[]>();
+	private _cookies = signal<ReqCookies>([
+		{
+			id: COOKIE_PLACEHOLDER,
+			key: "",
+			val: "",
+			enabled: "on",
+		},
+	]);
+
+	private _bulkEditModeCookies = signal<boolean>(false);
+
+	public bulkEditModeCookies = computed(() => this._bulkEditModeCookies());
+
+	public toggleEditModeCookies() {
+		this._bulkEditModeCookies.update((x) => !x);
+	}
+
+	private _bulkCookiesText = signal<string>("");
+
+	public setBulkCookiesText(s: string) {
+		this._bulkCookiesText.set(s);
+	}
+
+	public bulkCookiesText = computed(() => {
+		return this._cookies().reduce((prev, curr) => {
+			if (curr.id !== COOKIE_PLACEHOLDER) {
+				prev += `${curr.key}=${curr.val};`;
+			}
+			return prev;
+		}, "");
+	});
+
+	public bulkUpdateCookieParams(items: KeyValItem[]) {
+		const newParams = [
+			...items,
+			{
+				id: COOKIE_PLACEHOLDER,
+				key: "",
+				val: "",
+				enabled: "on",
+			},
+		];
+		this._cookies.set(newParams);
+		this.cookieChange$.next(newParams);
+	}
+
+	public cookies = computed(() => this._cookies());
+	public cookiesCount = computed(() => this._cookies().length);
+
+	public addCookie() {
+		this._cookies.update((prev) => {
+			const placeholderItemIndex = prev.findIndex(
+				(x) => x.id === COOKIE_PLACEHOLDER,
+			);
+
+			if (placeholderItemIndex >= 0) {
+				return prev;
+			}
+
+			return [
+				...prev,
+				{
+					id: COOKIE_PLACEHOLDER,
+					key: "",
+					val: "",
+					enabled: "on",
+				},
+			];
+		});
+	}
+
+	public updateCookie(
+		id: string,
+		prop: Exclude<keyof KeyValItem, "id">,
+		v: string,
+	) {
+		this._cookies.update((prev) => {
+			const index = prev.findIndex((x) => x.id === id);
+			if (index === -1) {
+				return prev;
+			}
+
+			const copy = [...prev];
+			copy[index][prop] = v;
+
+			if (id === COOKIE_PLACEHOLDER) {
+				copy[index].id = nanoid();
+			}
+
+			this.cookieChange$.next(copy);
+			return copy;
+		});
+	}
+
+	public deleteCookie(id: string) {
+		this._cookies.update((prev) => {
+			const copy = prev.filter((x) => x.id !== id);
+			this.cookieChange$.next(copy);
+			return copy;
+		});
+	}
+
+	private _cookiePreviewMode = signal<boolean>(true);
+
+	public cookiesPreviewMode = computed(() => this._cookiePreviewMode());
+
+	public toggleCookiePreviewMode() {
+		this._cookiePreviewMode.update((x) => !x);
+	}
+
+	//#endregion cookies
+
 	//#region Headers
 	private _headers = signal<RequestHeaders>([
 		{
@@ -287,10 +459,46 @@ export class FormService {
 			enabled: "on",
 		},
 	]);
+
+	private _bulkEditModeHeaders = signal<boolean>(false);
+
+	public bulkEditModeHeaders = computed(() => this._bulkEditModeHeaders());
+
+	public toggleEditModeHeaders() {
+		this._bulkEditModeHeaders.update((x) => !x);
+	}
+
+	private _bulkHeadersText = signal<string>("");
+
+	public setBulkHeadersText(s: string) {
+		this._bulkHeadersText.set(s);
+	}
+
+	public bulkHeadersText = computed(() => {
+		return this._headers().reduce((prev, curr) => {
+			if (curr.id !== HID_PLACEHOLDER) {
+				prev += `${curr.enabled === "on" ? "" : "#"}${curr.key}:${curr.val}\n`;
+			}
+			return prev;
+		}, "");
+	});
+
+	public bulkUpdateHeadersParams(items: KeyValItem[]) {
+		const newParams = [
+			...items,
+			{
+				id: HID_PLACEHOLDER,
+				key: "",
+				val: "",
+				enabled: "on",
+			},
+		];
+		this._headers.set(newParams);
+		this.headerChange$.next(newParams);
+	}
+
 	public headers = computed(() => this._headers());
 	public headerCount = computed(() => this._headers.length);
-	private _resHeaders = signal<models.GurlKeyValItem[]>([]);
-	public resHeaders = computed(() => this._resHeaders());
 
 	public addHeader() {
 		this._headers.update((prev) => {
@@ -356,6 +564,14 @@ export class FormService {
 			enabled: "on",
 		},
 	]);
+
+	private _bulkEditModeQuery = signal<boolean>(false);
+
+	public bulkEditModeQuery = computed(() => this._bulkEditModeQuery());
+
+	public toggleEditModeQuery() {
+		this._bulkEditModeQuery.update((x) => !x);
+	}
 
 	private _bulkQueryText = signal<string>("");
 
@@ -627,6 +843,46 @@ export class FormService {
 	//#endregion Multipart
 
 	//#region UrlEncoded
+
+	private _bulkEditModeUrlEncodedForm = signal<boolean>(false);
+
+	public bulkEditModeUrlEncodedForm = computed(() =>
+		this._bulkEditModeUrlEncodedForm(),
+	);
+
+	public toggleEditModeUrlEncodedForm() {
+		this._bulkEditModeUrlEncodedForm.update((x) => !x);
+	}
+
+	private _bulkUrlEncodedFormText = signal<string>("");
+
+	public setBulkUrlEncodedFormText(s: string) {
+		this._bulkUrlEncodedFormText.set(s);
+	}
+
+	public bulkUrlEncodedFormText = computed(() => {
+		return this._urlEncodedParams().reduce((prev, curr) => {
+			if (curr.id !== URLENCODED_ID_PLACEHOLDER) {
+				prev += `${curr.enabled === "on" ? "" : "#"}${curr.key}:${curr.val}\n`;
+			}
+			return prev;
+		}, "");
+	});
+
+	public bulkUpdateUrlEncodedForm(items: KeyValItem[]) {
+		const newParams = [
+			...items,
+			{
+				id: URLENCODED_ID_PLACEHOLDER,
+				key: "",
+				val: "",
+				enabled: "on",
+			},
+		];
+		this._urlEncodedParams.set(newParams);
+		this.urlEncodedChange$.next(newParams);
+	}
+
 	private _urlEncodedParams = signal<KeyValItem[]>([
 		{
 			id: URLENCODED_ID_PLACEHOLDER,
@@ -720,29 +976,24 @@ export class FormService {
 
 	//#region Request-Response
 
-	private _copyStatus = signal<"idle" | "failed" | "done">("idle");
+	private _res = signal<models.GurlRes | null>(null);
 
-	public copyStatus = computed(()=> this._copyStatus());
+	public res = computed(() => this._res());
 
-	public async copyTextResponseToClipboard() {
-		try {
-			const copied = await ClipboardSetText(this.responseBody()?.textContent || '');
-			if(copied) {
-				this._copyStatus.set("done");
-			}
-			else {
-				this._copyStatus.set("failed");
-			}
+	private _headersPreviewMode = signal<boolean>(true);
 
-			setTimeout(()=> {
-				if(copied) {
-					this._copyStatus.set("idle");
-				}
-			}, 600);	
-		} catch (error) {
-			console.error(error);
-		}
+	public headersPreviewMode = computed(() => this._headersPreviewMode());
+
+	public toggleHeadersPreview() {
+		this._headersPreviewMode.update((x) => !x);
 	}
+
+	public headersRaw = computed(() => {
+		return this._res()?.headers.reduce((acc, curr) => {
+			acc += `${curr.key}: ${curr.value}\n`;
+			return acc;
+		}, "");
+	});
 
 	private populateInitialState(data: models.RequestDraftDTO) {
 		try {
@@ -756,6 +1007,7 @@ export class FormService {
 				urlencoded,
 				binary,
 				text,
+				cookies,
 			} = data;
 
 			this._url.set(url);
@@ -771,6 +1023,17 @@ export class FormService {
 					enabled: "on",
 				},
 			]);
+
+			this._cookies.set([
+				...JSON.parse(cookies),
+				{
+					id: COOKIE_PLACEHOLDER,
+					key: "",
+					val: "",
+					enabled: "on",
+				},
+			]);
+
 			this._queryParams.set([
 				...JSON.parse(query),
 				{
@@ -780,6 +1043,7 @@ export class FormService {
 					enabled: "on",
 				},
 			]);
+
 			this._bodyType.set(
 				REQ_BODY_TYPES.find((x) => x.id === bodyType) || REQ_BODY_TYPES[0],
 			);
@@ -808,6 +1072,7 @@ export class FormService {
 
 	public async initializeReqForm(id: string) {
 		try {
+			console.log(`Initializing draft ${id}`);
 			this._requestId = id;
 			const dbRequest = await FindDraftById(id);
 			if (!dbRequest) {
@@ -829,24 +1094,24 @@ export class FormService {
 		}
 	}
 
-	private _resBody = signal<models.GurlBody | undefined>(undefined);
-	public responseBody = computed(() => this._resBody());
 	private _reqStatus = signal<ReqState>("idle");
 	public reqState = computed(() => this._reqStatus());
-	private _resStats = signal<ResStatsType>(null);
-	public resStats = computed(() => this._resStats());
+
+	private _previewMode = signal<boolean>(false);
+	public previewMode = computed(() => this._previewMode());
+
+	public togglePreviewMode() {
+		this._previewMode.update((x) => !x);
+	}
+
 	public before() {
 		this._reqStatus.set("progress");
-		this._resHeaders.set([]);
-		this._resStats.set(null);
-		this._resBody.set(undefined);
+		this._res.set(null);
 	}
 
 	public clearResponse() {
-		this._resBody.set(undefined);
-		this._resStats.set(null);
-		this._resHeaders.set([]);
 		this._reqStatus.set("idle");
+		this._res.set(null);
 	}
 
 	public async send() {
@@ -855,122 +1120,92 @@ export class FormService {
 			return;
 		}
 
+		if (this._url() === "") {
+			return;
+		}
+
 		try {
 			this.before();
 			const payload: Partial<models.GurlReq> = {
 				id: this._requestId,
-				method: this.method().id,
-				headers: [],
-				bodyType: this.bodyType().id,
-				binary: "",
-				multipart: [],
-				plaintext: "",
-				urlencoded: [],
-			};
-
-			//query
-			const params = new URLSearchParams(
-				this.queryParams().reduce(
-					(prev, curr) => {
-						if (
-							curr.key &&
-							curr.key !== QID_PLACEHOLDER &&
-							curr.enabled === "on"
-						) {
-							prev[curr.key] = curr.val;
-						}
-						return prev;
-					},
-					{} as Record<string, string>,
-				),
-			);
-
-			const endpointURL = params.size
-				? `${this.url()}?${params.toString()}`
-				: this.url();
-
-			payload.url = endpointURL;
-
-			//headers
-			for (const h of this.headers()) {
-				if (h.key && h.key !== HID_PLACEHOLDER && h.enabled === "on") {
-					payload.headers?.push({ key: h.key, value: h.val });
-				}
-			}
-
-			switch (this.bodyType().id) {
-				case "json":
-				case "plaintext":
-				case "xml": {
-					payload.plaintext = this.textBody();
-					break;
-				}
-				case "multipart": {
-					for (const field of this.multipartForm()) {
-						if (
-							field.key &&
-							field.key !== MULTIPART_ID_PLACEHOLDER &&
-							field.enabled === "on"
-						) {
-							if (typeof field.val === "string") {
-								payload.multipart?.push({
-									key: field.key,
-									isFile: false,
-									value: field.val,
-								});
-							} else {
-								payload.multipart?.push({
-									key: field.key,
-									isFile: true,
-									value: field.val.path,
-								});
-							}
-						}
+				url: this._url(),
+				method: this._method().id,
+				query: this._queryParams().reduce((prev, curr) => {
+					if (curr.key && curr.key !== QID_PLACEHOLDER) {
+						prev.push({
+							key: curr.key,
+							value: curr.val,
+							enabled: curr.enabled === "on",
+						});
 					}
-					break;
-				}
-				case "urlencoded": {
-					for (const field of this.urlEncodedParams()) {
-						if (
-							field.key &&
-							field.key !== URLENCODED_ID_PLACEHOLDER &&
-							field.enabled
-						) {
-							payload.urlencoded?.push({
-								key: field.key,
-								value: field.val,
+					return prev;
+				}, [] as models.GurlKeyValItem[]),
+				headers: this._headers().reduce((prev, curr) => {
+					if (curr.key && curr.key !== HID_PLACEHOLDER) {
+						prev.push({
+							key: curr.key,
+							value: curr.val,
+							enabled: curr.enabled === "on",
+						});
+					}
+					return prev;
+				}, [] as models.GurlKeyValItem[]),
+				cookies: this._cookies().reduce((prev, curr) => {
+					if (curr.key && curr.key !== COOKIE_PLACEHOLDER) {
+						prev.push({
+							key: curr.key,
+							value: curr.val,
+							enabled: curr.enabled === "on",
+						});
+					}
+					return prev;
+				}, [] as models.GurlKeyValItem[]),
+				bodyType: this.bodyType().id,
+				binary: this._binaryBody()?.path || "",
+				multipart: this._multiPartForm().reduce((prev, curr) => {
+					if (curr.key && curr.key !== MULTIPART_ID_PLACEHOLDER) {
+						if (typeof curr.val === "string") {
+							prev.push({
+								key: curr.key,
+								value: curr.val,
+								isFile: false,
+								enabled: curr.enabled === "on",
+							});
+						} else {
+							prev.push({
+								key: curr.key,
+								isFile: true,
+								value: curr.val.path,
+								enabled: curr.enabled === "on",
 							});
 						}
 					}
-					break;
-				}
-				case "binary": {
-					const binaryB = this.binaryBody();
-					if (binaryB) {
-						payload.binary = binaryB.path;
+					return prev;
+				}, [] as models.GurlKeyValMultiPartItem[]),
+				plaintext: this._textBody(),
+				urlencoded: this._urlEncodedParams().reduce((prev, curr) => {
+					if (curr.key && curr.key !== URLENCODED_ID_PLACEHOLDER) {
+						prev.push({
+							key: curr.key,
+							value: curr.val,
+							enabled: curr.enabled === "on",
+						});
 					}
-					break;
-				}
-
-				default: {
-					break;
-				}
-			}
+					return prev;
+				}, [] as models.GurlKeyValItem[]),
+			};
 
 			console.dir(payload);
 
-			const res = await SendReq(payload as models.GurlReq);
+			const res = await SendHttpReq(payload as models.GurlReq);
 
-			this._resHeaders.set(res.headers);
-			this._resStats.set({
-				size: res.size,
-				status: res.status,
-				statusText: res.statusText,
-				success: res.success,
-				time: res.time,
-			});
+			console.dir(res);
+			this._res.set(res);
 
-			this._resBody.set(res.body);
+			if (res.body?.html5Element === "text") {
+				this._previewMode.set(true);
+			}
+
 			this._reqStatus.set("success");
 
 			this._appSvc.addHistoryItem({
@@ -980,6 +1215,7 @@ export class FormService {
 				url: this._url(),
 				method: this._method().id,
 				headers: this._headers().filter((x) => x.id !== HID_PLACEHOLDER),
+				cookies: this._cookies().filter((x) => x.id !== COOKIE_PLACEHOLDER),
 				urlEncodedBody: this._urlEncodedParams().filter(
 					(x) => x.id !== URLENCODED_ID_PLACEHOLDER,
 				),
@@ -995,18 +1231,23 @@ export class FormService {
 				executed: Date.now(),
 			});
 		} catch (error) {
-			this._reqStatus.set("error");
 			console.error(error);
+			if (typeof error === "string" && error.includes("context canceled")) {
+				this._reqStatus.set("aborted");
+				return;
+			}
+
+			this._reqStatus.set("error");
 		}
 	}
 
 	public async saveToFile() {
 		try {
-			const b = this._resBody();
+			const b = this._res()?.body;
 			if (!b) {
 				return;
 			}
-			await SaveFile(b.filepath, b.extension);
+			await SaveFile(b.filepath);
 		} catch (error) {
 			console.error(error);
 		}

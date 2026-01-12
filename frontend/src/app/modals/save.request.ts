@@ -1,7 +1,15 @@
 import { NgClass } from "@angular/common";
-import { Component, HostBinding, inject, signal } from "@angular/core";
-import { DEFAULT_COLLECTION_ID } from "../../constants";
-import { AppService, FormService } from "../services";
+import {
+	type AfterViewChecked,
+	Component,
+	type ElementRef,
+	HostBinding,
+	inject,
+	signal,
+	viewChild,
+} from "@angular/core";
+import { DEFAULT_COLLECTION_ID } from "@/constants";
+import { AppService, FormService } from "@/services";
 
 @Component({
 	selector: `dialog[saveRequestModal]`,
@@ -20,6 +28,7 @@ import { AppService, FormService } from "../services";
             required
             [value]="requestName()"
             (input)="onInput($event.target.value)"
+			#reqNameInputEl
           />
           <select class="select w-full select-ghost bg-base-300 select-primary" (change)="onCollectionChange($event)">
             @for (collection of appSvc.collections(); track collection.id) {
@@ -31,7 +40,7 @@ import { AppService, FormService } from "../services";
         </div>
       </div>
       <div class="modal-action">
-        <button class="btn btn-soft btn-primary" (click)="onSubmit()">Submit</button>
+        <button class="btn btn-soft btn-primary" (click)="onSubmit()">Save</button>
         <button class="btn" (click)="onClose()">Cancel</button>
       </div>
     </div>
@@ -41,15 +50,22 @@ import { AppService, FormService } from "../services";
   `,
 	imports: [NgClass],
 })
-export class SaveRequestModal {
+export class SaveRequestModal implements AfterViewChecked {
 	@HostBinding("class")
 	def = "modal";
+
+	reqNameInputEl =
+		viewChild.required<ElementRef<HTMLInputElement>>("reqNameInputEl");
 
 	formSvc = inject(FormService);
 	appSvc = inject(AppService);
 
 	@HostBinding("attr.open") get checkOpen() {
 		return this.formSvc.isSaveRequestModalOpen() ? "" : null;
+	}
+
+	ngAfterViewChecked(): void {
+		this.reqNameInputEl()?.nativeElement.focus();
 	}
 
 	requestName = signal<string>(

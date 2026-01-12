@@ -1,7 +1,7 @@
 import { NgClass } from "@angular/common";
 import { Component, HostBinding, input, output } from "@angular/core";
 import { LucideAngularModule, X } from "lucide-angular";
-import type { KeyValItem } from "../../../types";
+import type { KeyValItem } from "@/types";
 
 @Component({
 	selector: "app-keyval-item",
@@ -26,7 +26,7 @@ import type { KeyValItem } from "../../../types";
       <input
         type="text"
         placeholder="value"
-        class="input input-sm flex-1 input-ghost bg-base-300 input-primary xl:input-md"
+        class="input input-sm flex-2 input-ghost bg-base-300 input-primary xl:input-md"
         [disabled]="item.key == '' || item.key.trim() == ''"
         [value]="item.val"
         (input)="handleUpdateVal(item.id, $event.target.value)"

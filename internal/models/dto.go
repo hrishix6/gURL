@@ -6,6 +6,7 @@ type RequestDraftDTO struct {
 	Method             string `json:"method"`
 	Query              string `json:"query"`
 	Headers            string `json:"headers"`
+	Cookies            string `json:"cookies"`
 	BodyType           string `json:"bodyType"`
 	MultipartFormBody  string `json:"multipart"`
 	UrlEncodedFormBody string `json:"urlencoded"`
@@ -23,6 +24,7 @@ type RequestDTO struct {
 	Method             string `json:"method"`
 	Query              string `json:"query"`
 	Headers            string `json:"headers"`
+	Cookies            string `json:"cookies"`
 	BodyType           string `json:"bodyType"`
 	MultipartFormBody  string `json:"multipart"`
 	UrlEncodedFormBody string `json:"urlencoded"`
@@ -43,6 +45,11 @@ type UpdateDraftUrlDTO struct {
 type UpdateDraftQueryDTO struct {
 	RequestId string `json:"requestId"`
 	QueryJSON string `json:"queryJson"`
+}
+
+type UpdateDraftCookiesDTO struct {
+	RequestId   string `json:"requestId"`
+	CookiesJSON string `json:"cookiesJSON"`
 }
 
 type UpdateDraftHeadersDTO struct {
@@ -85,13 +92,10 @@ type UpdateDraftCollectionDTO struct {
 	CollectionId string `json:"collectionId"`
 }
 
-//tabs
-
 type UpdateOpenTabsDTO struct {
 	OpenTabsJSON string `json:"openTabsJson"`
 }
 
-// collections
 type AddCollectionDTO struct {
 	Id   string `json:"id"`
 	Name string `json:"name"`
@@ -107,4 +111,17 @@ type SaveDraftAsReqDTO struct {
 	RequestId    string `json:"requestId"`
 	CollectionId string `json:"collectionId"`
 	Name         string `json:"name"`
+}
+
+type UIStateDTO struct {
+	OpenTabs      string `json:"openTabsJson"`
+	Layout        string `json:"layout"`
+	ActiveTab     string `json:"activeTab"`
+	IsSidebarOpen bool   `json:"isSidebarOpen"`
+}
+
+type SaveRequestCopyDTO struct {
+	SourceId string `json:"sourceId"`
+	Id       string `json:"id"`
+	Name     string `json:"name"`
 }

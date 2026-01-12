@@ -1,8 +1,8 @@
 import { NgClass } from "@angular/common";
 import { Component, inject } from "@angular/core";
 import { Layers, LucideAngularModule } from "lucide-angular";
-import { AppService } from "../../services";
-import { AppSidebarContent } from "../../../types";
+import { AppService } from "@/services";
+import { AppSidebarContent } from "@/types";
 
 /**
  * This renders the button that toggles sidebar on mobile and desktops
@@ -12,7 +12,7 @@ import { AppSidebarContent } from "../../../types";
 	template: `
     <button
       [ngClass]="{
-        'hidden xl:block btn  btn-primary btn-sm': true,
+        'hidden xl:inline-flex btn btn-sm': true,
         'btn-ghost': appSvc.appSidebarContent() !== 'collections',
         'btn-primary': appSvc.appSidebarContent() === 'collections'
       }"
@@ -24,13 +24,13 @@ import { AppSidebarContent } from "../../../types";
     <!-- this label toggles mobile sidebar -->
     <label
       [ngClass]="{
-        'xl:hidden btn btn-xs drawer-button': true,
+        'xl:hidden btn btn-sm drawer-button': true,
         'btn-ghost': appSvc.appSidebarContent() !== 'collections',
         'btn-primary': appSvc.appSidebarContent() === 'collections'
       }"
       (click)="mobileSidebarContent()"
     >
-      <lucide-angular [img]="CollectionsIcon" class="size-4" />
+      <lucide-angular [img]="CollectionsIcon" class="size-5" />
     </label>
   `,
 	imports: [LucideAngularModule, NgClass],

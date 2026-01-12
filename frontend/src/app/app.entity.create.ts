@@ -4,15 +4,16 @@ import {
 	Container,
 	Layers,
 	LucideAngularModule,
+	Plus,
 } from "lucide-angular";
 import { AppService } from "./services";
 
 @Component({
 	selector: `div[appEntityCreation]`,
 	template: `
-    <div tabindex="0" role="button" class="btn btn-primary btn-sm xl:btn-md">
-		Create
-		<lucide-angular [img]="DropdownIcon" class="size-4" />
+    <div tabindex="0" role="button" class="btn btn-soft btn-primary btn-sm xl:btn-md">
+		<lucide-angular [img]="PlusIcon" class="size-4" />
+		<span>Create</span>
 	</div>
     <ul
       tabindex="-1"
@@ -34,6 +35,7 @@ import { AppService } from "./services";
 })
 export class AppEntityCreationButton {
 	readonly DropdownIcon = ChevronsUpDown;
+	readonly PlusIcon = Plus;
 	readonly CollectionsIcon = Layers;
 	readonly EnvironmentIcon = Container;
 

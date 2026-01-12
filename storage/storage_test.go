@@ -1,4 +1,4 @@
-package requests_test
+package storage
 
 import (
 	"context"
@@ -13,7 +13,7 @@ import (
 	"gorm.io/gorm"
 )
 
-var storage *db.Storage
+var storage *Storage
 var testDb *gorm.DB
 
 func TestMain(m *testing.M) {
@@ -22,7 +22,7 @@ func TestMain(m *testing.M) {
 
 	baseDir := filepath.Dir(file)
 
-	dsn := filepath.Join(baseDir, "requests_test.db")
+	dsn := filepath.Join(baseDir, "storage.db")
 
 	os.Remove(dsn)
 
@@ -32,20 +32,20 @@ func TestMain(m *testing.M) {
 		panic(err)
 	}
 
-	d.AutoMigrate(&models.Collection{}, &models.RequestDraft{})
+	d.AutoMigrate(&db.Collection{}, &db.RequestDraft{}, &db.MimeRecord{})
 	testDb = d
 
-	gorm.G[models.Collection](testDb).Create(context.Background(), &models.Collection{
-		Id:   models.DEFAULT_COLLECTION,
-		Name: "Drafts",
+	gorm.G[db.Collection](testDb).Create(context.Background(), &db.Collection{
+		Id:   db.DEFAULT_COLLECTION_ID,
+		Name: db.DEFAULT_COLLECTION_NAME,
 	})
 
-	storage = db.NewTestStorage(d, context.Background())
+	storage = NewTestStorage(d, context.Background())
 
 	exitVal := m.Run()
 
 	//cleanup
-	//os.Remove(dsn)
+	os.Remove(dsn)
 	os.Exit(exitVal)
 }
 
@@ -53,7 +53,7 @@ func TestAddCollection(t *testing.T) {
 
 	wantId := "add_collection_test"
 
-	err := storage.AddCollection(&models.Collection{
+	err := storage.insertCollection(&db.Collection{
 		Id:   wantId,
 		Name: "Test Add collection",
 	})
@@ -62,7 +62,7 @@ func TestAddCollection(t *testing.T) {
 		t.Errorf("failed to add collection")
 	}
 
-	collection, err := storage.GetCollection(wantId)
+	collection, err := gorm.G[db.Collection](testDb).Where("id = ?", wantId).First(storage.appCtx)
 
 	if err != nil {
 		t.Errorf("failed to retrieve collection")
@@ -77,11 +77,11 @@ func TestAddReq(t *testing.T) {
 
 	wantReqId := "add_req"
 
-	r := &models.RequestDraft{
+	r := &models.AddFreshDraftDTO{
 		Id: wantReqId,
 	}
 
-	err := storage.AddDraft(r)
+	err := storage.AddFreshDraft(*r)
 
 	if err != nil {
 		t.Errorf("failed to create request")
@@ -92,17 +92,17 @@ func TestFindDraft(t *testing.T) {
 
 	wantReqId := "get_req"
 
-	r := &models.RequestDraft{
+	r := &models.AddFreshDraftDTO{
 		Id: wantReqId,
 	}
 
-	err := storage.AddDraft(r)
+	err := storage.AddFreshDraft(*r)
 
 	if err != nil {
 		t.Errorf("failed to create request")
 	}
 
-	got, err := storage.FindDraft(wantReqId)
+	got, err := storage.findDraft(wantReqId)
 
 	if err != nil {
 		t.Errorf("failed to find request %s", err.Error())
@@ -125,23 +125,23 @@ func TestUpdateReqHeaders(t *testing.T) {
 
 	wantReqId := "update_header_test"
 
-	r := &models.RequestDraft{
+	r := &models.AddFreshDraftDTO{
 		Id: wantReqId,
 	}
 
-	err := storage.AddDraft(r)
+	err := storage.AddFreshDraft(*r)
 
 	if err != nil {
 		t.Errorf("failed to create request")
 	}
 
-	s, err := storage.UpdateDraftHeaders(wantReqId, `[{"id":"1","key":"content-type","value":"application/json","enabled":"on"}]`)
+	err = storage.UpdateDraftHeaders(
+		models.UpdateDraftHeadersDTO{
+			RequestId:   wantReqId,
+			HeadersJSON: `[{"id":"1","key":"content-type","value":"application/json","enabled":"on"}]`,
+		})
 
 	if err != nil {
-		t.Errorf("failed to update headers request")
-	}
-
-	if !s {
 		t.Errorf("failed to update headers request")
 	}
 }

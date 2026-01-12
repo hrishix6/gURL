@@ -8,16 +8,16 @@ import { AppHistoryToggle } from "./history.toggle";
 	template: `
     <header class="flex flex-col gap-4 items-center">
       <div>
-        <button class="btn btn-xs btn-ghost xl:btn-sm">
-          <lucide-angular [img]="HomeImage" class="size-4 xl:size-5" />
+        <button class="btn btn-sm btn-ghost">
+          <lucide-angular [img]="HomeImage" class="size-5" />
         </button>
       </div>
       <div appHistoryToggle></div>
       <div appCollectionsToggle></div>
     </header>
-    <footer class="mt-auto flex justify-center flex-col gap-4">
-      <button class="btn btn-xs btn-ghost xl:btn-sm">
-        <lucide-angular [img]="SettingsIcon" class="size-4 xl:size-5" />
+    <footer class="mt-auto flex justify-center flex-col">
+      <button class="btn btn-sm btn-ghost">
+        <lucide-angular [img]="SettingsIcon" class="size-5" />
       </button>
     </footer>
   `,
@@ -29,5 +29,5 @@ export class AppTaskbar {
 
 	@HostBinding("class")
 	def =
-		"basis-16 grow-0 shrink-0 bg-base-100 flex flex-col items-center py-2 px-1 relative";
+		"basis-16 grow-0 shrink-0 bg-base-100 flex flex-col items-center p-2 relative";
 }

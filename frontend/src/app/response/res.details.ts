@@ -1,19 +1,18 @@
 import { Component, HostBinding, inject } from "@angular/core";
 import {
 	Ban,
-	Download,
-	File,
 	LucideAngularModule,
 	MessageCircleWarning,
-	Save,
 	ShieldBanIcon,
-	X,
 } from "lucide-angular";
-import { Tab } from "../common/components";
-import { RES_DETAILS_TABS } from "../../constants";
-import { FormService } from "../services";
-import type { ResTabId } from "../../types";
-import { ResOptions } from "./res.options";
+import { Tab } from "@/common/components";
+import { RES_DETAILS_TABS } from "@/constants";
+import { FormService } from "@/services";
+import type { ResTabId } from "@/types";
+import { ResCookies } from "./res.cookies";
+import { ResFooter } from "./res.footer";
+import { ResHeaders } from "./res.headers";
+import { ResPreview } from "./res.preview";
 import { ResStats } from "./res.stats";
 
 @Component({
@@ -27,81 +26,38 @@ import { ResStats } from "./res.stats";
         [activeTab]="formSvc.activeResTab()"
       ></app-section-tab>
 
-      @if(formSvc.resStats()){
-      <div class="flex items-center gap-2">
-        <app-res-opts />
-        <app-res-stats [stats]="formSvc.resStats()"></app-res-stats>
-      </div>
+      @if(formSvc.res()){
+          <app-res-stats [data]="formSvc.res()!"></app-res-stats>         
       }
     </header>
-    <div class="flex-1 overflow-y-auto relative p-2">
-      @switch (formSvc.activeResTab()) { @case ("res_headers") { @if (formSvc.resHeaders().length) {
-      <div class="overflow-x-auto bg-base-100">
-        <table class="table table-fixed">
-          <!-- head -->
-          <thead>
-            <tr>
-              <th class="w-2/5">Name</th>
-              <th>Value</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (item of formSvc.resHeaders(); track item.key) {
-            <tr>
-              <td>
-                {{ item.key || '' }}
-              </td>
-              <td>
-                {{ item.value || '' }}
-              </td>
-            </tr>
-            }
-          </tbody>
-        </table>
-      </div>
-      } @else {
-      <div class="absolute top-0 left-0 w-full h-full flex items-center justify-center opacity-10">
-        <lucide-angular [img]="NoneIcon" class="size-16 -z-10" />
-      </div>
-      } } @case ("res_body"){ @switch (formSvc.reqState()) { @case ("idle") {
-      <div class="absolute top-0 left-0 w-full h-full flex items-center justify-center opacity-10">
+    <div class="flex-1 flex flex-col overflow-hidden relative p-2">
+      @switch (formSvc.activeResTab()) { 
+        @case ("res_headers") { 
+        <div resHeaders></div>
+      } @case ("res_body"){ @switch (formSvc.reqState()) { @case ("idle") {
+      <div class="absolute top-0 left-0 w-full h-full flex items-center justify-center opacity-30">
         <lucide-angular [img]="NoneIcon" class="size-16 -z-10" />
       </div>
       } @case ("aborted") {
       <div
-        class="absolute top-0 left-0 w-full h-full flex items-center text-error justify-center opacity-10"
+        class="absolute top-0 left-0 w-full h-full flex items-center text-error justify-center opacity-30"
       >
-        <div class="flex flex-col gap-2">
+        <div class="flex flex-col items-center gap-2">
           <lucide-angular [img]="AbortedIcon" class="size-16 -z-10" />
+          <span class="text-lg">Request Aborted</span>
         </div>
       </div>
       } @case ("error") {
       <div
-        class="absolute top-0 left-0 w-full h-full flex items-center text-error justify-center opacity-10"
+        class="absolute top-0 left-0 w-full h-full flex items-center text-error justify-center opacity-30"
       >
         <div class="flex flex-col gap-2">
           <lucide-angular [img]="ErroredReqIcon" class="size-16 -z-10" />
         </div>
       </div>
-      } @case ("success") { @if(formSvc.responseBody()?.isText){
-      <textarea
-        class="textarea textarea-ghost textarea-primary bg-base-300 xl:textarea-lg w-full h-full"
-        readonly
-        [value]="formSvc.responseBody()?.textContent"
-      >
-      </textarea>
-      }@else {
-      <div class="absolute top-0 left-0 w-full h-full flex items-center justify-center">
-        @if(formSvc.resStats()?.size) {
-        <div class="flex flex-col gap-2">
-          <lucide-angular [img]="FileIcon" class="size-16 -z-10" />
-          <p class="text-xl">{{ formSvc.responseBody()?.extension }} File</p>
-        </div>
-        }@else {
-        <span>No Body</span>
-        }
-      </div>
-      } } @case ("progress") {
+      } @case ("success") { 
+        <div resPreview></div>
+    } @case ("progress") {
       <div class="absolute top-0 left-0 w-full h-full flex items-center justify-center">
         <div class="flex flex-col gap-2 items-center">
           <span class="loading loading-ring text-primary loading-sm xl:loading-lg"></span>
@@ -109,27 +65,41 @@ import { ResStats } from "./res.stats";
         </div>
       </div>
       } } } @case('res_console') {
-      <div class="absolute top-0 left-0 w-full h-full flex items-center justify-center opacity-10">
+      <div class="absolute top-0 left-0 w-full h-full flex items-center justify-center opacity-30">
         <span>Coming Soon</span>
       </div>
-      } }
+      } 
+      @case("res_cookies"){
+        <div resCookies></div>
+      }
+    }
     </div>
+    @if(formSvc.res()) {
+          <div resFooter
+           [data]="formSvc.res()!"
+          ></div>
+    }
   `,
-	imports: [Tab, LucideAngularModule, ResStats, ResOptions],
+	imports: [
+		Tab,
+		LucideAngularModule,
+		ResStats,
+		ResHeaders,
+		ResPreview,
+		ResCookies,
+		ResFooter,
+	],
 })
 export class ResponseDetails {
-	readonly CancelIcon = X;
 	readonly NoneIcon = Ban;
 	readonly AbortedIcon = ShieldBanIcon;
 	readonly ErroredReqIcon = MessageCircleWarning;
-	readonly SaveIcon = Save;
-	readonly LoaderIcon = Download;
+
 	readonly formSvc = inject(FormService);
 	readonly resDetailsTabs = RES_DETAILS_TABS;
-	readonly FileIcon = File;
 
 	@HostBinding("class")
-	hostClass = "flex-1 flex flex-col gap-2 px-2 overflow-hidden";
+	hostClass = "flex-1 flex flex-col overflow-hidden";
 
 	handleTabChange(id: ResTabId) {
 		this.formSvc.setActiveResTab(id);

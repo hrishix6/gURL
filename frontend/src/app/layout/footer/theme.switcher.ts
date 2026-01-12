@@ -1,16 +1,16 @@
 import { NgClass } from "@angular/common";
 import { Component, HostBinding, inject } from "@angular/core";
 import { Check, LucideAngularModule, Palette } from "lucide-angular";
-import { SUPPORTED_THEMES } from "../../../constants";
-import { AppService } from "../../services";
-import type { AppTheme } from "../../../types";
+import { SUPPORTED_THEMES } from "@/constants";
+import { AppService } from "@/services";
+import type { AppTheme } from "@/types";
 
 @Component({
 	selector: "div[appThemeSwithcer]",
 	template: `
       <div class="dropdown dropdown-top dropdown-end">
         <div tabindex="0" role="button" class="btn btn-sm btn-square btn-ghost">
-          <lucide-angular [img]="ThemeSwitcherIcon" class="size-4" />
+          <lucide-angular [img]="ThemeSwitcherIcon" class="size-5" />
         </div>
         <ul
           tabindex="-1"

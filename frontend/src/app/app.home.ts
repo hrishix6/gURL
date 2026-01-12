@@ -1,7 +1,7 @@
 import { Component, HostBinding, inject } from "@angular/core";
 import { CirclePlus, Layers, LucideAngularModule } from "lucide-angular";
-import { TabsService } from "./services";
 import { AppLogo } from "./app.logo";
+import { TabsService } from "./services";
 
 @Component({
 	selector: "section[appHome]",

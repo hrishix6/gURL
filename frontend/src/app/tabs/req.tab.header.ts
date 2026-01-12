@@ -7,15 +7,14 @@ import {
 	output,
 } from "@angular/core";
 import { LucideAngularModule, X } from "lucide-angular";
-import { TabsService } from "../services";
-import type { ApplicationTab } from "../../types";
-import { ReqMethodTag } from "../request/method.tag";
+import { ReqMethodTag } from "@/request/method.tag";
+import { TabsService } from "@/services";
+import type { ApplicationTab } from "@/types";
 
 @Component({
 	selector: `div[appReqTabHeader]`,
 	template: `
-    <div class="flex flex-1 items-center gap-1 overflow-hidden">
-      <!-- <div class="badge badge-soft badge-primary badge-xs">{{ data().tag }}</div> -->
+    <div class="flex flex-1 items-center gap-1.5 overflow-hidden">
       <div methodTag [size]="'xs'" [method]="data().tag"></div>
       <p class="truncate">
         {{ data().name }}
@@ -23,11 +22,14 @@ import { ReqMethodTag } from "../request/method.tag";
     </div>
     <button
       class="btn btn-ghost btn-square btn-xs hover:bg-base-200"
-      (click)="handleClose()"
+      (click)="handleClose($event)"
       [disabled]="tabSvc.tabCount() === 1"
     >
       <lucide-angular [img]="CancelIcon" class="size-3" />
     </button>
+	@if(isActive()){
+		<div class="absolute top-0 left-0 w-full h-0.5 bg-primary/75"></div>
+	}
   `,
 	imports: [LucideAngularModule, ReqMethodTag],
 })
@@ -46,31 +48,43 @@ export class TabHeader {
 			"justify-between",
 			"hover:cursor-pointer",
 			"hover:bg-base-100",
+			"rounded-box",
 			"items-center",
 			"basis-56",
 			"grow-0",
 			"shrink-0",
 			"overflow-hidden",
-			"text-xs",
+			"text-sm",
+			"relative",
+			"shadow-md",
 		];
 
 		if (this.isActive()) {
-			return [...defaults, "bg-base-100", "border-t-2", "border-primary"].join(
-				" ",
-			);
+			return [...defaults, "bg-base-100"].join(" ");
 		}
 
-		return [...defaults, "bg-base-300", "border-1", "border-base-200"].join(
-			" ",
-		);
+		return [...defaults, "bg-base-300", "opacity-65"].join(" ");
 	}
 
-	handleClose() {
+	@HostListener("mousedown", ["$event"])
+	handleClick(e: MouseEvent) {
+		e.stopPropagation();
+		if (e.buttons === 4 || e.button === 1) {
+			this.onCloseTab.emit();
+		}
+	}
+
+	@HostListener("contextmenu", ["$event"])
+	handleRightClick(_e: PointerEvent) {}
+
+	handleClose(e: Event) {
+		e.stopPropagation();
 		this.onCloseTab.emit();
 	}
 
-	@HostListener("click")
-	handleActivation() {
+	@HostListener("click", ["$event"])
+	handleActivation(e: Event) {
+		e.stopPropagation();
 		this.onSelectTab.emit();
 	}
 }

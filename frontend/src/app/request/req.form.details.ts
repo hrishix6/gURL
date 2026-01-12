@@ -1,10 +1,12 @@
 import { Component, HostBinding, inject } from "@angular/core";
 import { LucideAngularModule } from "lucide-angular";
-import { Tab } from "../common/components";
-import { REQ_DETAILS_TABS } from "../../constants";
-import { FormService } from "../services";
-import type { ReqTabId } from "../../types";
+import { Tab } from "@/common/components";
+import { REQ_DETAILS_TABS } from "@/constants";
+import { FormService } from "@/services";
+import type { ReqTabId } from "@/types";
 import { ReqBody } from "./req.body";
+import { ReqCookies } from "./req.cookies";
+import { ReqFooter } from "./req.footer";
 import { ReqHeaders } from "./req.headers";
 import { ReqQuery } from "./req.query";
 
@@ -19,7 +21,7 @@ import { ReqQuery } from "./req.query";
         [activeTab]="formSvc.activeReqTab()"
       ></app-section-tab>
     </header>
-    <div class="flex-1 flex flex-col gap-2 overflow-hidden mt-2">
+    <div class="flex-1 px-1 flex flex-col gap-2 overflow-hidden mt-2">
       @switch (formSvc.activeReqTab()) { @case ("req_headers") {
       <app-req-headers />
       } @case ("req_query") {
@@ -34,14 +36,27 @@ import { ReqQuery } from "./req.query";
           <span>Coming soon</span>
         </div>
       </div>
-      } }
+      }
+      @case("req_cookies"){
+        <app-req-cookies></app-req-cookies>
+      }
+    }
     </div>
+    <app-req-footer></app-req-footer>
   `,
-	imports: [Tab, ReqBody, ReqHeaders, ReqQuery, LucideAngularModule],
+	imports: [
+		Tab,
+		ReqBody,
+		ReqHeaders,
+		ReqQuery,
+		LucideAngularModule,
+		ReqCookies,
+		ReqFooter,
+	],
 })
 export class RequestFormDetails {
 	@HostBinding("class")
-	hostClass = "flex-1 flex px-2 flex-col overflow-hidden";
+	hostClass = "flex-1 flex flex-col overflow-hidden";
 
 	readonly formSvc = inject(FormService);
 	readonly reqDetailsTabs = REQ_DETAILS_TABS;
