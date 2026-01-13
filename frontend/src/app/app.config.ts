@@ -10,6 +10,8 @@ import { routes } from "./app.routes";
 
 async function initializeApp() {
 	const appSvc = inject(AppService);
+	//pdfjs
+	window.pdfWorkerSrc = "pdf.worker.min.mjs";
 	appSvc.initializeAppPreferences();
 }
 

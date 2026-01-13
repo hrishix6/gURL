@@ -5,6 +5,7 @@ import {
 	HardDriveDownload,
 	LucideAngularModule,
 } from "lucide-angular";
+import { PdfViewerModule } from "ng2-pdf-viewer";
 import { BytesPipe } from "@/common/pipes/bytes.pipe";
 import { SafePipe } from "@/common/pipes/safe.html.pipe";
 import { FormService } from "@/services";
@@ -33,13 +34,15 @@ import { ResponseTextPreview } from "./text.preview";
                  @if(formSvc.previewMode()){
                     @switch (formSvc.res()?.body?.html5Element) {
                         <!-- PDF -->
-                        @case ("iframe") {
-                            <iframe [src]="formSvc.res()?.body?.src | safe" sandbox="allow-same-origin allow-scripts" referrerpolicy="no-referrer" 
-                                [ngClass]="{
-                                'h-full w-full': true,
-                                }"
-                                >
-                            </iframe>
+                        @case ("pdf") {
+                            <pdf-viewer 
+                            [src]="formSvc.res()?.body?.src" 
+                            [original-size]="false"
+                            [c-maps-url]="'/cmaps/'"
+                            [fit-to-page]="true"
+                            class="block h-full w-full"
+                            >     
+                            </pdf-viewer>
                         }
 
                         <!-- IMAGE -->
@@ -112,6 +115,7 @@ import { ResponseTextPreview } from "./text.preview";
 		SafePipe,
 		ResponseTextPreview,
 		BytesPipe,
+		PdfViewerModule,
 	],
 })
 export class ResPreview {

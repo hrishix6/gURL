@@ -398,7 +398,7 @@ func (htf *HttpTransformer) TransformHttpResponse(
 	}
 
 	if cType == "application/pdf" {
-		html5Tag = "iframe"
+		html5Tag = "pdf"
 		canRender = true
 	}
 
