@@ -88,6 +88,11 @@ export class TabsService {
 				multipart: item.multipart,
 				text: item.text,
 				urlencoded: item.urlencoded,
+				authEnabled: item.authEnabled,
+				authType: item.authType,
+				basicAuth: item.basicAuth,
+				apiKeyAuth: item.apiKeyAuth,
+				tokenAuth: item.tokenAuth,
 			};
 
 			console.dir(newDraft);
@@ -120,7 +125,7 @@ export class TabsService {
 
 			const newTab: ApplicationTab = {
 				id: nanoid(),
-				name: newDraft.url,
+				name: newDraft.url || "New Request",
 				tag: newDraft.method,
 				entityId: newDraft.id,
 				entityType: AppTabType.Req,
@@ -155,6 +160,11 @@ export class TabsService {
 				multipart: JSON.stringify(item.multiPartBody),
 				text: item.textBody,
 				urlencoded: JSON.stringify(item.urlEncodedBody),
+				authEnabled: item.authEnabled,
+				authType: item.authType || "no_auth",
+				basicAuth: item.basicAuth ? JSON.stringify(item.basicAuth) : "",
+				apiKeyAuth: item.apiKeyAuth ? JSON.stringify(item.apiKeyAuth) : "",
+				tokenAuth: item.tokenAuth ? JSON.stringify(item.tokenAuth) : "",
 			};
 
 			await AddDraft(newDraft);
@@ -249,34 +259,15 @@ export class TabsService {
 				return prev;
 			}
 			const copy = [...prev];
-			copy[i][prop] = v;
-
-			this.tabChanges$.next(copy);
-			return copy;
-		});
-	}
-
-	public closeTabs(deletedEntities: string[]) {
-		this._openTabs.update((prev) => {
-			const copy = prev.filter((x) => !deletedEntities.includes(x.entityId));
-
-			const currentActiveTab = prev.find((x) => x.id === this.activeTab());
-
-			if (
-				currentActiveTab &&
-				deletedEntities.includes(currentActiveTab.entityId)
-			) {
-				if (copy.length) {
-					this.setActiveTab(copy[0].id);
-				}
+			switch (prop) {
+				case "name":
+					copy[i][prop] = v || "New Request";
+					break;
+				case "tag":
+					copy[i][prop] = v;
+					break;
 			}
-
 			this.tabChanges$.next(copy);
-
-			if (!copy.length) {
-				this.createFreshTab();
-			}
-
 			return copy;
 		});
 	}
