@@ -4,6 +4,7 @@ import { Tab } from "@/common/components";
 import { REQ_DETAILS_TABS } from "@/constants";
 import { FormService } from "@/services";
 import type { ReqTabId } from "@/types";
+import { RequestAuth } from "./req.auth";
 import { ReqBody } from "./req.body";
 import { ReqCookies } from "./req.cookies";
 import { ReqFooter } from "./req.footer";
@@ -21,7 +22,7 @@ import { ReqQuery } from "./req.query";
         [activeTab]="formSvc.activeReqTab()"
       ></app-section-tab>
     </header>
-    <div class="flex-1 px-1 flex flex-col gap-2 overflow-hidden mt-2">
+    <div class="flex-1 p-2 flex flex-col gap-2 overflow-hidden mt-2">
       @switch (formSvc.activeReqTab()) { @case ("req_headers") {
       <app-req-headers />
       } @case ("req_query") {
@@ -29,13 +30,7 @@ import { ReqQuery } from "./req.query";
       } @case ("req_body") {
       <app-req-body />
       } @case ("req_auth") {
-      <div class="flex-1 relative">
-        <div
-          class="absolute top-0 left-0 h-full w-full flex items-center justify-center opacity-25"
-        >
-          <span>Coming soon</span>
-        </div>
-      </div>
+      <app-req-auth></app-req-auth>
       }
       @case("req_cookies"){
         <app-req-cookies></app-req-cookies>
@@ -52,6 +47,7 @@ import { ReqQuery } from "./req.query";
 		LucideAngularModule,
 		ReqCookies,
 		ReqFooter,
+		RequestAuth,
 	],
 })
 export class RequestFormDetails {

@@ -20,7 +20,7 @@ import type { RequestMethod } from "@/types";
     <div class="flex gap-2.5 p-2 bg-base-300 items-center rounded-box">
       <app-dropdown
         [items]="reqMethods"
-        [activeItem]="this.formSvc.method()"
+        [activeItem]="this.f.urlSvc.method()"
         [size]="'md'"
         [varient]="'ghost'"
         (onItemSelection)="handleActiveItemSelection($event)"
@@ -31,20 +31,20 @@ import type { RequestMethod } from "@/types";
           type="text"
           [ngClass]="{
             'input w-full': true,
-            'input-primary input-ghost': formSvc.isValidUrl() || formSvc.url() === '',
-            'input-error': !formSvc.isValidUrl(),
+            'input-primary input-ghost': f.urlSvc.isValidUrl() || f.urlSvc.url() === '',
+            'input-error': !f.urlSvc.isValidUrl(),
           }"
           placeholder="https://example.com"
-          [value]="formSvc.url()"
-          (input)="formSvc.setUrl($event.target.value)"
-          (blur)="formSvc.parseUrl()"
+          [value]="f.urlSvc.url()"
+          (input)="f.setUrl($event.target.value)"
+          (blur)="f.urlSvc.parseUrl()"
         />
       </div>
       <div class="flex gap-2.5">
         <button
           class="btn btn-soft btn-primary"
-          (click)="formSvc.send()"
-          [disabled]="formSvc.reqState() === 'progress'"
+          (click)="f.send()"
+          [disabled]="f.reqState() === 'progress'"
         >
           <lucide-angular [img]="SendIcon" class="size-6"></lucide-angular>
         </button>
@@ -63,7 +63,7 @@ import type { RequestMethod } from "@/types";
              </a>
             </li>
             <li class="my-0.5">
-              <a href="#" (click)="formSvc.copyRequest()">
+              <a href="#" (click)="f.copyRequest()">
                 <lucide-angular [img]="CopyIcon" class="size-4"  /> 
                  Copy
              </a>
@@ -72,7 +72,7 @@ import type { RequestMethod } from "@/types";
       </div>
       </div>
     </div>
-    @if(this.formSvc.isSaveRequestModalOpen()) {
+    @if(this.f.isSaveRequestModalOpen()) {
     <dialog saveRequestModal></dialog>
     }
 
@@ -88,20 +88,15 @@ export class ReqFormHeader {
 	readonly reqMethods = REQ_METHODS;
 
 	@HostBinding("class")
-	defaultClass = "flex flex-col gap-2 p-2 border-t-1 border-base-100";
+	defaultClass = "flex flex-col gap-2 p-2 border-t-2 border-base-100";
 
-	readonly formSvc = inject(FormService);
+	readonly f = inject(FormService);
 
 	handleActiveItemSelection(id: RequestMethod) {
-		this.formSvc.setSelectedMethod(id);
+		this.f.setMethod(id);
 	}
 
 	handleOpenSaveRequestModal() {
-		this.formSvc.toggleSaveRequestModal();
-	}
-
-	handleMethodChange(e: Event) {
-		const target = e.target as HTMLSelectElement;
-		this.formSvc.setSelectedMethod(target.value as RequestMethod);
+		this.f.toggleSaveRequestModal();
 	}
 }

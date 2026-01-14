@@ -35,7 +35,7 @@ import { ResStats } from "./res.stats";
         @case ("res_headers") { 
         <div resHeaders></div>
       } @case ("res_body"){ @switch (formSvc.reqState()) { @case ("idle") {
-      <div class="absolute top-0 left-0 w-full h-full flex items-center justify-center opacity-30">
+      <div class="absolute top-0 left-0 w-full h-full flex items-center justify-center opacity-10">
         <lucide-angular [img]="NoneIcon" class="size-16 -z-10" />
       </div>
       } @case ("aborted") {

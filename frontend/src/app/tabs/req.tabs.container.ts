@@ -14,7 +14,7 @@ import { TabHeader } from "./req.tab.header";
 @Component({
 	selector: "section[appReqTabs]",
 	template: `
-    <div class="flex items-center relative px-2 py-1">
+    <div class="flex items-center relative py-1 px-2">
       <!-- Button to add  new tab -->
       <button class="btn btn-ghost btn-square btn-sm mr-1" (click)="tabsSvc.createFreshTab()">
         <lucide-angular [img]="PlusIcon" class="size-4" />

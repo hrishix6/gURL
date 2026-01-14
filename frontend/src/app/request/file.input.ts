@@ -8,11 +8,11 @@ import { FormService } from "@/services";
 	selector: "app-file-input",
 	template: `
     <div class="flex">
-      @if(formSvc.binaryBody()){
+      @if(f.bodySvc.binaryBody()){
       <div class="flex gap-2 items-center">
         <button class="btn btn-soft btn-primary xl:btn-lg" (click)="openFileDialogue()">
           <lucide-angular [img]="BinaryIcon" size="24" />
-          {{ formSvc.binaryBody()!.name }}{{ ' ' }} ({{ formSvc.binaryBody()!.size | bytes }})
+          {{ f.bodySvc.binaryBody()!.name }}{{ ' ' }} ({{ f.bodySvc.binaryBody()!.size | bytes }})
         </button>
         <button class="btn btn-sm btn-ghost xl:btn-md" (click)="clearFileInput()">
           <lucide-angular [img]="CancelIcon" [size]="16"></lucide-angular>
@@ -32,18 +32,18 @@ import { FormService } from "@/services";
 export class FileInput {
 	readonly BinaryIcon = Paperclip;
 	readonly CancelIcon = X;
-	readonly formSvc = inject(FormService);
+	readonly f = inject(FormService);
 
 	async openFileDialogue() {
 		try {
 			const fileStats = await ChooseFile();
-			this.formSvc.setBinaryBody(fileStats);
+			this.f.bodySvc.setBinaryBody(fileStats);
 		} catch (error) {
 			console.error(error);
 		}
 	}
 
 	clearFileInput() {
-		this.formSvc.clearBinaryBody();
+		this.f.bodySvc.clearBinaryBody();
 	}
 }

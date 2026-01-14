@@ -1,13 +1,16 @@
 import {
+	type APIKeyLocation,
 	type AppTheme,
 	type DropDownItem,
 	FormLayout,
 	type ReqBodyType,
 	type ReqTabId,
+	type RequestAuthType,
 	type RequestMethod,
 	type ResTabId,
 	type TabItem,
 	type ThemeLabel,
+	type TokenAuthType,
 } from "./types";
 
 export const DEFAULT_THEME: AppTheme = "mountain";
@@ -147,6 +150,43 @@ export const REQ_METHODS: readonly DropDownItem<RequestMethod>[] = [
 	{
 		id: "HEAD",
 		displayName: "Head",
+	},
+];
+
+export const REQ_AUTH_TYPES: readonly DropDownItem<RequestAuthType>[] = [
+	{
+		id: "no_auth",
+		displayName: "No Auth",
+	},
+	{
+		id: "basic",
+		displayName: "Basic",
+	},
+	{
+		id: "token",
+		displayName: "Token",
+	},
+	{
+		id: "api_key",
+		displayName: "API Key",
+	},
+];
+
+export const TOKEN_AUTH_TYPES: readonly DropDownItem<TokenAuthType>[] = [
+	{
+		id: "bearer",
+		displayName: "Bearer",
+	},
+];
+
+export const API_KEY_LOCATION: readonly DropDownItem<APIKeyLocation>[] = [
+	{
+		id: "header",
+		displayName: "in header",
+	},
+	{
+		id: "query",
+		displayName: "in query",
 	},
 ];
 

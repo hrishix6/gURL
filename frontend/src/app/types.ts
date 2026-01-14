@@ -33,7 +33,7 @@ export type ResTabId =
 	| "res_body"
 	| "res_console"
 	| "res_cookies";
-export type RequestAuthType = "no_auth" | "basic" | "bearer" | "api_key";
+export type RequestAuthType = "no_auth" | "basic" | "token" | "api_key";
 
 export type AppTheme =
 	| "dracula"
@@ -172,10 +172,40 @@ export interface ReqHistoryItem {
 	statusText: string;
 	success: boolean;
 	executed: number; //unix timestamp when this was executed
+	tokenAuth: TokenAuth | null;
+	basicAuth: BasicAuth | null;
+	apiKeyAuth: ApiKeyAuth | null;
+	authType: RequestAuthType | null;
+	authEnabled: boolean;
 }
 
 export enum FormLayout {
 	Horizontal = "h",
 	Vertical = "v",
 	Responsive = "r",
+}
+
+export interface BasicAuth {
+	username: string;
+	password: string;
+}
+
+export type APIKeyLocation = "header" | "query";
+
+export interface ApiKeyAuth {
+	key: string;
+	value: string;
+	location: APIKeyLocation;
+}
+
+export type TokenAuthType =
+	| "bearer"
+	| "digest"
+	| "hoba"
+	| "mutual"
+	| "aws4-hmac-sha256";
+
+export interface TokenAuth {
+	type: TokenAuthType;
+	token: string;
 }
