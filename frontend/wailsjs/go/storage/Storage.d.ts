@@ -42,6 +42,14 @@ export function SaveRequestCopy(arg1:models.SaveRequestCopyDTO):Promise<void>;
 
 export function UpdateActiveTab(arg1:string):Promise<void>;
 
+export function UpdateDraftApiKeyAuth(arg1:models.UpdateDraftApiKeyAuthDTO):Promise<void>;
+
+export function UpdateDraftAuthEnabled(arg1:models.UpdateDraftAuthEnabledDTO):Promise<void>;
+
+export function UpdateDraftAuthType(arg1:models.UpdateDraftAuthTypeDTO):Promise<void>;
+
+export function UpdateDraftBasicAuth(arg1:models.UpdateDraftBasicAuthDTO):Promise<void>;
+
 export function UpdateDraftBinaryBody(arg1:models.UpdateDraftBinaryBodyDTO):Promise<void>;
 
 export function UpdateDraftBodyType(arg1:models.UpdateDraftBodyTypeDTO):Promise<void>;
@@ -57,6 +65,8 @@ export function UpdateDraftMultipartForm(arg1:models.UpdateDraftMultipartFormDTO
 export function UpdateDraftQuery(arg1:models.UpdateDraftQueryDTO):Promise<void>;
 
 export function UpdateDraftTextBody(arg1:models.UpdateDraftTextBodyDTO):Promise<void>;
+
+export function UpdateDraftTokenAuth(arg1:models.UpdateDraftTokenAuthDTO):Promise<void>;
 
 export function UpdateDraftUrl(arg1:models.UpdateDraftUrlDTO):Promise<void>;
 

@@ -82,6 +82,22 @@ export function UpdateActiveTab(arg1) {
   return window['go']['storage']['Storage']['UpdateActiveTab'](arg1);
 }
 
+export function UpdateDraftApiKeyAuth(arg1) {
+  return window['go']['storage']['Storage']['UpdateDraftApiKeyAuth'](arg1);
+}
+
+export function UpdateDraftAuthEnabled(arg1) {
+  return window['go']['storage']['Storage']['UpdateDraftAuthEnabled'](arg1);
+}
+
+export function UpdateDraftAuthType(arg1) {
+  return window['go']['storage']['Storage']['UpdateDraftAuthType'](arg1);
+}
+
+export function UpdateDraftBasicAuth(arg1) {
+  return window['go']['storage']['Storage']['UpdateDraftBasicAuth'](arg1);
+}
+
 export function UpdateDraftBinaryBody(arg1) {
   return window['go']['storage']['Storage']['UpdateDraftBinaryBody'](arg1);
 }
@@ -112,6 +128,10 @@ export function UpdateDraftQuery(arg1) {
 
 export function UpdateDraftTextBody(arg1) {
   return window['go']['storage']['Storage']['UpdateDraftTextBody'](arg1);
+}
+
+export function UpdateDraftTokenAuth(arg1) {
+  return window['go']['storage']['Storage']['UpdateDraftTokenAuth'](arg1);
 }
 
 export function UpdateDraftUrl(arg1) {
