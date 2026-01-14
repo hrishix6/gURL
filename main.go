@@ -83,7 +83,7 @@ func main() {
 
 	// Create application with options
 	err = wails.Run(&options.App{
-		Title: "gURL v0.4.0",
+		Title: "gURL v0.5.0",
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},
