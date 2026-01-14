@@ -46,12 +46,12 @@ export function humanTime(date: number | null | undefined): string {
 	}
 }
 
-export function humanBytes(value?: number | null, decimals: number = 1) {
+export function humanBytes(value?: number | null, decimals: number = 2) {
 	if (value == null || Number.isNaN(value)) return "";
 
 	if (value === 0) return "0 bytes";
 
-	const k = 1024;
+	const k = 1000;
 	const sizes = ["bytes", "Kb", "Mb", "Gb", "Tb", "Pb"];
 	const i = Math.floor(Math.log(value) / Math.log(k));
 

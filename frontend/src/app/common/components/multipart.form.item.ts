@@ -75,7 +75,7 @@ import { humanBytes } from "../utils/time";
       </div>
       <button
         [ngClass]="{
-          'btn btn-xs btn-ghost xl:btn-sm': true,
+          'btn btn-xs btn-ghost btn-square xl:btn-sm': true,
         }"
         [disabled]="item.id === placeholderId()"
         (click)="handleDeleteItem(item.id)"
