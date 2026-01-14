@@ -7,6 +7,7 @@ toolchain go1.24.2
 require (
 	github.com/wailsapp/mimetype v1.4.1
 	github.com/wailsapp/wails/v2 v2.11.0
+	golang.org/x/text v0.32.0
 	gorm.io/datatypes v1.2.7
 	gorm.io/driver/sqlite v1.6.0
 	gorm.io/gorm v1.31.1
@@ -43,7 +44,6 @@ require (
 	golang.org/x/crypto v0.33.0 // indirect
 	golang.org/x/net v0.35.0 // indirect
 	golang.org/x/sys v0.30.0 // indirect
-	golang.org/x/text v0.32.0 // indirect
 	gorm.io/driver/mysql v1.5.6 // indirect
 )
 

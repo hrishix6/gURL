@@ -12,6 +12,11 @@ type RequestDraftDTO struct {
 	UrlEncodedFormBody string `json:"urlencoded"`
 	TextBody           string `json:"text"`
 	BinaryBody         string `json:"binary"`
+	AuthEnabled        bool   `json:"authEnabled"`
+	AuthType           string `json:"authType"`
+	BasicAuth          string `json:"basicAuth"`
+	ApiKeyAuth         string `json:"apiKeyAuth"`
+	TokenAuth          string `json:"tokenAuth"`
 	ParentRequestId    string `json:"parentRequestId"`
 	ParentRequestName  string `json:"parentRequestName"`
 	ParentCollectionId string `json:"parentCollectionId"`
@@ -30,6 +35,11 @@ type RequestDTO struct {
 	UrlEncodedFormBody string `json:"urlencoded"`
 	TextBody           string `json:"text"`
 	BinaryBody         string `json:"binary"`
+	AuthEnabled        bool   `json:"authEnabled"`
+	AuthType           string `json:"authType"`
+	BasicAuth          string `json:"basicAuth"`
+	ApiKeyAuth         string `json:"apiKeyAuth"`
+	TokenAuth          string `json:"tokenAuth"`
 	CollectionId       string `json:"collectionId"`
 }
 
@@ -124,4 +134,28 @@ type SaveRequestCopyDTO struct {
 	SourceId string `json:"sourceId"`
 	Id       string `json:"id"`
 	Name     string `json:"name"`
+}
+
+// auth
+type UpdateDraftBasicAuthDTO struct {
+	RequestId     string `json:"requestId"`
+	BasicAuthJSON string `json:"basicAuthJSON"`
+}
+type UpdateDraftApiKeyAuthDTO struct {
+	RequestId      string `json:"requestId"`
+	ApiKeyAuthJSON string `json:"apiKeyAuthJSON"`
+}
+type UpdateDraftTokenAuthDTO struct {
+	RequestId     string `json:"requestId"`
+	TokenAuthJSON string `json:"tokenAuthJSON"`
+}
+
+type UpdateDraftAuthEnabledDTO struct {
+	RequestId   string `json:"requestId"`
+	AuthEnabled bool   `json:"authEnabled"`
+}
+
+type UpdateDraftAuthTypeDTO struct {
+	RequestId string `json:"requestId"`
+	AuthType  string `json:"authType"`
 }

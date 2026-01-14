@@ -11,7 +11,6 @@ func InitTempDir(appDataDir string) (string, error) {
 
 	TempDir := filepath.Join(base, appDataDir, "temp")
 
-	// Create directory if missing
 	if err := os.MkdirAll(TempDir, 0o755); err != nil {
 		return "", err
 	}

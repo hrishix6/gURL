@@ -32,10 +32,11 @@ type Executor struct {
 	cleanupWG       *sync.WaitGroup
 }
 
-func NewExecutor(db *gorm.DB, appName string, tmpDir string) *Executor {
-	return &Executor{
+func NewExecutor(db *gorm.DB, appName string, tmpDir string) Executor {
+	contextStore := NewGurlReqContextStore()
+	return Executor{
 		db:          db,
-		cancelStore: NewGurlReqContextStore(),
+		cancelStore: &contextStore,
 		httpClient: &http.Client{
 			CheckRedirect: func(req *http.Request, via []*http.Request) error {
 				return http.ErrUseLastResponse
@@ -183,6 +184,7 @@ func (e *Executor) SendHttpReq(r models.GurlReq) (*models.GurlRes, error) {
 
 func (e *Executor) CancelReq(id string) {
 	e.cancelStore.CancelReq(id)
+	log.Printf("[Executor] request id %s cancelled\n", id)
 }
 
 func (e *Executor) ParseCookieRaw(text string) ([]models.GurlKeyValItem, error) {

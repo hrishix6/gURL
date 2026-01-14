@@ -48,6 +48,31 @@ type GurlReq struct {
 	MultiPartForm  []GurlKeyValMultiPartItem `json:"multipart"`
 	TextBody       string                    `json:"plaintext"`
 	BinaryFile     string                    `json:"binary"`
+	Auth           GurlAuth                  `json:"auth"`
+}
+
+type GurlAuth struct {
+	AuthEnabled bool       `json:"authEnabled"`
+	AuthType    string     `json:"authType"`
+	BasicAuth   BasicAuth  `json:"basicAuth"`
+	ApiKeyAuth  ApiKeyAuth `json:"apiKeyAuth"`
+	TokenAuth   TokenAuth  `json:"tokenAuth"`
+}
+
+type BasicAuth struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+type ApiKeyAuth struct {
+	Key      string `json:"key"`
+	Value    string `json:"value"`
+	Location string `json:"location"`
+}
+
+type TokenAuth struct {
+	Type  string `json:"type"`
+	Token string `json:"token"`
 }
 
 type GurlRenderMeta struct {
@@ -65,7 +90,8 @@ type GurlRes struct {
 	StatusCode        int              `json:"status"`
 	StatusText        string           `json:"statusText"`
 	Success           bool             `json:"success"`
-	Headers           []GurlKeyValItem `json:"headers"`
+	ReqHeaders        []GurlKeyValItem `json:"reqHeaders"`
+	ResHeaders        []GurlKeyValItem `json:"resHeaders"`
 	Body              *GurlRenderMeta  `json:"body"`
 	Cookies           []GurlResCookie  `json:"cookies"`
 	IsFile            bool             `json:"isFile"`

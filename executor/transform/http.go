@@ -21,6 +21,8 @@ import (
 	"time"
 
 	"github.com/wailsapp/mimetype"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 	"gorm.io/gorm"
 )
 
@@ -175,6 +177,28 @@ func (htf *HttpTransformer) prepareHttpBody(r *models.GurlReq) (io.Reader, strin
 	return body, cType, nil
 }
 
+func applyAuth(r *models.GurlReq, req *http.Request) {
+	if r.Auth.AuthEnabled {
+		switch r.Auth.AuthType {
+		case "basic":
+			req.SetBasicAuth(r.Auth.BasicAuth.Username, r.Auth.BasicAuth.Password)
+		case "api_key":
+			if r.Auth.ApiKeyAuth.Location == "header" {
+				req.Header.Add(r.Auth.ApiKeyAuth.Key, r.Auth.ApiKeyAuth.Value)
+			}
+
+			if r.Auth.ApiKeyAuth.Location == "query" {
+				q := req.URL.Query()
+				q.Add(r.Auth.ApiKeyAuth.Key, r.Auth.ApiKeyAuth.Value)
+				req.URL.RawQuery = q.Encode()
+			}
+		case "token":
+			caser := cases.Title(language.English)
+			req.Header.Add("Authorization", fmt.Sprintf("%s %s", caser.String(r.Auth.TokenAuth.Type), r.Auth.TokenAuth.Token))
+		}
+	}
+}
+
 func (htf *HttpTransformer) TransformToHttp(ctx context.Context, r *models.GurlReq, defaultAgent string) (*http.Request, error) {
 
 	//query
@@ -239,6 +263,10 @@ func (htf *HttpTransformer) TransformToHttp(ctx context.Context, r *models.GurlR
 			}
 		}
 	}
+
+	//auth
+	applyAuth(r, req)
+
 	return req, nil
 }
 
@@ -366,10 +394,20 @@ func (htf *HttpTransformer) TransformHttpResponse(
 	gres.StatusCode = res.StatusCode
 	gres.Success = res.StatusCode >= 200 && res.StatusCode < 300
 
-	//headers
+	//response headers
 	for k, v := range res.Header {
 		for _, c := range v {
-			gres.Headers = append(gres.Headers, models.GurlKeyValItem{
+			gres.ResHeaders = append(gres.ResHeaders, models.GurlKeyValItem{
+				Key:   k,
+				Value: c,
+			})
+		}
+	}
+
+	//request headers
+	for k, v := range req.Header {
+		for _, c := range v {
+			gres.ReqHeaders = append(gres.ReqHeaders, models.GurlKeyValItem{
 				Key:   k,
 				Value: c,
 			})

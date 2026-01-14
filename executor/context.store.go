@@ -10,8 +10,8 @@ type GurlReqContextStore struct {
 	m  map[string]context.CancelFunc
 }
 
-func NewGurlReqContextStore() *GurlReqContextStore {
-	return &GurlReqContextStore{
+func NewGurlReqContextStore() GurlReqContextStore {
+	return GurlReqContextStore{
 		m: make(map[string]context.CancelFunc),
 	}
 }

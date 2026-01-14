@@ -17,8 +17,8 @@ func (snb *SniffBuffer) Write(p []byte) (int, error) {
 	return len(p), nil
 }
 
-func NewSniffBuffer(sniffSize int) *SniffBuffer {
-	return &SniffBuffer{
+func NewSniffBuffer(sniffSize int) SniffBuffer {
+	return SniffBuffer{
 		buf:   make([]byte, sniffSize),
 		limit: sniffSize,
 	}

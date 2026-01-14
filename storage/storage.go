@@ -21,14 +21,14 @@ type Storage struct {
 	appCtx context.Context
 }
 
-func NewStorage(db *gorm.DB) *Storage {
-	return &Storage{
+func NewStorage(db *gorm.DB) Storage {
+	return Storage{
 		db: db,
 	}
 }
 
-func NewTestStorage(db *gorm.DB, appCtx context.Context) *Storage {
-	return &Storage{
+func NewTestStorage(db *gorm.DB, appCtx context.Context) Storage {
+	return Storage{
 		db:     db,
 		appCtx: appCtx,
 	}
@@ -37,10 +37,8 @@ func NewTestStorage(db *gorm.DB, appCtx context.Context) *Storage {
 func Startup(s *Storage, appCtx context.Context) error {
 	log.Println("[Storage] Initialization Started")
 
-	//store app context
 	s.appCtx = appCtx
 
-	//migrate
 	err := s.db.AutoMigrate(
 		&db.UIState{},
 		&db.Collection{},
@@ -305,6 +303,56 @@ func (s *Storage) UpdateDraftMethod(dto models.UpdateDraftMethodDTO) error {
 
 func (s *Storage) UpdateDraftBodyType(dto models.UpdateDraftBodyTypeDTO) error {
 	_, err := gorm.G[db.RequestDraft](s.db).Where("id = ?", dto.RequestId).Update(s.appCtx, "bodyType", dto.BodyType)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *Storage) UpdateDraftBasicAuth(dto models.UpdateDraftBasicAuthDTO) error {
+	_, err := gorm.G[db.RequestDraft](s.db).Where("id = ?", dto.RequestId).Update(s.appCtx, "basicAuth", datatypes.JSON([]byte(dto.BasicAuthJSON)))
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *Storage) UpdateDraftApiKeyAuth(dto models.UpdateDraftApiKeyAuthDTO) error {
+	_, err := gorm.G[db.RequestDraft](s.db).Where("id = ?", dto.RequestId).Update(s.appCtx, "apiKeyAuth", datatypes.JSON([]byte(dto.ApiKeyAuthJSON)))
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *Storage) UpdateDraftTokenAuth(dto models.UpdateDraftTokenAuthDTO) error {
+	_, err := gorm.G[db.RequestDraft](s.db).Where("id = ?", dto.RequestId).Update(s.appCtx, "tokenAuth", datatypes.JSON([]byte(dto.TokenAuthJSON)))
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *Storage) UpdateDraftAuthEnabled(dto models.UpdateDraftAuthEnabledDTO) error {
+	_, err := gorm.G[db.RequestDraft](s.db).Where("id = ?", dto.RequestId).Update(s.appCtx, "authEnabled", dto.AuthEnabled)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *Storage) UpdateDraftAuthType(dto models.UpdateDraftAuthTypeDTO) error {
+	_, err := gorm.G[db.RequestDraft](s.db).Where("id = ?", dto.RequestId).Update(s.appCtx, "authType", dto.AuthType)
 
 	if err != nil {
 		return err
