@@ -20,6 +20,7 @@ import {
 	GetUIState,
 	RenameCollection,
 	SaveRequestCopy,
+	UpdateAlwaysDiscardDraftsPreference,
 	UpdateLayoutPreference,
 	UpdateSideBarPreference,
 } from "@wailsjs/go/storage/Storage";
@@ -50,6 +51,15 @@ export class AppService {
 	public appState = computed(() => this._appState());
 	private tabSvc = inject(TabsService);
 	private destoyRef = inject(DestroyRef);
+	private discardDraftsDbSync$ = new Subject<boolean>();
+
+	private _alwaysDiscardDrafts = signal<boolean>(false);
+	public alwaysDiscardDrafts = computed(() => this._alwaysDiscardDrafts());
+
+	public setAlwaysDiscardDrafts(v: boolean) {
+		this._alwaysDiscardDrafts.set(v);
+		this.discardDraftsDbSync$.next(v);
+	}
 
 	public activeItemInfo = signal<ActiveItemInfo>({
 		show: false,
@@ -370,6 +380,16 @@ export class AppService {
 					});
 				},
 			});
+		
+		this.discardDraftsDbSync$
+			.pipe(takeUntilDestroyed(this.destoyRef),)
+			.subscribe({
+				next: (v) => {
+					UpdateAlwaysDiscardDraftsPreference(v).then(() => {
+						console.log(`always discard drafts preference saved to db`);
+					});
+				},
+			});
 	}
 
 	//#region init
@@ -416,6 +436,7 @@ export class AppService {
 				(uiState.layout as FormLayout) || FormLayout.Responsive,
 			);
 			this._isDesktopSidebarOpen.set(uiState.isSidebarOpen);
+			this._alwaysDiscardDrafts.set(uiState.alwaysDiscardDrafts);
 			await this.tabSvc.init(uiState);
 		} catch (_error) {
 			this._appState.set("error");

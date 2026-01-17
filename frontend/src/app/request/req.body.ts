@@ -24,12 +24,12 @@ import { FileInput } from "./file.input";
         <app-multipart-item
             [placeholderId]="placeHolderMultipartId"
             [items]="f.bodySvc.multipartForm()"
-            (onDelete)="f.bodySvc.deleteMultipartItem($event)"
-            (onKeyUpdate)="f.bodySvc.updateMultiPartField($event.id, 'key', $event.v)"
-            (onValUpdate)="f.bodySvc.updateMultipartFieldValue($event.id, $event.v)"
+            (onDelete)="f.deleteMultipartItem($event)"
+            (onKeyUpdate)="f.updateMultiPartField($event.id, 'key', $event.v)"
+            (onValUpdate)="f.updateMultipartFieldValue($event.id, $event.v)"
             (onBlur)="f.bodySvc.addMultiPartField()"
-            (onEnabledUpdate)="f.bodySvc.updateMultiPartField($event.id, 'enabled', $event.v)"
-            (onClearFileInput)="f.bodySvc.clearMultipartFileInput($event.id)"
+            (onEnabledUpdate)="f.updateMultiPartField($event.id, 'enabled', $event.v)"
+            (onClearFileInput)="f.clearMultipartFileInput($event.id)"
           />
       } @case("urlencoded"){
         @if(f.bodySvc.bulkEditModeUrlEncodedForm()){
@@ -37,18 +37,18 @@ import { FileInput } from "./file.input";
             [editInstructions]="bulkUrlFormEditInstruction"
             [parseFn]="parseTextAsKeyValFn"
             [initialValue]="f.bodySvc.bulkUrlEncodedFormText()"
-            (onChange)="f.bodySvc.bulkUpdateUrlEncodedForm($event)"
+            (onChange)="f.bulkUpdateUrlEncodedForm($event)"
             >
            </app-bulk-keyval-editor>
         }@else {
            <app-keyval-item
           [placeholderId]="placeHolderUrlEncodedId"
           [items]="f.bodySvc.urlEncodedParams()"
-          (onDelete)="f.bodySvc.deleteUrlEncodedField($event)"
-          (onKeyUpdate)="f.bodySvc.updateUrlEncodedField($event.id, 'key', $event.v)"
-          (onValUpdate)="f.bodySvc.updateUrlEncodedField($event.id, 'val', $event.v)"
+          (onDelete)="f.deleteUrlEncodedField($event)"
+          (onKeyUpdate)="f.updateUrlEncodedField($event.id, 'key', $event.v)"
+          (onValUpdate)="f.updateUrlEncodedField($event.id, 'val', $event.v)"
           (onBlur)="f.bodySvc.addUrlEncodedField()"
-          (onEnabledUpdate)="f.bodySvc.updateUrlEncodedField($event.id, 'enabled', $event.v)"
+          (onEnabledUpdate)="f.updateUrlEncodedField($event.id, 'enabled', $event.v)"
       />
         }
      
@@ -101,6 +101,6 @@ export class ReqBody {
 
 	handleTextBodyUpdate(e: Event) {
 		const target = e.target as HTMLInputElement;
-		this.f.bodySvc.setTextBody(target.value);
+		this.f.setTextBody(target.value);
 	}
 }

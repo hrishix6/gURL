@@ -143,6 +143,7 @@ export interface ApplicationTab {
 	name: string;
 	entityType: AppTabType;
 	entityId: string;
+	isModified: boolean;
 }
 
 export interface ActiveItemInfo {

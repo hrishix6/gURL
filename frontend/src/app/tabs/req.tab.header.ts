@@ -16,17 +16,20 @@ import type { ApplicationTab } from "@/types";
 	template: `
     <div class="flex flex-1 items-center gap-1.5 overflow-hidden">
       <div methodTag [size]="'xs'" [method]="data().tag"></div>
+	  	@if(data().isModified) {
+		<div aria-label="status" class="status status-md status-primary"></div>
+		}	
       <p class="truncate">
         {{ data().name }}
       </p>
     </div>
-    <button
-      class="btn btn-ghost btn-square btn-xs hover:bg-base-200"
-      (click)="handleClose($event)"
-      [disabled]="tabSvc.tabCount() === 1"
-    >
-      <lucide-angular [img]="CancelIcon" class="size-3" />
-    </button>
+	<button
+		class="btn btn-ghost btn-square btn-xs hover:bg-base-200"
+		(click)="handleClose($event)"
+		[disabled]="tabSvc.tabCount() === 1"
+		>
+		<lucide-angular [img]="CancelIcon" class="size-3" />
+	</button>
 	@if(isActive()){
 		<div class="absolute top-0 left-0 w-full h-0.5 bg-primary/75"></div>
 	}
@@ -44,7 +47,8 @@ export class TabHeader {
 	@HostBinding("class") get def() {
 		const defaults = [
 			"flex",
-			"p-2",
+			"px-1",
+			"py-2",
 			"justify-between",
 			"hover:cursor-pointer",
 			"hover:bg-base-100",

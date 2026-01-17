@@ -60,7 +60,7 @@ export class HeadersService {
 		}, "");
 	});
 
-	public bulkUpdateHeadersParams(items: KeyValItem[]) {
+	public _bulkUpdateHeadersParams(items: KeyValItem[]) {
 		const newParams = [
 			...items,
 			{
@@ -99,7 +99,7 @@ export class HeadersService {
 		});
 	}
 
-	public updateHeader(
+	public _updateHeader(
 		id: string,
 		prop: Exclude<keyof KeyValItem, "id">,
 		v: string,
@@ -122,7 +122,7 @@ export class HeadersService {
 		});
 	}
 
-	public deleteHeader(id: string) {
+	public _deleteHeader(id: string) {
 		this._headers.update((prev) => {
 			const copy = prev.filter((x) => x.id !== id);
 			this.headersDbSync$.next(copy);

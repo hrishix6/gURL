@@ -3,6 +3,7 @@ import {
 	type ElementRef,
 	HostBinding,
 	inject,
+	signal,
 	viewChild,
 } from "@angular/core";
 import { LucideAngularModule, Plus } from "lucide-angular";
@@ -10,6 +11,7 @@ import { AppDropdown } from "@/common/components";
 import { AppService, TabsService } from "@/services";
 import { RequestTab } from "./req.tab";
 import { TabHeader } from "./req.tab.header";
+import { DraftSavePreferenceModal } from "@/modals/draft.save.preference";
 
 @Component({
 	selector: "section[appReqTabs]",
@@ -30,7 +32,7 @@ import { TabHeader } from "./req.tab.header";
           appReqTabHeader
           [data]="tab"
           [isActive]="tabsSvc.activeTab() === tab.id"
-          (onCloseTab)="tabsSvc.deleteTab(tab.id)"
+          (onCloseTab)="tabsSvc.emitTabCloseEvent(tab.id)"
           (onSelectTab)="tabsSvc.setActiveTab(tab.id)"
         ></div>
         }

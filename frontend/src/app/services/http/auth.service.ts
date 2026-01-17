@@ -65,7 +65,7 @@ export class AuthService {
 	private _authEnabled = signal<boolean>(false);
 	public authEnabled = computed(() => this._authEnabled());
 
-	public toggleAuthEnabled() {
+	public _toggleAuthEnabled() {
 		this._authEnabled.update((x) => {
 			this.authEnabledDbSync$.next(!x);
 			return !x;
@@ -96,7 +96,7 @@ export class AuthService {
 		this._basicAuthRawMode.update((x) => !x);
 	}
 
-	public updateBasicAuth(prop: keyof BasicAuth, v: string) {
+	public _updateBasicAuth(prop: keyof BasicAuth, v: string) {
 		this._basicAuth.update((prev) => {
 			const updated = { ...prev, [prop]: v };
 			this.basicDbSync$.next(updated);
@@ -104,7 +104,7 @@ export class AuthService {
 		});
 	}
 
-	public setAuth(v: RequestAuthType) {
+	public _setAuth(v: RequestAuthType) {
 		const itemIndex = REQ_AUTH_TYPES.findIndex((x) => x.id === v);
 		if (itemIndex > -1) {
 			this._auth.set(REQ_AUTH_TYPES[itemIndex]);
@@ -120,7 +120,7 @@ export class AuthService {
 
 	public apiKey = computed(() => this._apiKeyAuth());
 
-	public updateApiKey(prop: keyof ApiKeyAuth, value: string) {
+	public _updateApiKey(prop: keyof ApiKeyAuth, value: string) {
 		this._apiKeyAuth.update((prev) => {
 			const updated = { ...prev, [prop]: value };
 			this.apiKeyDbSync$.next(updated);
@@ -135,7 +135,7 @@ export class AuthService {
 
 	public tokenAuth = computed(() => this._tokenAuth());
 
-	public updateTokenAuth(prop: keyof TokenAuth, value: string) {
+	public _updateTokenAuth(prop: keyof TokenAuth, value: string) {
 		this._tokenAuth.update((prev) => {
 			const updated = { ...prev, [prop]: value };
 			this.tokenAuthDbSync$.next(updated);

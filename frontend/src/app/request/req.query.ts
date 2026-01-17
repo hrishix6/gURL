@@ -15,7 +15,7 @@ import { BulkKeyValEditor } from "./bulk.editor";
           [editInstructions]="bulkQueryEditInstruction"
           [parseFn]="parseTextAsKeyValFn"
           [initialValue]="f.urlSvc.bulkQueryParamText()"
-          (onChange)="f.urlSvc.bulkUpdateQueryParams($event)"
+          (onChange)="f.bulkUpdateQueryParams($event)"
           >
         </app-bulk-keyval-editor>
       }
@@ -23,10 +23,10 @@ import { BulkKeyValEditor } from "./bulk.editor";
         <app-keyval-item
         [placeholderId]="placeHolderQueryId"
         [items]="f.urlSvc.queryParams()"
-        (onDelete)="f.urlSvc.deleteQueryParam($event)"
-        (onKeyUpdate)="f.urlSvc.updateQueryParam($event.id, 'key', $event.v)"
-        (onValUpdate)="f.urlSvc.updateQueryParam($event.id, 'val', $event.v)"
-        (onEnabledUpdate)="f.urlSvc.updateQueryParam($event.id, 'enabled', $event.v)"
+        (onDelete)="f.deleteQueryParam($event)"
+        (onKeyUpdate)="f.updateQueryParam($event.id, 'key', $event.v)"
+        (onValUpdate)="f.updateQueryParam($event.id, 'val', $event.v)"
+        (onEnabledUpdate)="f.updateQueryParam($event.id, 'enabled', $event.v)"
         (onBlur)="f.urlSvc.addQueryParam()"
         >
         </app-keyval-item>

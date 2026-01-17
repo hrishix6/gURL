@@ -15,7 +15,7 @@ import { BulkKeyValEditor } from "./bulk.editor";
           [editInstructions]="bulkcookieEditInstruction"
           [parseFn]="parseCookieTextFn"
           [initialValue]="f.cookieSvc.bulkCookiesText()"
-          (onChange)="f.cookieSvc.bulkUpdateCookieParams($event)"
+          (onChange)="f.bulkUpdateCookieParams($event)"
           >
         </app-bulk-keyval-editor>
       }
@@ -23,11 +23,11 @@ import { BulkKeyValEditor } from "./bulk.editor";
          <app-keyval-item
           [placeholderId]="placeHolderId"
           [items]="f.cookieSvc.cookies()"
-          (onDelete)="f.cookieSvc.deleteCookie($event)"
-          (onKeyUpdate)="f.cookieSvc.updateCookie($event.id, 'key', $event.v)"
-          (onValUpdate)="f.cookieSvc.updateCookie($event.id, 'val', $event.v)"
+          (onDelete)="f.deleteCookie($event)"
+          (onKeyUpdate)="f.updateCookie($event.id, 'key', $event.v)"
+          (onValUpdate)="f.updateCookie($event.id, 'val', $event.v)"
           (onBlur)="f.cookieSvc.addCookie()"
-          (onEnabledUpdate)="f.cookieSvc.updateCookie($event.id, 'enabled', $event.v)">
+          (onEnabledUpdate)="f.updateCookie($event.id, 'enabled', $event.v)">
         </app-keyval-item>
       }
    </div>

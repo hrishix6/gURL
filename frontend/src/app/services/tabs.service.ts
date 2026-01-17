@@ -31,7 +31,7 @@ export class TabsService {
 	private activeTabChanges$ = new Subject<string>();
 	private reqChanges$ = new Subject<string>();
 	public tabCount = computed(() => this._openTabs().length);
-
+	public closeTabEvent$ = new Subject<ApplicationTab>();
 	public refreshNotifier = new Subject<void>();
 
 	constructor() {
@@ -105,6 +105,7 @@ export class TabsService {
 				tag: item.method,
 				entityId: newDraft.id,
 				entityType: AppTabType.Req,
+				isModified: false,
 			};
 
 			this._openTabs.update((prev) => {
@@ -129,6 +130,7 @@ export class TabsService {
 				tag: newDraft.method,
 				entityId: newDraft.id,
 				entityType: AppTabType.Req,
+				isModified: false,
 			};
 
 			this._openTabs.update((prev) => {
@@ -175,6 +177,7 @@ export class TabsService {
 				tag: item.method,
 				entityId: newDraft.id,
 				entityType: AppTabType.Req,
+				isModified: false,
 			};
 
 			this._openTabs.update((prev) => {
@@ -201,6 +204,7 @@ export class TabsService {
 				entityType: AppTabType.Req,
 				name: "New Request",
 				tag: "GET",
+				isModified: false,
 			};
 
 			await AddFreshDraft(newDraft);
@@ -217,24 +221,34 @@ export class TabsService {
 		}
 	}
 
+	public emitTabCloseEvent(tabId: string) {
+		const tab = this._openTabs().find((x) => x.id === tabId);
+
+		if(!tab){
+			return;
+		}
+
+		if(this.tabCount() === 1){
+			return;
+		}
+
+		this.closeTabEvent$.next(tab);
+	}
+	
 	public deleteTab(id: string) {
 		this._openTabs.update((prev) => {
-			if (prev.length === 1) {
-				return prev;
-			}
 			const i = prev.findIndex((x) => x.id === id);
 			if (i === -1) {
 				return prev;
 			}
 
-			if (this._activeTab() === id) {
+			if(this.activeTab() === id)	{
 				const nextTab = prev[i + 1];
 				const prevTab = prev[i - 1];
 				const newTabId = nextTab?.id || prevTab?.id || null;
 				console.log(`new active tab id after closing current is ${newTabId}`);
 				this.setActiveTab(newTabId);
 			}
-
 			this.reqChanges$.next(prev[i].entityId);
 			const copy = prev.filter((x) => x.id !== id);
 			this.tabChanges$.next(copy);
@@ -248,9 +262,21 @@ export class TabsService {
 		this.activeTabChanges$.next(id || "");
 	}
 
+	public updateModifiedStatus(isModified: boolean) {
+		const i = this._openTabs().findIndex((x) => x.id === this._activeTab());
+
+			if (i === -1) {
+				return;
+			}
+			const copy = [...this._openTabs()];
+			copy[i].isModified = isModified;
+			this._openTabs.set(copy);
+			this.tabChanges$.next(copy);
+	}
+
 	public updateActiveTab(
 		prop: Exclude<keyof ApplicationTab, "id" | "entityType" | "entityId">,
-		v: string,
+		v: string
 	) {
 		this._openTabs.update((prev) => {
 			const i = prev.findIndex((x) => x.id === this._activeTab());

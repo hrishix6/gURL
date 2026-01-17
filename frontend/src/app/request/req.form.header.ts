@@ -37,7 +37,7 @@ import type { RequestMethod } from "@/types";
           placeholder="https://example.com"
           [value]="f.urlSvc.url()"
           (input)="f.setUrl($event.target.value)"
-          (blur)="f.urlSvc.parseUrl()"
+          (blur)="f.parseUrl()"
         />
       </div>
       <div class="flex gap-2.5">

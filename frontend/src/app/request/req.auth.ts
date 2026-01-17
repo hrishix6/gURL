@@ -28,14 +28,14 @@ import { FormService } from "@/services";
                         User : 
                         <input type="text" class="grow"
                         [value]="f.auth.basicAuth().username"
-                        (input)="f.auth.updateBasicAuth('username', $event.target.value)"
+                        (input)="f.updateBasicAuth('username', $event.target.value)"
                         />
                     </label>
                      <label class="input input-sm xl:input-md input-ghost bg-base-300 input-primary w-full">
                         Password : 
                         <input type="text" class="grow"
                         [value]="f.auth.basicAuth().password"
-                        (input)="f.auth.updateBasicAuth('password', $event.target.value)"
+                        (input)="f.updateBasicAuth('password', $event.target.value)"
                         />
                     </label>
                 }
@@ -56,14 +56,14 @@ import { FormService } from "@/services";
                         Key : 
                         <input type="text" class="grow"
                         [value]="f.auth.apiKey().key"
-                        (input)="f.auth.updateApiKey('key', $event.target.value)"
+                        (input)="f.updateApiKey('key', $event.target.value)"
                         />
                     </label>
                      <label class="input input-sm xl:input-md input-ghost bg-base-300 input-primary w-full">
                         Value : 
                         <input type="text" class="grow"
                         [value]="f.auth.apiKey().value"
-                        (input)="f.auth.updateApiKey('value', $event.target.value)"
+                        (input)="f.updateApiKey('value', $event.target.value)"
                         />
                     </label>
                 </div>
@@ -84,6 +84,6 @@ export class RequestAuth {
 
 	handleTokenInput(e: Event) {
 		const target = e.target as HTMLTextAreaElement;
-		this.f.auth.updateTokenAuth("token", target.value);
+		this.f.updateTokenAuth("token", target.value);
 	}
 }

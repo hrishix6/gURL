@@ -58,7 +58,7 @@ export class CookieService {
 		}, "");
 	});
 
-	public bulkUpdateCookieParams(items: KeyValItem[]) {
+	public _bulkUpdateCookieParams(items: KeyValItem[]) {
 		const newParams = [
 			...items,
 			{
@@ -97,7 +97,7 @@ export class CookieService {
 		});
 	}
 
-	public updateCookie(
+	public _updateCookie(
 		id: string,
 		prop: Exclude<keyof KeyValItem, "id">,
 		v: string,
@@ -120,7 +120,7 @@ export class CookieService {
 		});
 	}
 
-	public deleteCookie(id: string) {
+	public _deleteCookie(id: string) {
 		this._cookies.update((prev) => {
 			const copy = prev.filter((x) => x.id !== id);
 			this.cookiesDbSync$.next(copy);

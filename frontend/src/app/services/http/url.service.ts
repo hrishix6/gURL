@@ -60,7 +60,7 @@ export class UrlService {
 		this.urlDbSync$.next(v);
 	}
 
-	public parseUrl() {
+	public _parseUrl() {
 		try {
 			const parsed = new URL(this._url());
 
@@ -163,7 +163,7 @@ export class UrlService {
 		});
 	}
 
-	public bulkUpdateQueryParams(items: KeyValItem[]) {
+	public _bulkUpdateQueryParams(items: KeyValItem[]) {
 		const newParams = [
 			...items,
 			{
@@ -177,7 +177,7 @@ export class UrlService {
 		this.queryDbSync$.next(newParams);
 	}
 
-	public updateQueryParam(
+	public _updateQueryParam(
 		id: string,
 		prop: Exclude<keyof KeyValItem, "id">,
 		v: string,
@@ -200,7 +200,7 @@ export class UrlService {
 		});
 	}
 
-	public deleteQueryParam(id: string) {
+	public _deleteQueryParam(id: string) {
 		this._queryParams.update((prev) => {
 			const copy = prev.filter((x) => x.id !== id);
 			this.queryDbSync$.next(copy);

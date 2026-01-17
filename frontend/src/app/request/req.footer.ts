@@ -48,7 +48,7 @@ import type {
                  <div class="flex-1 flex gap-4 items-center">
                     @if(f.auth.activeAuth().id !== 'no_auth'){
                         <label class="label">
-                            <input type="checkbox"  [checked]="f.auth.authEnabled()" (change)="f.auth.toggleAuthEnabled()" class="checkbox checkbox-xs checkbox-primary xl:checkbox-sm" />
+                            <input type="checkbox"  [checked]="f.auth.authEnabled()" (change)="f.toggleAuthEnabled()" class="checkbox checkbox-xs checkbox-primary xl:checkbox-sm" />
                              Enabled
                         </label>
                     }
@@ -150,19 +150,19 @@ export class ReqFooter {
 	def = "flex text-xs p-2";
 
 	handleActiveItemSelection(id: ReqBodyType) {
-		this.f.bodySvc.setBodyType(id);
+		this.f.setBodyType(id);
 	}
 
 	handleActiveAuthSelection(id: RequestAuthType) {
-		this.f.auth.setAuth(id);
+		this.f.setAuth(id);
 	}
 
 	handleSetApiKeyLocation(location: APIKeyLocation) {
-		this.f.auth.updateApiKey("location", location);
+		this.f.updateApiKey("location", location);
 	}
 
 	handleSetTokenAuthType(type: TokenAuthType) {
-		this.f.auth.updateTokenAuth("type", type);
+		this.f.updateTokenAuth("type", type);
 	}
 
 	handleEditModeSwitch(tabId: ReqTabId) {

@@ -63,7 +63,7 @@ export class BodyService {
 	//#region Body
 	private _bodyType = signal<DropDownItem<ReqBodyType>>(REQ_BODY_TYPES[0]);
 	public bodyType = computed(() => this._bodyType());
-	public setBodyType(v: ReqBodyType) {
+	public _setBodyType(v: ReqBodyType) {
 		const itemIndex = REQ_BODY_TYPES.findIndex((x) => x.id === v);
 		if (itemIndex > -1) {
 			this._bodyType.set(REQ_BODY_TYPES[itemIndex]);
@@ -104,7 +104,7 @@ export class BodyService {
 		});
 	}
 
-	public updateMultiPartField(
+	public _updateMultiPartField(
 		id: string,
 		prop: Exclude<keyof MultipartItem, "id" | "val">,
 		v: string,
@@ -127,7 +127,7 @@ export class BodyService {
 		});
 	}
 
-	public clearMultipartFileInput(id: string) {
+	public _clearMultipartFileInput(id: string) {
 		this._multiPartForm.update((prev) => {
 			const index = prev.findIndex((x) => x.id === id);
 			if (index === -1) {
@@ -142,7 +142,7 @@ export class BodyService {
 		});
 	}
 
-	public updateMultipartFieldValue(id: string, v: string | models.FileStats) {
+	public _updateMultipartFieldValue(id: string, v: string | models.FileStats) {
 		this._multiPartForm.update((prev) => {
 			const index = prev.findIndex((x) => x.id === id);
 			if (index === -1) {
@@ -161,7 +161,7 @@ export class BodyService {
 		});
 	}
 
-	public deleteMultipartItem(id: string) {
+	public _deleteMultipartItem(id: string) {
 		this._multiPartForm.update((prev) => {
 			const copy = prev.filter((x) => x.id !== id);
 			this.multipartDbSync$.next(copy);
@@ -221,7 +221,7 @@ export class BodyService {
 		}, "");
 	});
 
-	public bulkUpdateUrlEncodedForm(items: KeyValItem[]) {
+	public _bulkUpdateUrlEncodedForm(items: KeyValItem[]) {
 		const newParams = [
 			...items,
 			{
@@ -267,7 +267,7 @@ export class BodyService {
 		});
 	}
 
-	public updateUrlEncodedField(
+	public _updateUrlEncodedField(
 		id: string,
 		prop: Exclude<keyof KeyValItem, "id">,
 		v: string,
@@ -291,7 +291,7 @@ export class BodyService {
 		});
 	}
 
-	public deleteUrlEncodedField(id: string) {
+	public _deleteUrlEncodedField(id: string) {
 		this._urlEncodedParams.update((prev) => {
 			const copy = prev.filter((x) => x.id !== id);
 			this.urlEncodedDbSync$.next(copy);
@@ -318,12 +318,12 @@ export class BodyService {
 	private _binaryBody = signal<models.FileStats | null>(null);
 	public binaryBody = computed(() => this._binaryBody());
 
-	public setBinaryBody(v: models.FileStats) {
+	public _setBinaryBody(v: models.FileStats) {
 		this._binaryBody.set(v);
 		this.binaryBDbSync$.next(v);
 	}
 
-	public clearBinaryBody() {
+	public _clearBinaryBody() {
 		this._binaryBody.set(null);
 		this.binaryBDbSync$.next(null);
 	}
@@ -337,7 +337,7 @@ export class BodyService {
 	//#region Text
 	private _textBody = signal<string>("");
 	public textBody = computed(() => this._textBody());
-	public setTextBody(v: string) {
+	public _setTextBody(v: string) {
 		this._textBody.set(v);
 		this.textBDbSync$.next(v);
 	}

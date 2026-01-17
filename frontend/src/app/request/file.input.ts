@@ -37,13 +37,13 @@ export class FileInput {
 	async openFileDialogue() {
 		try {
 			const fileStats = await ChooseFile();
-			this.f.bodySvc.setBinaryBody(fileStats);
+			this.f.setBinaryBody(fileStats);
 		} catch (error) {
 			console.error(error);
 		}
 	}
 
 	clearFileInput() {
-		this.f.bodySvc.clearBinaryBody();
+		this.f.clearBinaryBody();
 	}
 }

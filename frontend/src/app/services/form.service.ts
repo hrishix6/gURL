@@ -29,8 +29,12 @@ import {
 import { AppService, TabsService } from "@/services";
 import type {
 	DraftParentMetadata,
+	KeyValItem,
+	MultipartItem,
+	ReqBodyType,
 	ReqState,
 	ReqTabId,
+	RequestAuthType,
 	RequestMethod,
 	ResTabId,
 } from "@/types";
@@ -61,6 +65,27 @@ export class FormService {
 	public bodySvc = new BodyService(this.destroyRef);
 	public urlSvc = new UrlService(this.destroyRef);
 
+	public saveDraftModalTitle = computed(()=> {
+		const {parentRequestId, parentRequestName} = this.draftParentData();
+
+		if(!parentRequestId) {
+			return "Save draft as request ?";
+		}
+
+		return `Save changes for request "${parentRequestName}" ?`
+	});
+
+	public saveDraftModalMessage = computed(()=> {
+		const {parentRequestId} = this.draftParentData();
+
+		if(!parentRequestId) {
+			return "Your changes will be lost, save these changes to avoid losing work.";
+		}
+
+		return "Your changes to the request will be lost, save these changes to avoid losing work.";
+	});
+
+
 	constructor() {
 		//tab refresh notification
 		this._tabSvc.refreshNotifier
@@ -71,9 +96,57 @@ export class FormService {
 					this.initializeReqForm(this._requestId);
 				},
 			});
+		this._tabSvc.closeTabEvent$
+			.pipe(takeUntilDestroyed(this.destroyRef))
+			.subscribe({
+				next: (tab) => {
+					if (tab.entityId !== this._requestId) {
+						return;
+					}
+
+					console.log(`received signal to handle tab close for ${tab.id} and draft ${this._requestId}`);
+					const {parentRequestId} = this.draftParentData();
+
+					if(parentRequestId) {
+						if(tab.isModified) {
+							if(!this._appSvc.alwaysDiscardDrafts()) {
+							console.log(`draft is linked to ${parentRequestId} and modified asking to save`);
+							this._tabSvc.setActiveTab(tab.id)
+							this._isDraftSavePreferenceModalOpen.set(true);
+							return;
+						   }
+						}
+						console.log(`draft is linked to ${parentRequestId} and not modified, closing tab`);
+						this._tabSvc.deleteTab(tab.id);
+					}
+					else {
+						if(tab.isModified){
+								if(!this._appSvc.alwaysDiscardDrafts()) {
+								console.log(`draft is not linked to any request, asking to save as new request`);
+								this._tabSvc.setActiveTab(tab.id)
+								this._isDraftSavePreferenceModalOpen.set(true);
+								return;
+							}
+						}
+
+						console.log(`draft is not linked to any request and user doesn't want to save drafts, closing tab`);
+						this._tabSvc.deleteTab(tab.id);
+					}
+				},
+			});
 	}
 
 	//#region request-ops
+	private _isDraftSavePreferenceModalOpen = signal<boolean>(false);
+
+	public isDraftSavePreferenceModalOpen = computed(
+		() => this._isDraftSavePreferenceModalOpen(),
+	);
+
+	public toggleDraftSavePreferenceModal() {
+		this._isDraftSavePreferenceModalOpen.update((x) => !x);
+	}
+
 	private _saveRequestModalOpen = signal<boolean>(false);
 	public isSaveRequestModalOpen = computed(() => this._saveRequestModalOpen());
 
@@ -114,6 +187,7 @@ export class FormService {
 			});
 
 			this._tabSvc.updateActiveTab("name", name);
+			this._tabSvc.updateModifiedStatus(false);
 		} catch (error) {
 			console.error(error);
 		} finally {
@@ -195,15 +269,169 @@ export class FormService {
 	}
 	//#endregion tab-management
 
+	//#region proxy-setters
+
 	public setUrl(v: string) {
 		this.urlSvc.setUrl(v);
 		this._tabSvc.updateActiveTab("name", v);
+		this._tabSvc.updateModifiedStatus(true);
+	}
+
+	public parseUrl() {
+		this.urlSvc._parseUrl();
+		this._tabSvc.updateModifiedStatus(true);
+	}
+
+	public bulkUpdateQueryParams(items: KeyValItem[]) {
+		this.urlSvc._bulkUpdateQueryParams(items);
+		this._tabSvc.updateModifiedStatus(true);
+	}
+
+	public updateQueryParam(
+		id: string,
+		prop: Exclude<keyof KeyValItem, "id">,
+		v: string,
+	) {
+		this.urlSvc._updateQueryParam(id, prop, v);
+		this._tabSvc.updateModifiedStatus(true);
+	}
+
+	public deleteQueryParam(id: string) {
+		this.urlSvc._deleteQueryParam(id);
+		this._tabSvc.updateModifiedStatus(true);
 	}
 
 	public setMethod(v: RequestMethod) {
 		this.urlSvc.setSelectedMethod(v);
 		this._tabSvc.updateActiveTab("tag", v);
+		this._tabSvc.updateModifiedStatus(true);
 	}
+
+	public toggleAuthEnabled() {
+		this.auth._toggleAuthEnabled();
+		this._tabSvc.updateModifiedStatus(true);
+	}
+
+	public setAuth(v: RequestAuthType) {
+		this.auth._setAuth(v);
+		this._tabSvc.updateModifiedStatus(true);
+	}
+
+	public updateApiKey(prop: keyof models.ApiKeyAuth, value: string) {
+		this.auth._updateApiKey(prop, value);
+		this._tabSvc.updateModifiedStatus(true);
+	}
+
+	public updateTokenAuth(prop: keyof models.TokenAuth, value: string) {
+		this.auth._updateTokenAuth(prop, value);
+		this._tabSvc.updateModifiedStatus(true);
+	}
+
+	public updateBasicAuth(prop: keyof models.BasicAuth, v: string) {
+		this.auth._updateBasicAuth(prop, v);
+		this._tabSvc.updateModifiedStatus(true);
+	}
+
+	public setBodyType(v: ReqBodyType) {
+		this.bodySvc._setBodyType(v);
+		this._tabSvc.updateModifiedStatus(true);
+	}
+
+	public updateMultiPartField(
+			id: string,
+			prop: Exclude<keyof MultipartItem, "id" | "val">,
+			v: string,
+		) {
+		this.bodySvc._updateMultiPartField(id, prop, v);
+		this._tabSvc.updateModifiedStatus(true);
+	}
+	public updateMultipartFieldValue(id: string, v: string | models.FileStats) {
+		this.bodySvc._updateMultipartFieldValue(id, v);
+		this._tabSvc.updateModifiedStatus(true);
+	}
+	
+	public clearMultipartFileInput(id: string){
+		this.bodySvc._clearMultipartFileInput(id);
+		this._tabSvc.updateModifiedStatus(true);
+	}
+
+	public deleteMultipartItem(id: string) {
+		this.bodySvc._deleteMultipartItem(id);
+		this._tabSvc.updateModifiedStatus(true);
+	}
+
+	public bulkUpdateUrlEncodedForm(items: KeyValItem[]) {
+		this.bodySvc._bulkUpdateUrlEncodedForm(items);
+		this._tabSvc.updateModifiedStatus(true);
+	}
+
+	public  updateUrlEncodedField(
+		id: string,
+		prop: Exclude<keyof KeyValItem, "id">,
+		v: string,
+	) {
+		this.bodySvc._updateUrlEncodedField(id, prop, v);
+		this._tabSvc.updateModifiedStatus(true);
+	}
+	
+	public deleteUrlEncodedField(id: string) {
+		this.bodySvc._deleteUrlEncodedField(id);
+		this._tabSvc.updateModifiedStatus(true);
+	}
+
+	public setBinaryBody(v: models.FileStats) {
+		this.bodySvc._setBinaryBody(v);
+		this._tabSvc.updateModifiedStatus(true);
+	}
+
+	public setTextBody(v: string) {
+		this.bodySvc._setTextBody(v);
+		this._tabSvc.updateModifiedStatus(true);
+	}	
+
+	public clearBinaryBody() {
+		this.bodySvc._clearBinaryBody();
+		this._tabSvc.updateModifiedStatus(true);
+	}
+
+	public deleteCookie(id: string) {
+		this.cookieSvc._deleteCookie(id);
+		this._tabSvc.updateModifiedStatus(true);
+	}
+
+	public updateCookie(
+		id: string,
+		prop: Exclude<keyof KeyValItem, "id">,
+		v: string,
+	) {
+		this.cookieSvc._updateCookie(id, prop, v);
+		this._tabSvc.updateModifiedStatus(true);
+	}
+
+	public bulkUpdateCookieParams(items: KeyValItem[]) {
+		this.cookieSvc._bulkUpdateCookieParams(items);
+		this._tabSvc.updateModifiedStatus(true);
+	}
+
+	public deleteHeader(id: string) {
+		this.headerSvc._deleteHeader(id);
+		this._tabSvc.updateModifiedStatus(true);
+	}
+
+	public updateHeader(
+		id: string,
+		prop: Exclude<keyof KeyValItem, "id">,
+		v: string,
+	) {
+		this.headerSvc._updateHeader(id, prop, v);
+		this._tabSvc.updateModifiedStatus(true);
+	}
+
+	public bulkUpdateHeadersParams(items: KeyValItem[]) {
+		this.headerSvc._bulkUpdateHeadersParams(items);
+		this._tabSvc.updateModifiedStatus(true);
+	}
+	//#endregion proxy-setters
 
 	//#region Request-Response
 

@@ -15,7 +15,7 @@ import { BulkKeyValEditor } from "./bulk.editor";
           [editInstructions]="bulkHeadersEditInstruction"
           [parseFn]="parseTextAsKeyValFn"
           [initialValue]="f.headerSvc.bulkHeadersText()"
-          (onChange)="f.headerSvc.bulkUpdateHeadersParams($event)"
+          (onChange)="f.bulkUpdateHeadersParams($event)"
           >
         </app-bulk-keyval-editor>
       }
@@ -23,11 +23,11 @@ import { BulkKeyValEditor } from "./bulk.editor";
          <app-keyval-item
           [placeholderId]="placeHolderHeaderId"
           [items]="f.headerSvc.headers()"
-          (onDelete)="f.headerSvc.deleteHeader($event)"
-          (onKeyUpdate)="f.headerSvc.updateHeader($event.id, 'key', $event.v)"
-          (onValUpdate)="f.headerSvc.updateHeader($event.id, 'val', $event.v)"
+          (onDelete)="f.deleteHeader($event)"
+          (onKeyUpdate)="f.updateHeader($event.id, 'key', $event.v)"
+          (onValUpdate)="f.updateHeader($event.id, 'val', $event.v)"
           (onBlur)="f.headerSvc.addHeader()"
-          (onEnabledUpdate)="f.headerSvc.updateHeader($event.id, 'enabled', $event.v)">
+          (onEnabledUpdate)="f.updateHeader($event.id, 'enabled', $event.v)">
     </app-keyval-item>
       }
    </div>
