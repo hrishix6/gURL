@@ -475,11 +475,17 @@ func (s *Storage) GetUIState() (*models.UIStateDTO, error) {
 		Layout:        r.Layout,
 		ActiveTab:     r.ActiveTab,
 		IsSidebarOpen: r.IsSidebarOpen,
+		AlwaysDiscard: r.AlwaysDiscardDrafts,
 	}, nil
 }
 
 func (s *Storage) UpdateActiveTab(tabId string) error {
 	_, err := gorm.G[db.UIState](s.db).Where("id = ?", db.DEFAULT_UI_STATE_ID).Update(s.appCtx, "activeTab", tabId)
+	return err
+}
+
+func (s *Storage) UpdateAlwaysDiscardDraftsPreference(alwaysDiscard bool) error {
+	_, err := gorm.G[db.UIState](s.db).Where("id = ?", db.DEFAULT_UI_STATE_ID).Update(s.appCtx, "alwaysDiscardDrafts", alwaysDiscard)
 	return err
 }
 

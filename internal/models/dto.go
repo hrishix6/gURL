@@ -128,6 +128,7 @@ type UIStateDTO struct {
 	Layout        string `json:"layout"`
 	ActiveTab     string `json:"activeTab"`
 	IsSidebarOpen bool   `json:"isSidebarOpen"`
+	AlwaysDiscard bool   `json:"alwaysDiscardDrafts"`
 }
 
 type SaveRequestCopyDTO struct {

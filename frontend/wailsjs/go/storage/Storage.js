@@ -82,6 +82,10 @@ export function UpdateActiveTab(arg1) {
   return window['go']['storage']['Storage']['UpdateActiveTab'](arg1);
 }
 
+export function UpdateAlwaysDiscardDraftsPreference(arg1) {
+  return window['go']['storage']['Storage']['UpdateAlwaysDiscardDraftsPreference'](arg1);
+}
+
 export function UpdateDraftApiKeyAuth(arg1) {
   return window['go']['storage']['Storage']['UpdateDraftApiKeyAuth'](arg1);
 }

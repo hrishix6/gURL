@@ -42,6 +42,8 @@ export function SaveRequestCopy(arg1:models.SaveRequestCopyDTO):Promise<void>;
 
 export function UpdateActiveTab(arg1:string):Promise<void>;
 
+export function UpdateAlwaysDiscardDraftsPreference(arg1:boolean):Promise<void>;
+
 export function UpdateDraftApiKeyAuth(arg1:models.UpdateDraftApiKeyAuthDTO):Promise<void>;
 
 export function UpdateDraftAuthEnabled(arg1:models.UpdateDraftAuthEnabledDTO):Promise<void>;

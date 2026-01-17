@@ -27,13 +27,14 @@ func (mr *MimeRecord) FromJsonRecord(key string, record models.MimeData) MimeRec
 }
 
 type UIState struct {
-	Id            string         `gorm:"primaryKey;column:id"`
-	OpenTabs      datatypes.JSON `gorm:"column:openTabs;default:'[]'"`
-	ActiveTab     string         `gorm:"column:activeTab"`
-	IsSidebarOpen bool           `gorm:"column:sidebarOpen;default:false"`
-	Layout        string         `gorm:"column:layout;default:r"`
-	Created       int            `gorm:"autoCreateTime;column:created"`
-	UpdatedAt     int            `gorm:"autoUpdateTime;column:updated"`
+	Id                  string         `gorm:"primaryKey;column:id"`
+	OpenTabs            datatypes.JSON `gorm:"column:openTabs;default:'[]'"`
+	ActiveTab           string         `gorm:"column:activeTab"`
+	IsSidebarOpen       bool           `gorm:"column:sidebarOpen;default:false"`
+	AlwaysDiscardDrafts bool           `gorm:"column:alwaysDiscardDrafts;default:false"`
+	Layout              string         `gorm:"column:layout;default:r"`
+	Created             int            `gorm:"autoCreateTime;column:created"`
+	UpdatedAt           int            `gorm:"autoUpdateTime;column:updated"`
 }
 
 type Collection struct {

@@ -475,6 +475,7 @@ export namespace models {
 	    layout: string;
 	    activeTab: string;
 	    isSidebarOpen: boolean;
+	    alwaysDiscardDrafts: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new UIStateDTO(source);
@@ -486,6 +487,7 @@ export namespace models {
 	        this.layout = source["layout"];
 	        this.activeTab = source["activeTab"];
 	        this.isSidebarOpen = source["isSidebarOpen"];
+	        this.alwaysDiscardDrafts = source["alwaysDiscardDrafts"];
 	    }
 	}
 	export class UpdateDraftApiKeyAuthDTO {
