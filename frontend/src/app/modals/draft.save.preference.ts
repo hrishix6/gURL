@@ -1,8 +1,15 @@
-import { Component, HostBinding, input, OnInit, output, signal } from "@angular/core";
+import {
+	Component,
+	HostBinding,
+	input,
+	type OnInit,
+	output,
+	signal,
+} from "@angular/core";
 
 @Component({
-    selector: `dialog[draftSavePreferenceModal]`,
-    template: `
+	selector: `dialog[draftSavePreferenceModal]`,
+	template: `
         <div class="modal-box">
             <div class="flex flex-col gap-4">
                 <div class="flex flex-col gap-2">
@@ -38,26 +45,26 @@ import { Component, HostBinding, input, OnInit, output, signal } from "@angular/
     `,
 })
 export class DraftSavePreferenceModal implements OnInit {
-    @HostBinding("class")
+	@HostBinding("class")
 	def = "modal";
 	isOpen = input.required<boolean>();
-    title = input.required<string>();
+	title = input.required<string>();
 	message = input.required<string>();
 	onCancel = output<void>();
 	onSave = output<void>();
-    onNoSave = output<boolean>();
-    alwaysDiscard = signal<boolean>(false);
+	onNoSave = output<boolean>();
+	alwaysDiscard = signal<boolean>(false);
 
-    ngOnInit(): void {
-        this.alwaysDiscard.set(false);
-    }
+	ngOnInit(): void {
+		this.alwaysDiscard.set(false);
+	}
 
 	@HostBinding("attr.open") get checkOpen() {
 		return this.isOpen() ? "" : null;
 	}
 
-    alwaysDiscardChanges() {
-		this.alwaysDiscard.update(x => !x);
+	alwaysDiscardChanges() {
+		this.alwaysDiscard.update((x) => !x);
 	}
 
 	handleClose() {
@@ -68,7 +75,7 @@ export class DraftSavePreferenceModal implements OnInit {
 		this.onSave.emit();
 	}
 
-    handleNoSave() {
-        this.onNoSave.emit(this.alwaysDiscard());
-    }
+	handleNoSave() {
+		this.onNoSave.emit(this.alwaysDiscard());
+	}
 }

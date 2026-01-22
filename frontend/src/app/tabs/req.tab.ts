@@ -5,15 +5,14 @@ import {
 	HostBinding,
 	inject,
 	input,
-	signal,
 	type OnInit,
 } from "@angular/core";
+import { DraftSavePreferenceModal } from "@/modals/draft.save.preference";
 import { RequestFormDetails } from "@/request/req.form.details";
 import { ReqFormHeader } from "@/request/req.form.header";
 import { ResponseDetails } from "@/response/res.details";
 import { AppService, FormService, TabsService } from "@/services";
-import { FormLayout } from "@/types";
-import { DraftSavePreferenceModal } from "@/modals/draft.save.preference";
+import { AppTabType, FormLayout } from "@/types";
 
 @Component({
 	selector: `app-request-tab`,
@@ -37,7 +36,13 @@ import { DraftSavePreferenceModal } from "@/modals/draft.save.preference";
       ></dialog>
     }
   `,
-	imports: [ReqFormHeader, RequestFormDetails, ResponseDetails, NgClass, DraftSavePreferenceModal],
+	imports: [
+		ReqFormHeader,
+		RequestFormDetails,
+		ResponseDetails,
+		NgClass,
+		DraftSavePreferenceModal,
+	],
 	providers: [FormService],
 })
 export class RequestTab implements OnInit {
@@ -79,23 +84,23 @@ export class RequestTab implements OnInit {
 		return "hidden";
 	}
 
-   ngOnInit(): void {
+	ngOnInit(): void {
 		console.log(`called`);
 		this.formSvc.initializeReqForm(this.draftId());
 	}
 
-  handleSaveDraft() {
-	this.formSvc.toggleDraftSavePreferenceModal();
-     this.formSvc.toggleSaveRequestModal();
-  }
+	handleSaveDraft() {
+		this.formSvc.toggleDraftSavePreferenceModal();
+		this.formSvc.toggleSaveRequestModal();
+	}
 
-  handleClose() {
-    this.formSvc.toggleDraftSavePreferenceModal();
-  }
+	handleClose() {
+		this.formSvc.toggleDraftSavePreferenceModal();
+	}
 
-  handleNoSaveDraft(alwaysDiscard: boolean) {
-	this.appSvc.setAlwaysDiscardDrafts(alwaysDiscard);
-    this.tabSvc.deleteTab(this.tabId());
-    this.formSvc.toggleDraftSavePreferenceModal();
-  }
+	handleNoSaveDraft(alwaysDiscard: boolean) {
+		this.appSvc.setAlwaysDiscardDrafts(alwaysDiscard);
+		this.tabSvc.deleteTab(this.tabId(), AppTabType.Req);
+		this.formSvc.toggleDraftSavePreferenceModal();
+	}
 }

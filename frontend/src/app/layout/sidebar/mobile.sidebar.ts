@@ -2,6 +2,7 @@ import { Component, HostBinding, inject } from "@angular/core";
 import { AppService } from "@/services";
 import { AppSidebarHeader } from "./app.sidebar.header";
 import { AppCollectionsSidebar } from "./collections/collection.sidebar";
+import { EnvironmentSidebar } from "./environments/environments.sidebar";
 import { AppRequestHistory } from "./history/history.sidebar";
 
 @Component({
@@ -12,9 +13,18 @@ import { AppRequestHistory } from "./history/history.sidebar";
     <div gurlReqHistory></div>
     } @case("collections"){
     <app-collections />
-    } }
+    }
+    @case("environments"){
+       <div gurlEnvironments></div>
+       }
+   }
   </div>`,
-	imports: [AppCollectionsSidebar, AppSidebarHeader, AppRequestHistory],
+	imports: [
+		AppCollectionsSidebar,
+		AppSidebarHeader,
+		AppRequestHistory,
+		EnvironmentSidebar,
+	],
 })
 export class MobileSidebar {
 	@HostBinding("class")

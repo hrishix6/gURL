@@ -6,7 +6,7 @@ import {
 	input,
 	output,
 } from "@angular/core";
-import { LucideAngularModule, X } from "lucide-angular";
+import { Container, LucideAngularModule, X } from "lucide-angular";
 import { ReqMethodTag } from "@/request/method.tag";
 import { TabsService } from "@/services";
 import type { ApplicationTab } from "@/types";
@@ -15,9 +15,16 @@ import type { ApplicationTab } from "@/types";
 	selector: `div[appReqTabHeader]`,
 	template: `
     <div class="flex flex-1 items-center gap-1.5 overflow-hidden">
-      <div methodTag [size]="'xs'" [method]="data().tag"></div>
+	   @switch (data().entityType) {
+		   	@case("req") {
+				<div methodTag [size]="'xs'" [method]="data().tag"></div>
+			}
+			@case("env") {
+				<lucide-angular [img]="EnvironmentIcon" class="size-4" />
+			}
+	    }
 	  	@if(data().isModified) {
-		<div aria-label="status" class="status status-md status-primary"></div>
+			<div aria-label="status" class="status status-md status-primary"></div>
 		}	
       <p class="truncate">
         {{ data().name }}
@@ -38,6 +45,7 @@ import type { ApplicationTab } from "@/types";
 })
 export class TabHeader {
 	readonly CancelIcon = X;
+	readonly EnvironmentIcon = Container;
 	isActive = input.required<boolean>();
 	data = input.required<ApplicationTab>();
 	onCloseTab = output();
@@ -47,8 +55,7 @@ export class TabHeader {
 	@HostBinding("class") get def() {
 		const defaults = [
 			"flex",
-			"px-1",
-			"py-2",
+			"p-2",
 			"justify-between",
 			"hover:cursor-pointer",
 			"hover:bg-base-100",
