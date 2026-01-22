@@ -5,6 +5,7 @@ import {
 	HardDriveDownload,
 	LucideAngularModule,
 } from "lucide-angular";
+import { PdfViewerModule } from "ng2-pdf-viewer";
 import { BytesPipe } from "@/common/pipes/bytes.pipe";
 import { SafePipe } from "@/common/pipes/safe.html.pipe";
 import { FormService } from "@/services";
@@ -21,7 +22,7 @@ import { ResponseTextPreview } from "./text.preview";
                         @if(formSvc.res()?.sizeNotReported){
                             Server did not report Content-Length, download stopped after reaching limit 1kb. 
                        } @else {
-                        Server reported Content-length as {{formSvc.res()?.reportedSize | bytes}}, dowload stopped after reaching limit 1 Kb.
+                        Server reported Content-length as {{formSvc.res()?.reportedSize | bytes}}, dowload stopped after reaching limit 100 Mb.
                        }
                     </span>
                 </div>
@@ -30,16 +31,21 @@ import { ResponseTextPreview } from "./text.preview";
     @else {
         @if(formSvc.res()?.body?.canRender){
             <div class="flex-1 flex relative overflow-auto shadow-md border-2 border-base-100 rounded-box">
-                 @if(formSvc.previewMode()){
+                 <div [ngClass]="{
+                    'flex-1': true,
+                    'hidden': !formSvc.previewMode(),
+                 }">
                     @switch (formSvc.res()?.body?.html5Element) {
                         <!-- PDF -->
-                        @case ("iframe") {
-                            <iframe [src]="formSvc.res()?.body?.src | safe" sandbox="allow-same-origin allow-scripts" referrerpolicy="no-referrer" 
-                                [ngClass]="{
-                                'h-full w-full': true,
-                                }"
-                                >
-                            </iframe>
+                        @case ("pdf") {
+                            <pdf-viewer 
+                            [src]="formSvc.res()?.body?.src" 
+                            [original-size]="false"
+                            [c-maps-url]="'/cmaps/'"
+                            [fit-to-page]="true"
+                            class="block h-full w-full"
+                            >     
+                            </pdf-viewer>
                         }
 
                         <!-- IMAGE -->
@@ -77,19 +83,21 @@ import { ResponseTextPreview } from "./text.preview";
                             }" appResTextPreview [src]="formSvc.res()?.body?.src"></div>
                         }
                     }
-                 }
-                 @else {
-                     <div class="flex-1 flex items-center justify-center">
-                        @if(formSvc.res()?.size){
-                            <button class="btn xl:btn-lg btn-soft btn-primary" (click)="formSvc.saveToFile()">
-                                <lucide-angular [img]="DownloadIcon"  class="size-5 xl:size-6"/>
-                                Download {{formSvc.res()?.body?.extension}}
-                            </button>
-                        }@else {
-                            <span>No Body</span>
-                        }
-                     </div>
-                 }
+                 </div>
+
+                <div [ngClass]="{
+                    'flex-1 flex items-center justify-center': true,
+                    'hidden': formSvc.previewMode(),
+                }">
+                @if(formSvc.res()?.size){
+                    <button class="btn xl:btn-lg btn-soft btn-primary" (click)="formSvc.saveToFile()">
+                        <lucide-angular [img]="DownloadIcon"  class="size-5 xl:size-6"/>
+                        Download {{formSvc.res()?.body?.extension}}
+                    </button>
+                }@else {
+                    <span>No Body</span>
+                }
+                </div>
             </div>
         }
         @else {
@@ -112,6 +120,7 @@ import { ResponseTextPreview } from "./text.preview";
 		SafePipe,
 		ResponseTextPreview,
 		BytesPipe,
+		PdfViewerModule,
 	],
 })
 export class ResPreview {

@@ -33,7 +33,7 @@ export type ResTabId =
 	| "res_body"
 	| "res_console"
 	| "res_cookies";
-export type RequestAuthType = "no_auth" | "basic" | "bearer" | "api_key";
+export type RequestAuthType = "no_auth" | "basic" | "token" | "api_key";
 
 export type AppTheme =
 	| "dracula"
@@ -55,6 +55,14 @@ export interface KeyValItem {
 	key: string;
 	val: string;
 	enabled: string;
+}
+
+export interface EnvironmentItem {
+	id: string;
+	key: string;
+	val: string;
+	isSecret: boolean;
+	description: string;
 }
 
 export interface MultipartItem {
@@ -143,6 +151,7 @@ export interface ApplicationTab {
 	name: string;
 	entityType: AppTabType;
 	entityId: string;
+	isModified: boolean;
 }
 
 export interface ActiveItemInfo {
@@ -155,6 +164,7 @@ export interface ActiveItemInfo {
 export enum AppSidebarContent {
 	History = "history",
 	Collections = "collections",
+	Environments = "environments",
 }
 
 export interface ReqHistoryItem {
@@ -172,10 +182,55 @@ export interface ReqHistoryItem {
 	statusText: string;
 	success: boolean;
 	executed: number; //unix timestamp when this was executed
+	tokenAuth: TokenAuth | null;
+	basicAuth: BasicAuth | null;
+	apiKeyAuth: ApiKeyAuth | null;
+	authType: RequestAuthType | null;
+	authEnabled: boolean;
 }
 
 export enum FormLayout {
 	Horizontal = "h",
 	Vertical = "v",
 	Responsive = "r",
+}
+
+export interface BasicAuth {
+	username: string;
+	password: string;
+}
+
+export type APIKeyLocation = "header" | "query";
+
+export interface ApiKeyAuth {
+	key: string;
+	value: string;
+	location: APIKeyLocation;
+}
+
+export interface EnvironmentDraftParent {
+	parentEnvId: string;
+	parentEnvName: string;
+}
+
+export type TokenAuthType =
+	| "bearer"
+	| "digest"
+	| "hoba"
+	| "mutual"
+	| "aws4-hmac-sha256";
+
+export interface TokenAuth {
+	type: TokenAuthType;
+	token: string;
+}
+
+export type GlobalEnvMap = Record<string, Record<string, string>>;
+
+export interface InputToken {
+	type: "env" | "text";
+	value: string;
+	valid: boolean;
+	key: string;
+	interpolated: string;
 }

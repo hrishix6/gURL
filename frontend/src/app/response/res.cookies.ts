@@ -6,21 +6,7 @@ import { FormService } from "@/services";
 	selector: `div[resCookies]`,
 	template: `
         @if(formSvc.res()?.cookies?.length){
-            <div class="flex-1 flex flex-col gap-2 overflow-auto shadow-md border-2 border-base-100 relative">
-            <div class="absolute top-0 right-0 w-max z-20">
-                 <div class="join">
-                     <button
-                        class="btn btn-soft btn-sm join-item"
-                        (click)="formSvc.toggleCookiePreviewMode()"
-                    >
-                        @if(formSvc.cookiesPreviewMode()) {
-                            <lucide-angular [img]="PreviewCloseIcon"  class="size-5"/>
-                        }@else{
-                        <lucide-angular [img]="PreviewOpenIcon"  class="size-5"/>
-                        }
-                    </button>
-                 </div>
-            </div>
+            <div class="flex-1 flex overflow-auto shadow-md border-2 border-base-100">
             @if(formSvc.cookiesPreviewMode()){
                 <div class="flex-1 flex flex-col gap-2 p-2">
                 @for(item of formSvc.res()?.cookies; track item.name){
@@ -132,7 +118,7 @@ import { FormService } from "@/services";
                 </div>
             }
             @else {
-                 <div class="flex-1 flex flex-col overflow-auto gap-2 p-2">
+                 <div class="flex-1 flex flex-col gap-2 p-2">
                     @for(item of formSvc.res()?.cookies; track item.name){
                       <p class="p-2 shadow-md border-2 border-base-100">
                        Set-Cookie: {{item.raw}}
@@ -159,5 +145,5 @@ export class ResCookies {
 
 	readonly NoneIcon = Ban;
 
-	formSvc = inject(FormService);
+	readonly formSvc = inject(FormService);
 }

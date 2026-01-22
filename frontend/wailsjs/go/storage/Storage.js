@@ -10,8 +10,20 @@ export function AddDraft(arg1) {
   return window['go']['storage']['Storage']['AddDraft'](arg1);
 }
 
+export function AddEnvironment(arg1) {
+  return window['go']['storage']['Storage']['AddEnvironment'](arg1);
+}
+
+export function AddEnvironmentDraft(arg1) {
+  return window['go']['storage']['Storage']['AddEnvironmentDraft'](arg1);
+}
+
 export function AddFreshDraft(arg1) {
   return window['go']['storage']['Storage']['AddFreshDraft'](arg1);
+}
+
+export function AddFreshEnvDraft(arg1) {
+  return window['go']['storage']['Storage']['AddFreshEnvDraft'](arg1);
 }
 
 export function ChooseFile() {
@@ -30,6 +42,10 @@ export function DeleteDraftsUnderCollection(arg1) {
   return window['go']['storage']['Storage']['DeleteDraftsUnderCollection'](arg1);
 }
 
+export function DeleteEnvDraftsUnderEnv(arg1) {
+  return window['go']['storage']['Storage']['DeleteEnvDraftsUnderEnv'](arg1);
+}
+
 export function DeleteRequestDrafts(arg1) {
   return window['go']['storage']['Storage']['DeleteRequestDrafts'](arg1);
 }
@@ -46,8 +62,16 @@ export function FindDraftIdsByCollection(arg1) {
   return window['go']['storage']['Storage']['FindDraftIdsByCollection'](arg1);
 }
 
+export function FindEnvDraft(arg1) {
+  return window['go']['storage']['Storage']['FindEnvDraft'](arg1);
+}
+
 export function GetAllCollections() {
   return window['go']['storage']['Storage']['GetAllCollections']();
+}
+
+export function GetEnvironments() {
+  return window['go']['storage']['Storage']['GetEnvironments']();
 }
 
 export function GetSavedRequests() {
@@ -62,12 +86,24 @@ export function RemoveDraft(arg1) {
   return window['go']['storage']['Storage']['RemoveDraft'](arg1);
 }
 
+export function RemoveEnv(arg1) {
+  return window['go']['storage']['Storage']['RemoveEnv'](arg1);
+}
+
+export function RemoveEnvDraft(arg1) {
+  return window['go']['storage']['Storage']['RemoveEnvDraft'](arg1);
+}
+
 export function RenameCollection(arg1, arg2) {
   return window['go']['storage']['Storage']['RenameCollection'](arg1, arg2);
 }
 
 export function SaveDraftAsRequest(arg1) {
   return window['go']['storage']['Storage']['SaveDraftAsRequest'](arg1);
+}
+
+export function SaveEnvDraftAsEnv(arg1) {
+  return window['go']['storage']['Storage']['SaveEnvDraftAsEnv'](arg1);
 }
 
 export function SaveFile(arg1) {
@@ -80,6 +116,30 @@ export function SaveRequestCopy(arg1) {
 
 export function UpdateActiveTab(arg1) {
   return window['go']['storage']['Storage']['UpdateActiveTab'](arg1);
+}
+
+export function UpdateAlwaysDiscardDraftsPreference(arg1) {
+  return window['go']['storage']['Storage']['UpdateAlwaysDiscardDraftsPreference'](arg1);
+}
+
+export function UpdateAlwaysDiscardEnvDraftsPreference(arg1) {
+  return window['go']['storage']['Storage']['UpdateAlwaysDiscardEnvDraftsPreference'](arg1);
+}
+
+export function UpdateDraftApiKeyAuth(arg1) {
+  return window['go']['storage']['Storage']['UpdateDraftApiKeyAuth'](arg1);
+}
+
+export function UpdateDraftAuthEnabled(arg1) {
+  return window['go']['storage']['Storage']['UpdateDraftAuthEnabled'](arg1);
+}
+
+export function UpdateDraftAuthType(arg1) {
+  return window['go']['storage']['Storage']['UpdateDraftAuthType'](arg1);
+}
+
+export function UpdateDraftBasicAuth(arg1) {
+  return window['go']['storage']['Storage']['UpdateDraftBasicAuth'](arg1);
 }
 
 export function UpdateDraftBinaryBody(arg1) {
@@ -114,12 +174,20 @@ export function UpdateDraftTextBody(arg1) {
   return window['go']['storage']['Storage']['UpdateDraftTextBody'](arg1);
 }
 
+export function UpdateDraftTokenAuth(arg1) {
+  return window['go']['storage']['Storage']['UpdateDraftTokenAuth'](arg1);
+}
+
 export function UpdateDraftUrl(arg1) {
   return window['go']['storage']['Storage']['UpdateDraftUrl'](arg1);
 }
 
 export function UpdateDraftUrlEncodedForm(arg1) {
   return window['go']['storage']['Storage']['UpdateDraftUrlEncodedForm'](arg1);
+}
+
+export function UpdateEnvDraftData(arg1) {
+  return window['go']['storage']['Storage']['UpdateEnvDraftData'](arg1);
 }
 
 export function UpdateLayoutPreference(arg1) {

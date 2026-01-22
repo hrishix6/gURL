@@ -9,25 +9,25 @@ import { BulkKeyValEditor } from "./bulk.editor";
 @Component({
 	selector: "app-req-cookies",
 	template: `
-   <div class="flex-1 py-2 px-1 overflow-y-auto">
-         @if(formSvc.bulkEditModeCookies()){
+   <div class="flex-1 p-1 overflow-y-auto">
+         @if(f.cookieSvc.bulkEditModeCookies()){
          <app-bulk-keyval-editor
           [editInstructions]="bulkcookieEditInstruction"
           [parseFn]="parseCookieTextFn"
-          [initialValue]="formSvc.bulkCookiesText()"
-          (onChange)="formSvc.bulkUpdateCookieParams($event)"
+          [initialValue]="f.cookieSvc.bulkCookiesText()"
+          (onChange)="f.bulkUpdateCookieParams($event)"
           >
         </app-bulk-keyval-editor>
       }
       @else {
          <app-keyval-item
           [placeholderId]="placeHolderId"
-          [items]="formSvc.cookies()"
-          (onDelete)="formSvc.deleteCookie($event)"
-          (onKeyUpdate)="formSvc.updateCookie($event.id, 'key', $event.v)"
-          (onValUpdate)="formSvc.updateCookie($event.id, 'val', $event.v)"
-          (onBlur)="formSvc.addCookie()"
-          (onEnabledUpdate)="formSvc.updateCookie($event.id, 'enabled', $event.v)">
+          [items]="f.cookieSvc.cookies()"
+          (onDelete)="f.deleteCookie($event)"
+          (onKeyUpdate)="f.updateCookie($event.id, 'key', $event.v)"
+          (onValUpdate)="f.updateCookie($event.id, 'val', $event.v)"
+          (onBlur)="f.cookieSvc.addCookie()"
+          (onEnabledUpdate)="f.updateCookie($event.id, 'enabled', $event.v)">
         </app-keyval-item>
       }
    </div>
@@ -42,5 +42,5 @@ export class ReqCookies {
 	readonly parseCookieTextFn = parseTextAsCookies;
 
 	readonly placeHolderId = COOKIE_PLACEHOLDER;
-	readonly formSvc = inject(FormService);
+	readonly f = inject(FormService);
 }

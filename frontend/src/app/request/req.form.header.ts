@@ -9,6 +9,7 @@ import {
 	Trash2,
 } from "lucide-angular";
 import { AppDropdown } from "@/common/components";
+import { HighlightedInput } from "@/common/components/highlighted.input";
 import { REQ_METHODS } from "@/constants";
 import { SaveRequestModal } from "@/modals/save.request";
 import { FormService } from "@/services";
@@ -20,31 +21,39 @@ import type { RequestMethod } from "@/types";
     <div class="flex gap-2.5 p-2 bg-base-300 items-center rounded-box">
       <app-dropdown
         [items]="reqMethods"
-        [activeItem]="this.formSvc.method()"
+        [activeItem]="this.f.urlSvc.method()"
         [size]="'md'"
         [varient]="'ghost'"
         (onItemSelection)="handleActiveItemSelection($event)"
       >
     </app-dropdown>
       <div class="flex-1">
-        <input
+        <!-- <input
           type="text"
           [ngClass]="{
             'input w-full': true,
-            'input-primary input-ghost': formSvc.isValidUrl() || formSvc.url() === '',
-            'input-error': !formSvc.isValidUrl(),
+            'input-primary input-ghost': f.urlSvc.isValidUrl() || f.urlSvc.url() === '',
+            'input-error': !f.urlSvc.isValidUrl(),
           }"
           placeholder="https://example.com"
-          [value]="formSvc.url()"
-          (input)="formSvc.setUrl($event.target.value)"
-          (blur)="formSvc.parseUrl()"
-        />
+          [value]="f.urlSvc.url()"
+          (input)="f.setUrl($event.target.value)"
+          (blur)="f.parseUrl()"
+        /> -->
+        <div highlightedInp
+          [disabled]="false"
+          [placeHolder]="'https://example.com'"
+          [text]="f.urlSvc.url()"
+          (onInput)="f.setUrl($event)"
+          (blur)="f.parseUrl()"
+        >
+        </div>
       </div>
       <div class="flex gap-2.5">
         <button
           class="btn btn-soft btn-primary"
-          (click)="formSvc.send()"
-          [disabled]="formSvc.reqState() === 'progress'"
+          (click)="f.send()"
+          [disabled]="f.reqState() === 'progress'"
         >
           <lucide-angular [img]="SendIcon" class="size-6"></lucide-angular>
         </button>
@@ -63,7 +72,7 @@ import type { RequestMethod } from "@/types";
              </a>
             </li>
             <li class="my-0.5">
-              <a href="#" (click)="formSvc.copyRequest()">
+              <a href="#" (click)="f.copyRequest()">
                 <lucide-angular [img]="CopyIcon" class="size-4"  /> 
                  Copy
              </a>
@@ -72,12 +81,18 @@ import type { RequestMethod } from "@/types";
       </div>
       </div>
     </div>
-    @if(this.formSvc.isSaveRequestModalOpen()) {
+    @if(this.f.isSaveRequestModalOpen()) {
     <dialog saveRequestModal></dialog>
     }
 
   `,
-	imports: [LucideAngularModule, NgClass, AppDropdown, SaveRequestModal],
+	imports: [
+		LucideAngularModule,
+		NgClass,
+		AppDropdown,
+		SaveRequestModal,
+		HighlightedInput,
+	],
 })
 export class ReqFormHeader {
 	readonly SendIcon = ArrowRight;
@@ -88,20 +103,15 @@ export class ReqFormHeader {
 	readonly reqMethods = REQ_METHODS;
 
 	@HostBinding("class")
-	defaultClass = "flex flex-col gap-2 p-2 border-t-1 border-base-100";
+	defaultClass = "flex flex-col gap-2 p-2";
 
-	readonly formSvc = inject(FormService);
+	readonly f = inject(FormService);
 
 	handleActiveItemSelection(id: RequestMethod) {
-		this.formSvc.setSelectedMethod(id);
+		this.f.setMethod(id);
 	}
 
 	handleOpenSaveRequestModal() {
-		this.formSvc.toggleSaveRequestModal();
-	}
-
-	handleMethodChange(e: Event) {
-		const target = e.target as HTMLSelectElement;
-		this.formSvc.setSelectedMethod(target.value as RequestMethod);
+		this.f.toggleSaveRequestModal();
 	}
 }

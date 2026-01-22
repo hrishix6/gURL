@@ -6,7 +6,7 @@ import {
 	input,
 	output,
 } from "@angular/core";
-import { LucideAngularModule, X } from "lucide-angular";
+import { Container, LucideAngularModule, X } from "lucide-angular";
 import { ReqMethodTag } from "@/request/method.tag";
 import { TabsService } from "@/services";
 import type { ApplicationTab } from "@/types";
@@ -15,18 +15,28 @@ import type { ApplicationTab } from "@/types";
 	selector: `div[appReqTabHeader]`,
 	template: `
     <div class="flex flex-1 items-center gap-1.5 overflow-hidden">
-      <div methodTag [size]="'xs'" [method]="data().tag"></div>
+	   @switch (data().entityType) {
+		   	@case("req") {
+				<div methodTag [size]="'xs'" [method]="data().tag"></div>
+			}
+			@case("env") {
+				<lucide-angular [img]="EnvironmentIcon" class="size-4" />
+			}
+	    }
+	  	@if(data().isModified) {
+			<div aria-label="status" class="status status-md status-primary"></div>
+		}	
       <p class="truncate">
         {{ data().name }}
       </p>
     </div>
-    <button
-      class="btn btn-ghost btn-square btn-xs hover:bg-base-200"
-      (click)="handleClose($event)"
-      [disabled]="tabSvc.tabCount() === 1"
-    >
-      <lucide-angular [img]="CancelIcon" class="size-3" />
-    </button>
+	<button
+		class="btn btn-ghost btn-square btn-xs hover:bg-base-200"
+		(click)="handleClose($event)"
+		[disabled]="tabSvc.tabCount() === 1"
+		>
+		<lucide-angular [img]="CancelIcon" class="size-3" />
+	</button>
 	@if(isActive()){
 		<div class="absolute top-0 left-0 w-full h-0.5 bg-primary/75"></div>
 	}
@@ -35,6 +45,7 @@ import type { ApplicationTab } from "@/types";
 })
 export class TabHeader {
 	readonly CancelIcon = X;
+	readonly EnvironmentIcon = Container;
 	isActive = input.required<boolean>();
 	data = input.required<ApplicationTab>();
 	onCloseTab = output();

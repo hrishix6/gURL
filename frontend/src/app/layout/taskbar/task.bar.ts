@@ -1,6 +1,7 @@
 import { Component, HostBinding } from "@angular/core";
 import { BookOpen, Cog, LucideAngularModule } from "lucide-angular";
 import { AppCollectionsToggle } from "./collections.toggle";
+import { EnvironmentToggle } from "./env.toggle";
 import { AppHistoryToggle } from "./history.toggle";
 
 @Component({
@@ -14,6 +15,7 @@ import { AppHistoryToggle } from "./history.toggle";
       </div>
       <div appHistoryToggle></div>
       <div appCollectionsToggle></div>
+      <div appEnvironmentToggle></div>
     </header>
     <footer class="mt-auto flex justify-center flex-col">
       <button class="btn btn-sm btn-ghost">
@@ -21,7 +23,12 @@ import { AppHistoryToggle } from "./history.toggle";
       </button>
     </footer>
   `,
-	imports: [LucideAngularModule, AppHistoryToggle, AppCollectionsToggle],
+	imports: [
+		LucideAngularModule,
+		AppHistoryToggle,
+		AppCollectionsToggle,
+		EnvironmentToggle,
+	],
 })
 export class AppTaskbar {
 	readonly HomeImage = BookOpen;

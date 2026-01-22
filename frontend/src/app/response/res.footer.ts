@@ -22,16 +22,16 @@ import { FormService } from "@/services";
                         @if(!formSvc.res()?.limitExceeded){
                           @if(formSvc.res()?.body?.canRender){
                             <label class="label">
-                                <input type="checkbox" [checked]="!formSvc.previewMode()" (change)="formSvc.togglePreviewMode()" class="toggle" />
-                                <span class="text-xs">Download</span>
+                                <input type="checkbox" [checked]="formSvc.previewMode()" (change)="formSvc.togglePreviewMode()" class="toggle toggle-primary" />
+                                <span class="text-xs">Preview</span>
                             </label> 
                            }
                         }
                       }
                       @case("res_headers"){
-                        @if(formSvc.res()?.headers?.length){
+                        @if(formSvc.res()?.resHeaders?.length){
                             <label class="label">
-                                <input type="checkbox" [checked]="!formSvc.headersPreviewMode()" (change)="formSvc.toggleHeadersPreview()" class="toggle" />
+                                <input type="checkbox" [checked]="!formSvc.headersPreviewMode()" (change)="formSvc.toggleHeadersPreview()" class="toggle toggle-primary" />
                                  <span class="text-xs">Raw</span>
                             </label> 
                         }
@@ -39,7 +39,7 @@ import { FormService } from "@/services";
                       @case("res_cookies") {
                         @if(formSvc.res()?.cookies?.length){
                           <label class="label">
-                                <input type="checkbox" [checked]="!formSvc.cookiesPreviewMode()" (change)="formSvc.toggleCookiePreviewMode()" class="toggle" />
+                                <input type="checkbox" [checked]="!formSvc.cookiesPreviewMode()" (change)="formSvc.toggleCookiePreviewMode()" class="toggle toggle-primary" />
                                 <span class="text-xs">Raw</span>
                           </label> 
                         }
@@ -104,5 +104,5 @@ export class ResFooter {
 	});
 
 	@HostBinding("class")
-	def = "flex items-center px-2 py-1";
+	def = "flex items-center p-2";
 }

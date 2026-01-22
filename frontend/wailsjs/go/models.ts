@@ -14,6 +14,34 @@ export namespace models {
 	        this.name = source["name"];
 	    }
 	}
+	export class AddEnvironmentDTO {
+	    id: string;
+	    name: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new AddEnvironmentDTO(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.name = source["name"];
+	    }
+	}
+	export class AddEnvironmentDraftDTO {
+	    draftId: string;
+	    envId: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new AddEnvironmentDraftDTO(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.draftId = source["draftId"];
+	        this.envId = source["envId"];
+	    }
+	}
 	export class AddFreshDraftDTO {
 	    id: string;
 	
@@ -24,6 +52,36 @@ export namespace models {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
+	    }
+	}
+	export class ApiKeyAuth {
+	    key: string;
+	    value: string;
+	    location: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ApiKeyAuth(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.key = source["key"];
+	        this.value = source["value"];
+	        this.location = source["location"];
+	    }
+	}
+	export class BasicAuth {
+	    username: string;
+	    password: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new BasicAuth(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.username = source["username"];
+	        this.password = source["password"];
 	    }
 	}
 	export class CollectionDTO {
@@ -38,6 +96,42 @@ export namespace models {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
 	        this.name = source["name"];
+	    }
+	}
+	export class EnvironmentDTO {
+	    id: string;
+	    name: string;
+	    dataJSON: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new EnvironmentDTO(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.name = source["name"];
+	        this.dataJSON = source["dataJSON"];
+	    }
+	}
+	export class EnvironmentDraftDTO {
+	    id: string;
+	    name: string;
+	    dataJSON: string;
+	    parentEnvId: string;
+	    parentEnvName: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new EnvironmentDraftDTO(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.name = source["name"];
+	        this.dataJSON = source["dataJSON"];
+	        this.parentEnvId = source["parentEnvId"];
+	        this.parentEnvName = source["parentEnvName"];
 	    }
 	}
 	export class FileStats {
@@ -55,6 +149,58 @@ export namespace models {
 	        this.size = source["size"];
 	        this.path = source["path"];
 	    }
+	}
+	export class TokenAuth {
+	    type: string;
+	    token: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new TokenAuth(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.type = source["type"];
+	        this.token = source["token"];
+	    }
+	}
+	export class GurlAuth {
+	    authEnabled: boolean;
+	    authType: string;
+	    basicAuth: BasicAuth;
+	    apiKeyAuth: ApiKeyAuth;
+	    tokenAuth: TokenAuth;
+	
+	    static createFrom(source: any = {}) {
+	        return new GurlAuth(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.authEnabled = source["authEnabled"];
+	        this.authType = source["authType"];
+	        this.basicAuth = this.convertValues(source["basicAuth"], BasicAuth);
+	        this.apiKeyAuth = this.convertValues(source["apiKeyAuth"], ApiKeyAuth);
+	        this.tokenAuth = this.convertValues(source["tokenAuth"], TokenAuth);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
 	}
 	export class GurlKeyValItem {
 	    key: string;
@@ -126,6 +272,7 @@ export namespace models {
 	    multipart: GurlKeyValMultiPartItem[];
 	    plaintext: string;
 	    binary: string;
+	    auth: GurlAuth;
 	
 	    static createFrom(source: any = {}) {
 	        return new GurlReq(source);
@@ -144,6 +291,7 @@ export namespace models {
 	        this.multipart = this.convertValues(source["multipart"], GurlKeyValMultiPartItem);
 	        this.plaintext = source["plaintext"];
 	        this.binary = source["binary"];
+	        this.auth = this.convertValues(source["auth"], GurlAuth);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -199,7 +347,8 @@ export namespace models {
 	    status: number;
 	    statusText: string;
 	    success: boolean;
-	    headers: GurlKeyValItem[];
+	    reqHeaders: GurlKeyValItem[];
+	    resHeaders: GurlKeyValItem[];
 	    body?: GurlRenderMeta;
 	    cookies: GurlResCookie[];
 	    isFile: boolean;
@@ -222,7 +371,8 @@ export namespace models {
 	        this.status = source["status"];
 	        this.statusText = source["statusText"];
 	        this.success = source["success"];
-	        this.headers = this.convertValues(source["headers"], GurlKeyValItem);
+	        this.reqHeaders = this.convertValues(source["reqHeaders"], GurlKeyValItem);
+	        this.resHeaders = this.convertValues(source["resHeaders"], GurlKeyValItem);
 	        this.body = this.convertValues(source["body"], GurlRenderMeta);
 	        this.cookies = this.convertValues(source["cookies"], GurlResCookie);
 	        this.isFile = source["isFile"];
@@ -268,6 +418,11 @@ export namespace models {
 	    urlencoded: string;
 	    text: string;
 	    binary: string;
+	    authEnabled: boolean;
+	    authType: string;
+	    basicAuth: string;
+	    apiKeyAuth: string;
+	    tokenAuth: string;
 	    collectionId: string;
 	
 	    static createFrom(source: any = {}) {
@@ -288,6 +443,11 @@ export namespace models {
 	        this.urlencoded = source["urlencoded"];
 	        this.text = source["text"];
 	        this.binary = source["binary"];
+	        this.authEnabled = source["authEnabled"];
+	        this.authType = source["authType"];
+	        this.basicAuth = source["basicAuth"];
+	        this.apiKeyAuth = source["apiKeyAuth"];
+	        this.tokenAuth = source["tokenAuth"];
 	        this.collectionId = source["collectionId"];
 	    }
 	}
@@ -303,6 +463,11 @@ export namespace models {
 	    urlencoded: string;
 	    text: string;
 	    binary: string;
+	    authEnabled: boolean;
+	    authType: string;
+	    basicAuth: string;
+	    apiKeyAuth: string;
+	    tokenAuth: string;
 	    parentRequestId: string;
 	    parentRequestName: string;
 	    parentCollectionId: string;
@@ -324,6 +489,11 @@ export namespace models {
 	        this.urlencoded = source["urlencoded"];
 	        this.text = source["text"];
 	        this.binary = source["binary"];
+	        this.authEnabled = source["authEnabled"];
+	        this.authType = source["authType"];
+	        this.basicAuth = source["basicAuth"];
+	        this.apiKeyAuth = source["apiKeyAuth"];
+	        this.tokenAuth = source["tokenAuth"];
 	        this.parentRequestId = source["parentRequestId"];
 	        this.parentRequestName = source["parentRequestName"];
 	        this.parentCollectionId = source["parentCollectionId"];
@@ -347,6 +517,22 @@ export namespace models {
 	        this.name = source["name"];
 	    }
 	}
+	export class SaveEnvDraftAsEnvDTO {
+	    draftId: string;
+	    envId: string;
+	    name: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new SaveEnvDraftAsEnvDTO(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.draftId = source["draftId"];
+	        this.envId = source["envId"];
+	        this.name = source["name"];
+	    }
+	}
 	export class SaveRequestCopyDTO {
 	    sourceId: string;
 	    id: string;
@@ -363,11 +549,14 @@ export namespace models {
 	        this.name = source["name"];
 	    }
 	}
+	
 	export class UIStateDTO {
 	    openTabsJson: string;
 	    layout: string;
 	    activeTab: string;
 	    isSidebarOpen: boolean;
+	    alwaysDiscardDrafts: boolean;
+	    alwaysDiscardEnvDrafts: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new UIStateDTO(source);
@@ -379,6 +568,64 @@ export namespace models {
 	        this.layout = source["layout"];
 	        this.activeTab = source["activeTab"];
 	        this.isSidebarOpen = source["isSidebarOpen"];
+	        this.alwaysDiscardDrafts = source["alwaysDiscardDrafts"];
+	        this.alwaysDiscardEnvDrafts = source["alwaysDiscardEnvDrafts"];
+	    }
+	}
+	export class UpdateDraftApiKeyAuthDTO {
+	    requestId: string;
+	    apiKeyAuthJSON: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new UpdateDraftApiKeyAuthDTO(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.requestId = source["requestId"];
+	        this.apiKeyAuthJSON = source["apiKeyAuthJSON"];
+	    }
+	}
+	export class UpdateDraftAuthEnabledDTO {
+	    requestId: string;
+	    authEnabled: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new UpdateDraftAuthEnabledDTO(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.requestId = source["requestId"];
+	        this.authEnabled = source["authEnabled"];
+	    }
+	}
+	export class UpdateDraftAuthTypeDTO {
+	    requestId: string;
+	    authType: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new UpdateDraftAuthTypeDTO(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.requestId = source["requestId"];
+	        this.authType = source["authType"];
+	    }
+	}
+	export class UpdateDraftBasicAuthDTO {
+	    requestId: string;
+	    basicAuthJSON: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new UpdateDraftBasicAuthDTO(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.requestId = source["requestId"];
+	        this.basicAuthJSON = source["basicAuthJSON"];
 	    }
 	}
 	export class UpdateDraftBinaryBodyDTO {
@@ -493,6 +740,20 @@ export namespace models {
 	        this.textBody = source["textBody"];
 	    }
 	}
+	export class UpdateDraftTokenAuthDTO {
+	    requestId: string;
+	    tokenAuthJSON: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new UpdateDraftTokenAuthDTO(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.requestId = source["requestId"];
+	        this.tokenAuthJSON = source["tokenAuthJSON"];
+	    }
+	}
 	export class UpdateDraftUrlDTO {
 	    requestId: string;
 	    url: string;
@@ -519,6 +780,20 @@ export namespace models {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.requestId = source["requestId"];
 	        this.urlencodedJson = source["urlencodedJson"];
+	    }
+	}
+	export class UpdateEnvDraftDataDTO {
+	    draftId: string;
+	    dataJSON: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new UpdateEnvDraftDataDTO(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.draftId = source["draftId"];
+	        this.dataJSON = source["dataJSON"];
 	    }
 	}
 	export class UpdateOpenTabsDTO {

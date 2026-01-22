@@ -9,8 +9,11 @@ import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import type { models } from "@wailsjs/go/models";
 import {
 	AddDraft,
+	AddEnvironmentDraft,
 	AddFreshDraft,
+	AddFreshEnvDraft,
 	RemoveDraft,
+	RemoveEnvDraft,
 	UpdateActiveTab,
 	UpdateOpenTabs,
 } from "@wailsjs/go/storage/Storage";
@@ -30,9 +33,11 @@ export class TabsService {
 	private tabChanges$ = new Subject<ApplicationTab[]>();
 	private activeTabChanges$ = new Subject<string>();
 	private reqChanges$ = new Subject<string>();
+	private envDraftrmDbSync$ = new Subject<string>();
 	public tabCount = computed(() => this._openTabs().length);
-
-	public refreshNotifier = new Subject<void>();
+	public closeReqTabEvent$ = new Subject<ApplicationTab>();
+	public closeEnvTabEvent$ = new Subject<ApplicationTab>();
+	public refreshNotifier = new Subject<AppTabType>();
 
 	constructor() {
 		this.tabChanges$
@@ -63,12 +68,75 @@ export class TabsService {
 			},
 		});
 
+		this.envDraftrmDbSync$.pipe(takeUntilDestroyed(this.destoyRef)).subscribe({
+			next: (v) => {
+				RemoveEnvDraft(v)
+					.then(() => {
+						console.log(`env draft with id ${v} is deleted from db`);
+					})
+					.catch((_err) => {
+						console.log(`failed to delete env draft with id ${v} from db`);
+					});
+			},
+		});
+
 		this.activeTabChanges$.pipe(takeUntilDestroyed(this.destoyRef)).subscribe({
 			next: (v) => {
 				console.log(`saving tab ${v} as active in db`);
 				UpdateActiveTab(v);
 			},
 		});
+	}
+
+	public async createFreshEnvTab() {
+		try {
+			const newTab: ApplicationTab = {
+				id: nanoid(),
+				name: "New Environment",
+				tag: "ENV",
+				entityId: nanoid(),
+				entityType: AppTabType.Env,
+				isModified: false,
+			};
+
+			await AddFreshEnvDraft(newTab.entityId);
+
+			this._openTabs.update((prev) => {
+				const copy = [...prev, newTab];
+				this.tabChanges$.next(copy);
+				return copy;
+			});
+
+			this.setActiveTab(newTab.id);
+		} catch (_error) {}
+	}
+
+	public async createEnvTabFromSaved(item: models.EnvironmentDTO) {
+		try {
+			const newTab: ApplicationTab = {
+				id: nanoid(),
+				name: item.name,
+				tag: "ENV",
+				entityId: nanoid(),
+				entityType: AppTabType.Env,
+				isModified: false,
+			};
+
+			await AddEnvironmentDraft({
+				draftId: newTab.entityId,
+				envId: item.id,
+			});
+
+			this._openTabs.update((prev) => {
+				const copy = [...prev, newTab];
+				this.tabChanges$.next(copy);
+				return copy;
+			});
+
+			this.setActiveTab(newTab.id);
+		} catch (error) {
+			console.error(error);
+		}
 	}
 
 	public async createTabFromSaved(item: models.RequestDTO) {
@@ -88,6 +156,11 @@ export class TabsService {
 				multipart: item.multipart,
 				text: item.text,
 				urlencoded: item.urlencoded,
+				authEnabled: item.authEnabled,
+				authType: item.authType,
+				basicAuth: item.basicAuth,
+				apiKeyAuth: item.apiKeyAuth,
+				tokenAuth: item.tokenAuth,
 			};
 
 			console.dir(newDraft);
@@ -100,6 +173,7 @@ export class TabsService {
 				tag: item.method,
 				entityId: newDraft.id,
 				entityType: AppTabType.Req,
+				isModified: false,
 			};
 
 			this._openTabs.update((prev) => {
@@ -120,10 +194,11 @@ export class TabsService {
 
 			const newTab: ApplicationTab = {
 				id: nanoid(),
-				name: newDraft.url,
+				name: newDraft.url || "New Request",
 				tag: newDraft.method,
 				entityId: newDraft.id,
 				entityType: AppTabType.Req,
+				isModified: false,
 			};
 
 			this._openTabs.update((prev) => {
@@ -155,6 +230,11 @@ export class TabsService {
 				multipart: JSON.stringify(item.multiPartBody),
 				text: item.textBody,
 				urlencoded: JSON.stringify(item.urlEncodedBody),
+				authEnabled: item.authEnabled,
+				authType: item.authType || "no_auth",
+				basicAuth: item.basicAuth ? JSON.stringify(item.basicAuth) : "",
+				apiKeyAuth: item.apiKeyAuth ? JSON.stringify(item.apiKeyAuth) : "",
+				tokenAuth: item.tokenAuth ? JSON.stringify(item.tokenAuth) : "",
 			};
 
 			await AddDraft(newDraft);
@@ -165,6 +245,7 @@ export class TabsService {
 				tag: item.method,
 				entityId: newDraft.id,
 				entityType: AppTabType.Req,
+				isModified: false,
 			};
 
 			this._openTabs.update((prev) => {
@@ -191,6 +272,7 @@ export class TabsService {
 				entityType: AppTabType.Req,
 				name: "New Request",
 				tag: "GET",
+				isModified: false,
 			};
 
 			await AddFreshDraft(newDraft);
@@ -207,17 +289,34 @@ export class TabsService {
 		}
 	}
 
-	public deleteTab(id: string) {
+	public emitTabCloseEvent(tabId: string) {
+		const tab = this._openTabs().find((x) => x.id === tabId);
+
+		if (!tab) {
+			return;
+		}
+
+		if (this.tabCount() === 1) {
+			return;
+		}
+
+		if (tab.entityType === AppTabType.Env) {
+			this.closeEnvTabEvent$.next(tab);
+		}
+
+		if (tab.entityType === AppTabType.Req) {
+			this.closeReqTabEvent$.next(tab);
+		}
+	}
+
+	public deleteTab(id: string, tabType: AppTabType) {
 		this._openTabs.update((prev) => {
-			if (prev.length === 1) {
-				return prev;
-			}
-			const i = prev.findIndex((x) => x.id === id);
+			const i = prev.findIndex((x) => x.id === id && x.entityType === tabType);
 			if (i === -1) {
 				return prev;
 			}
 
-			if (this._activeTab() === id) {
+			if (this.activeTab() === id) {
 				const nextTab = prev[i + 1];
 				const prevTab = prev[i - 1];
 				const newTabId = nextTab?.id || prevTab?.id || null;
@@ -225,7 +324,14 @@ export class TabsService {
 				this.setActiveTab(newTabId);
 			}
 
-			this.reqChanges$.next(prev[i].entityId);
+			if (tabType === AppTabType.Req) {
+				this.reqChanges$.next(prev[i].entityId);
+			}
+
+			if (tabType === AppTabType.Env) {
+				this.envDraftrmDbSync$.next(prev[i].entityId);
+			}
+
 			const copy = prev.filter((x) => x.id !== id);
 			this.tabChanges$.next(copy);
 
@@ -236,6 +342,18 @@ export class TabsService {
 	public setActiveTab(id: string | null) {
 		this._activeTab.set(id);
 		this.activeTabChanges$.next(id || "");
+	}
+
+	public updateModifiedStatus(isModified: boolean) {
+		const i = this._openTabs().findIndex((x) => x.id === this._activeTab());
+
+		if (i === -1) {
+			return;
+		}
+		const copy = [...this._openTabs()];
+		copy[i].isModified = isModified;
+		this._openTabs.set(copy);
+		this.tabChanges$.next(copy);
 	}
 
 	public updateActiveTab(
@@ -249,34 +367,15 @@ export class TabsService {
 				return prev;
 			}
 			const copy = [...prev];
-			copy[i][prop] = v;
-
-			this.tabChanges$.next(copy);
-			return copy;
-		});
-	}
-
-	public closeTabs(deletedEntities: string[]) {
-		this._openTabs.update((prev) => {
-			const copy = prev.filter((x) => !deletedEntities.includes(x.entityId));
-
-			const currentActiveTab = prev.find((x) => x.id === this.activeTab());
-
-			if (
-				currentActiveTab &&
-				deletedEntities.includes(currentActiveTab.entityId)
-			) {
-				if (copy.length) {
-					this.setActiveTab(copy[0].id);
-				}
+			switch (prop) {
+				case "name":
+					copy[i][prop] = v || "New Request";
+					break;
+				case "tag":
+					copy[i][prop] = v;
+					break;
 			}
-
 			this.tabChanges$.next(copy);
-
-			if (!copy.length) {
-				this.createFreshTab();
-			}
-
 			return copy;
 		});
 	}

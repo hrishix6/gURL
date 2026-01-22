@@ -5,6 +5,7 @@ import { ChooseFile } from "@wailsjs/go/storage/Storage";
 import { Eraser, LucideAngularModule, Paperclip, X } from "lucide-angular";
 import type { MultipartItem } from "@/types";
 import { humanBytes } from "../utils/time";
+import { HighlightedInput } from "./highlighted.input";
 
 @Component({
 	selector: "app-multipart-item",
@@ -18,27 +19,25 @@ import { humanBytes } from "../utils/time";
         [checked]="item.enabled === 'on'"
         (change)="handleEnable(item.id, $event)"
       />
-      <div class="flex-1">
-        <input
-          type="text"
-          placeholder="key"
-          class="input input-sm w-full input-ghost bg-base-300 input-primary xl:input-md"
-          [value]="item.key"
-          (input)="handleUpdateKey(item.id, $event.target.value)"
-          (blur)="handleBlur()"
-        />
+      <div
+        highlightedInp
+        [placeHolder]="'key'"
+        [disabled]="false"
+        [text]="item.key"
+        (onInput)="handleUpdateKey(item.id, $event)"
+        (onBlur)="handleBlur()"
+      >
       </div>
       <div class="flex-2 relative">
         @if(typeof item.val === 'string'){
-        <input
-          type="text"
-          placeholder="value"
-          class="input input-sm w-full input-ghost bg-base-300 input-primary xl:input-md"
+        <div
+          highlightedInp
+          [placeHolder]="'value'"
           [disabled]="item.key == '' || item.key.trim() == ''"
-          [value]="item.val"
-          (input)="handleUpdateVal(item.id, $event.target.value)"
-          (blur)="handleBlur()"
-        />
+          [text]="item.val"
+          (onInput)="handleUpdateVal(item.id, $event)"
+          (onBlur)="handleBlur()"
+         ></div>
         }@else {
         <input
           type="text"
@@ -75,7 +74,7 @@ import { humanBytes } from "../utils/time";
       </div>
       <button
         [ngClass]="{
-          'btn btn-xs btn-ghost xl:btn-sm': true,
+          'btn btn-xs btn-ghost btn-square xl:btn-sm': true,
         }"
         [disabled]="item.id === placeholderId()"
         (click)="handleDeleteItem(item.id)"
@@ -85,7 +84,7 @@ import { humanBytes } from "../utils/time";
     </div>
     }
   `,
-	imports: [LucideAngularModule, NgClass],
+	imports: [LucideAngularModule, NgClass, HighlightedInput],
 })
 export class MultiPartFormItem {
 	@HostBinding("class")

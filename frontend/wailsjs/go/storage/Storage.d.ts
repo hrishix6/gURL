@@ -6,7 +6,13 @@ export function AddCollection(arg1:models.AddCollectionDTO):Promise<void>;
 
 export function AddDraft(arg1:models.RequestDraftDTO):Promise<void>;
 
+export function AddEnvironment(arg1:models.AddEnvironmentDTO):Promise<void>;
+
+export function AddEnvironmentDraft(arg1:models.AddEnvironmentDraftDTO):Promise<void>;
+
 export function AddFreshDraft(arg1:models.AddFreshDraftDTO):Promise<void>;
+
+export function AddFreshEnvDraft(arg1:string):Promise<void>;
 
 export function ChooseFile():Promise<models.FileStats>;
 
@@ -16,6 +22,8 @@ export function DeleteCollection(arg1:string):Promise<void>;
 
 export function DeleteDraftsUnderCollection(arg1:string):Promise<void>;
 
+export function DeleteEnvDraftsUnderEnv(arg1:string):Promise<void>;
+
 export function DeleteRequestDrafts(arg1:string):Promise<void>;
 
 export function DeleteSavedReq(arg1:string):Promise<void>;
@@ -24,7 +32,11 @@ export function FindDraftById(arg1:string):Promise<models.RequestDraftDTO>;
 
 export function FindDraftIdsByCollection(arg1:string):Promise<Array<string>>;
 
+export function FindEnvDraft(arg1:string):Promise<models.EnvironmentDraftDTO>;
+
 export function GetAllCollections():Promise<Array<models.CollectionDTO>>;
+
+export function GetEnvironments():Promise<Array<models.EnvironmentDTO>>;
 
 export function GetSavedRequests():Promise<Array<models.RequestDTO>>;
 
@@ -32,15 +44,33 @@ export function GetUIState():Promise<models.UIStateDTO>;
 
 export function RemoveDraft(arg1:string):Promise<void>;
 
+export function RemoveEnv(arg1:string):Promise<void>;
+
+export function RemoveEnvDraft(arg1:string):Promise<void>;
+
 export function RenameCollection(arg1:string,arg2:string):Promise<void>;
 
 export function SaveDraftAsRequest(arg1:models.SaveDraftAsReqDTO):Promise<void>;
+
+export function SaveEnvDraftAsEnv(arg1:models.SaveEnvDraftAsEnvDTO):Promise<void>;
 
 export function SaveFile(arg1:string):Promise<void>;
 
 export function SaveRequestCopy(arg1:models.SaveRequestCopyDTO):Promise<void>;
 
 export function UpdateActiveTab(arg1:string):Promise<void>;
+
+export function UpdateAlwaysDiscardDraftsPreference(arg1:boolean):Promise<void>;
+
+export function UpdateAlwaysDiscardEnvDraftsPreference(arg1:boolean):Promise<void>;
+
+export function UpdateDraftApiKeyAuth(arg1:models.UpdateDraftApiKeyAuthDTO):Promise<void>;
+
+export function UpdateDraftAuthEnabled(arg1:models.UpdateDraftAuthEnabledDTO):Promise<void>;
+
+export function UpdateDraftAuthType(arg1:models.UpdateDraftAuthTypeDTO):Promise<void>;
+
+export function UpdateDraftBasicAuth(arg1:models.UpdateDraftBasicAuthDTO):Promise<void>;
 
 export function UpdateDraftBinaryBody(arg1:models.UpdateDraftBinaryBodyDTO):Promise<void>;
 
@@ -58,9 +88,13 @@ export function UpdateDraftQuery(arg1:models.UpdateDraftQueryDTO):Promise<void>;
 
 export function UpdateDraftTextBody(arg1:models.UpdateDraftTextBodyDTO):Promise<void>;
 
+export function UpdateDraftTokenAuth(arg1:models.UpdateDraftTokenAuthDTO):Promise<void>;
+
 export function UpdateDraftUrl(arg1:models.UpdateDraftUrlDTO):Promise<void>;
 
 export function UpdateDraftUrlEncodedForm(arg1:models.UpdateDraftUrlEncodedFormDTO):Promise<void>;
+
+export function UpdateEnvDraftData(arg1:models.UpdateEnvDraftDataDTO):Promise<void>;
 
 export function UpdateLayoutPreference(arg1:string):Promise<void>;
 

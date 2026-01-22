@@ -1,5 +1,6 @@
 import {
 	Component,
+	computed,
 	type ElementRef,
 	HostBinding,
 	inject,
@@ -7,6 +8,7 @@ import {
 } from "@angular/core";
 import { LucideAngularModule, Plus } from "lucide-angular";
 import { AppDropdown } from "@/common/components";
+import { EnvironmentTab } from "@/environments/environment.tab";
 import { AppService, TabsService } from "@/services";
 import { RequestTab } from "./req.tab";
 import { TabHeader } from "./req.tab.header";
@@ -14,7 +16,7 @@ import { TabHeader } from "./req.tab.header";
 @Component({
 	selector: "section[appReqTabs]",
 	template: `
-    <div class="flex items-center relative px-2 py-1">
+    <div class="flex items-center relative py-1 px-2 border-b-2 border-base-100">
       <!-- Button to add  new tab -->
       <button class="btn btn-ghost btn-square btn-sm mr-1" (click)="tabsSvc.createFreshTab()">
         <lucide-angular [img]="PlusIcon" class="size-4" />
@@ -30,7 +32,7 @@ import { TabHeader } from "./req.tab.header";
           appReqTabHeader
           [data]="tab"
           [isActive]="tabsSvc.activeTab() === tab.id"
-          (onCloseTab)="tabsSvc.deleteTab(tab.id)"
+          (onCloseTab)="tabsSvc.emitTabCloseEvent(tab.id)"
           (onSelectTab)="tabsSvc.setActiveTab(tab.id)"
         ></div>
         }
@@ -41,8 +43,8 @@ import { TabHeader } from "./req.tab.header";
           class="pointer-events-none absolute -left-10 top-0 h-full w-10 bg-linear-to-r from-transparent to-bg-base-100/5"
         ></div>
           <app-dropdown
-              [activeItem]="appSvc.activeEnvironment()"
-              [items]="appSvc.environments()"
+              [activeItem]="activeItem()!"
+              [items]="appSvc.environmentDropdownItems()"
               (onItemSelection)="appSvc.setActiveEnvironment($event)"
               [size]="'md'"
               [align]="'end'"
@@ -53,20 +55,43 @@ import { TabHeader } from "./req.tab.header";
       </div>
     </div>
     <!-- Tab content view -->
-    @for (tab of tabsSvc.openTabs(); track tab.id) { @switch (tab.entityType) { @case ("req") {
-            <app-request-tab
-              [tabId]="tab.id"
-              [draftId]="tab.entityId"
-              [activeId]="tabsSvc.activeTab()"
-        ></app-request-tab>
-    } } }
+    @for (tab of tabsSvc.openTabs(); track tab.id) {        
+
+      @if(tab.entityType === 'req') {
+        <app-request-tab
+                [tabId]="tab.id"
+                [draftId]="tab.entityId"
+                [activeId]="tabsSvc.activeTab()"
+          ></app-request-tab>
+      }
+      
+      @if(tab.entityType === 'env') {
+        <app-env-tab
+        [tab]="tab"
+        [activeId]="tabsSvc.activeTab()"
+        >
+        </app-env-tab>
+      }
+    } 
   `,
-	imports: [LucideAngularModule, TabHeader, RequestTab, AppDropdown],
+	imports: [
+		LucideAngularModule,
+		TabHeader,
+		RequestTab,
+		AppDropdown,
+		EnvironmentTab,
+	],
 })
 export class AppTabsWrapper {
 	readonly PlusIcon = Plus;
 	readonly tabsSvc = inject(TabsService);
 	readonly appSvc = inject(AppService);
+
+	activeItem = computed(() => {
+		return this.appSvc
+			.environmentDropdownItems()
+			.find((x) => x.id === this.appSvc.activeEnvironment());
+	});
 
 	@HostBinding("class")
 	def = "flex-1 flex flex-col overflow-hidden";

@@ -22,7 +22,7 @@ import type { DropDownItem } from "@/types";
             </div>
           <ul
             tabindex="-1"
-            class="menu menu-{{size()}} dropdown-content bg-base-100 rounded-box z-1 w-max p-2 shadow-sm"
+            class="menu menu-{{size()}} dropdown-content bg-base-100 rounded-box z-50 w-max p-2 shadow-sm"
           >
            @for (item of items(); track item.id) {
           <li class="my-0.5">

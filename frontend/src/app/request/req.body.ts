@@ -15,40 +15,40 @@ import { FileInput } from "./file.input";
 @Component({
 	selector: "app-req-body",
 	template: `
-    <div class="flex-1 overflow-y-auto relative px-1 py-2">
-      @switch (formSvc.bodyType().id) { @case("none") {
+    <div class="flex-1 overflow-y-auto relative p-1">
+      @switch (f.bodySvc.bodyType().id) { @case("none") {
       <div class="absolute top-0 left-0 w-full h-full flex items-center justify-center opacity-10">
         <lucide-angular [img]="NoneIcon" class="size-16 -z-10" />
       </div>
       } @case("multipart"){
         <app-multipart-item
             [placeholderId]="placeHolderMultipartId"
-            [items]="formSvc.multipartForm()"
-            (onDelete)="formSvc.deleteMultipartItem($event)"
-            (onKeyUpdate)="formSvc.updateMultiPartField($event.id, 'key', $event.v)"
-            (onValUpdate)="formSvc.updateMultipartFieldValue($event.id, $event.v)"
-            (onBlur)="formSvc.addMultiPartField()"
-            (onEnabledUpdate)="formSvc.updateMultiPartField($event.id, 'enabled', $event.v)"
-            (onClearFileInput)="formSvc.clearMultipartFileInput($event.id)"
+            [items]="f.bodySvc.multipartForm()"
+            (onDelete)="f.deleteMultipartItem($event)"
+            (onKeyUpdate)="f.updateMultiPartField($event.id, 'key', $event.v)"
+            (onValUpdate)="f.updateMultipartFieldValue($event.id, $event.v)"
+            (onBlur)="f.bodySvc.addMultiPartField()"
+            (onEnabledUpdate)="f.updateMultiPartField($event.id, 'enabled', $event.v)"
+            (onClearFileInput)="f.clearMultipartFileInput($event.id)"
           />
       } @case("urlencoded"){
-        @if(formSvc.bulkEditModeUrlEncodedForm()){
+        @if(f.bodySvc.bulkEditModeUrlEncodedForm()){
             <app-bulk-keyval-editor
             [editInstructions]="bulkUrlFormEditInstruction"
             [parseFn]="parseTextAsKeyValFn"
-            [initialValue]="formSvc.bulkUrlEncodedFormText()"
-            (onChange)="formSvc.bulkUpdateUrlEncodedForm($event)"
+            [initialValue]="f.bodySvc.bulkUrlEncodedFormText()"
+            (onChange)="f.bulkUpdateUrlEncodedForm($event)"
             >
            </app-bulk-keyval-editor>
         }@else {
            <app-keyval-item
           [placeholderId]="placeHolderUrlEncodedId"
-          [items]="formSvc.urlEncodedParams()"
-          (onDelete)="formSvc.deleteUrlEncodedField($event)"
-          (onKeyUpdate)="formSvc.updateUrlEncodedField($event.id, 'key', $event.v)"
-          (onValUpdate)="formSvc.updateUrlEncodedField($event.id, 'val', $event.v)"
-          (onBlur)="formSvc.addUrlEncodedField()"
-          (onEnabledUpdate)="formSvc.updateUrlEncodedField($event.id, 'enabled', $event.v)"
+          [items]="f.bodySvc.urlEncodedParams()"
+          (onDelete)="f.deleteUrlEncodedField($event)"
+          (onKeyUpdate)="f.updateUrlEncodedField($event.id, 'key', $event.v)"
+          (onValUpdate)="f.updateUrlEncodedField($event.id, 'val', $event.v)"
+          (onBlur)="f.bodySvc.addUrlEncodedField()"
+          (onEnabledUpdate)="f.updateUrlEncodedField($event.id, 'enabled', $event.v)"
       />
         }
      
@@ -56,19 +56,19 @@ import { FileInput } from "./file.input";
       <textarea
         class="textarea textarea-ghost textarea-primary bg-base-300 xl:textarea-lg w-full h-full"
         (input)="handleTextBodyUpdate($event)"
-        [value]="formSvc.textBody()"
+        [value]="f.bodySvc.textBody()"
       ></textarea>
       } @case("xml") {
       <textarea
         class="textarea textarea-ghost textarea-primary bg-base-300 xl:textarea-lg w-full h-full"
         (input)="handleTextBodyUpdate($event)"
-        [value]="formSvc.textBody()"
+        [value]="f.bodySvc.textBody()"
       ></textarea>
       } @case ("plaintext") {
       <textarea
         class="textarea textarea-ghost textarea-primary bg-base-300 xl:textarea-lg w-full h-full"
         (input)="handleTextBodyUpdate($event)"
-        [value]="formSvc.textBody()"
+        [value]="f.bodySvc.textBody()"
       ></textarea>
       } @case ("binary") {
       <div class="absolute top-0 left-0 w-full h-full flex justify-center items-center">
@@ -94,13 +94,13 @@ export class ReqBody {
 	@HostBinding("class")
 	defaultClass = "flex-1 flex flex-col overflow-hidden";
 
-	readonly formSvc = inject(FormService);
+	readonly f = inject(FormService);
 
 	readonly bulkUrlFormEditInstruction = BULK_EDIT_INSTRUCTION;
 	readonly parseTextAsKeyValFn = parseTextAsKeyVal;
 
 	handleTextBodyUpdate(e: Event) {
 		const target = e.target as HTMLInputElement;
-		this.formSvc.setTextBody(target.value);
+		this.f.setTextBody(target.value);
 	}
 }

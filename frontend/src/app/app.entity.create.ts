@@ -6,7 +6,7 @@ import {
 	LucideAngularModule,
 	Plus,
 } from "lucide-angular";
-import { AppService } from "./services";
+import { AppService, TabsService } from "./services";
 
 @Component({
 	selector: `div[appEntityCreation]`,
@@ -24,7 +24,7 @@ import { AppService } from "./services";
 			<lucide-angular [img]="CollectionsIcon" class="size-4"  />
 			Collection
 		</button>
-		 <button>
+		 <button (click)="handleNewEnvironmentCreation()">
 			<lucide-angular [img]="EnvironmentIcon" class="size-4"  />
 			Environment
 		</button>
@@ -43,9 +43,16 @@ export class AppEntityCreationButton {
 	def = "dropdown dropdown-end";
 
 	appSvc = inject(AppService);
+	tabSvc = inject(TabsService);
 
 	toggleCollectionModal() {
 		this.appSvc.toggleCollectionModal();
+		const activeElement = document.activeElement as HTMLAnchorElement;
+		activeElement?.blur();
+	}
+
+	handleNewEnvironmentCreation() {
+		this.tabSvc.createFreshEnvTab();
 		const activeElement = document.activeElement as HTMLAnchorElement;
 		activeElement?.blur();
 	}

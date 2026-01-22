@@ -9,25 +9,25 @@ import { BulkKeyValEditor } from "./bulk.editor";
 @Component({
 	selector: "app-req-query",
 	template: `
-  <div class="flex-1 overflow-y-auto px-1 py-2">
-     @if(formSvc.bulkEditModeQuery()){
+  <div class="flex-1 overflow-y-auto p-1">
+     @if(f.urlSvc.bulkEditModeQuery()){
          <app-bulk-keyval-editor
           [editInstructions]="bulkQueryEditInstruction"
           [parseFn]="parseTextAsKeyValFn"
-          [initialValue]="formSvc.bulkQueryParamText()"
-          (onChange)="formSvc.bulkUpdateQueryParams($event)"
+          [initialValue]="f.urlSvc.bulkQueryParamText()"
+          (onChange)="f.bulkUpdateQueryParams($event)"
           >
         </app-bulk-keyval-editor>
       }
       @else {
         <app-keyval-item
         [placeholderId]="placeHolderQueryId"
-        [items]="formSvc.queryParams()"
-        (onDelete)="formSvc.deleteQueryParam($event)"
-        (onKeyUpdate)="formSvc.updateQueryParam($event.id, 'key', $event.v)"
-        (onValUpdate)="formSvc.updateQueryParam($event.id, 'val', $event.v)"
-        (onEnabledUpdate)="formSvc.updateQueryParam($event.id, 'enabled', $event.v)"
-        (onBlur)="formSvc.addQueryParam()"
+        [items]="f.urlSvc.queryParams()"
+        (onDelete)="f.deleteQueryParam($event)"
+        (onKeyUpdate)="f.updateQueryParam($event.id, 'key', $event.v)"
+        (onValUpdate)="f.updateQueryParam($event.id, 'val', $event.v)"
+        (onEnabledUpdate)="f.updateQueryParam($event.id, 'enabled', $event.v)"
+        (onBlur)="f.urlSvc.addQueryParam()"
         >
         </app-keyval-item>
       }
@@ -43,7 +43,7 @@ export class ReqQuery {
 	readonly parseTextAsKeyValFn = parseTextAsKeyVal;
 
 	readonly placeHolderQueryId = QID_PLACEHOLDER;
-	readonly formSvc = inject(FormService);
+	readonly f = inject(FormService);
 
 	readonly bulkEditInstructions =
 		"Each entry must be on new line\nKey and value are delimited by ' : '\nTo keep item disabled start the row with ' # '";

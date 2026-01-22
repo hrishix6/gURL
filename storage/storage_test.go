@@ -13,7 +13,7 @@ import (
 	"gorm.io/gorm"
 )
 
-var storage *Storage
+var storage Storage
 var testDb *gorm.DB
 
 func TestMain(m *testing.M) {

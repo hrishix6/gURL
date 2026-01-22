@@ -7,11 +7,12 @@ import {
 	input,
 	type OnInit,
 } from "@angular/core";
+import { DraftSavePreferenceModal } from "@/modals/draft.save.preference";
 import { RequestFormDetails } from "@/request/req.form.details";
 import { ReqFormHeader } from "@/request/req.form.header";
 import { ResponseDetails } from "@/response/res.details";
-import { AppService, FormService } from "@/services";
-import { FormLayout } from "@/types";
+import { AppService, FormService, TabsService } from "@/services";
+import { AppTabType, FormLayout } from "@/types";
 
 @Component({
 	selector: `app-request-tab`,
@@ -22,14 +23,33 @@ import { FormLayout } from "@/types";
       <div class="p-px bg-base-100"></div>
       <app-res-details></app-res-details>
     </div>
+	@if(
+      !appSvc.alwaysDiscardDrafts() && formSvc.isDraftSavePreferenceModalOpen()
+    ){
+      <dialog draftSavePreferenceModal
+	    [title]="formSvc.saveDraftModalTitle()"
+		[message]="formSvc.saveDraftModalMessage()"
+        [isOpen]="formSvc.isDraftSavePreferenceModalOpen()"
+        (onSave)="handleSaveDraft()"
+        (onCancel)="handleClose()"
+        (onNoSave)="handleNoSaveDraft($event)"
+      ></dialog>
+    }
   `,
-	imports: [ReqFormHeader, RequestFormDetails, ResponseDetails, NgClass],
+	imports: [
+		ReqFormHeader,
+		RequestFormDetails,
+		ResponseDetails,
+		NgClass,
+		DraftSavePreferenceModal,
+	],
 	providers: [FormService],
 })
 export class RequestTab implements OnInit {
 	activeId = input.required<string | null>();
 	tabId = input.required<string>();
 	draftId = input.required<string>();
+	tabSvc = inject(TabsService);
 
 	layoutClass = computed(() => {
 		const layout = this.appSvc.formLayout();
@@ -67,5 +87,20 @@ export class RequestTab implements OnInit {
 	ngOnInit(): void {
 		console.log(`called`);
 		this.formSvc.initializeReqForm(this.draftId());
+	}
+
+	handleSaveDraft() {
+		this.formSvc.toggleDraftSavePreferenceModal();
+		this.formSvc.toggleSaveRequestModal();
+	}
+
+	handleClose() {
+		this.formSvc.toggleDraftSavePreferenceModal();
+	}
+
+	handleNoSaveDraft(alwaysDiscard: boolean) {
+		this.appSvc.setAlwaysDiscardDrafts(alwaysDiscard);
+		this.tabSvc.deleteTab(this.tabId(), AppTabType.Req);
+		this.formSvc.toggleDraftSavePreferenceModal();
 	}
 }

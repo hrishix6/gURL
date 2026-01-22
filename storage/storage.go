@@ -21,14 +21,14 @@ type Storage struct {
 	appCtx context.Context
 }
 
-func NewStorage(db *gorm.DB) *Storage {
-	return &Storage{
+func NewStorage(db *gorm.DB) Storage {
+	return Storage{
 		db: db,
 	}
 }
 
-func NewTestStorage(db *gorm.DB, appCtx context.Context) *Storage {
-	return &Storage{
+func NewTestStorage(db *gorm.DB, appCtx context.Context) Storage {
+	return Storage{
 		db:     db,
 		appCtx: appCtx,
 	}
@@ -37,16 +37,16 @@ func NewTestStorage(db *gorm.DB, appCtx context.Context) *Storage {
 func Startup(s *Storage, appCtx context.Context) error {
 	log.Println("[Storage] Initialization Started")
 
-	//store app context
 	s.appCtx = appCtx
 
-	//migrate
 	err := s.db.AutoMigrate(
 		&db.UIState{},
 		&db.Collection{},
 		&db.RequestDraft{},
 		&db.Request{},
 		&db.MimeRecord{},
+		&db.EnvironmentDraft{},
+		&db.Environment{},
 	)
 
 	if err != nil {
@@ -313,6 +313,56 @@ func (s *Storage) UpdateDraftBodyType(dto models.UpdateDraftBodyTypeDTO) error {
 	return nil
 }
 
+func (s *Storage) UpdateDraftBasicAuth(dto models.UpdateDraftBasicAuthDTO) error {
+	_, err := gorm.G[db.RequestDraft](s.db).Where("id = ?", dto.RequestId).Update(s.appCtx, "basicAuth", datatypes.JSON([]byte(dto.BasicAuthJSON)))
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *Storage) UpdateDraftApiKeyAuth(dto models.UpdateDraftApiKeyAuthDTO) error {
+	_, err := gorm.G[db.RequestDraft](s.db).Where("id = ?", dto.RequestId).Update(s.appCtx, "apiKeyAuth", datatypes.JSON([]byte(dto.ApiKeyAuthJSON)))
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *Storage) UpdateDraftTokenAuth(dto models.UpdateDraftTokenAuthDTO) error {
+	_, err := gorm.G[db.RequestDraft](s.db).Where("id = ?", dto.RequestId).Update(s.appCtx, "tokenAuth", datatypes.JSON([]byte(dto.TokenAuthJSON)))
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *Storage) UpdateDraftAuthEnabled(dto models.UpdateDraftAuthEnabledDTO) error {
+	_, err := gorm.G[db.RequestDraft](s.db).Where("id = ?", dto.RequestId).Update(s.appCtx, "authEnabled", dto.AuthEnabled)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *Storage) UpdateDraftAuthType(dto models.UpdateDraftAuthTypeDTO) error {
+	_, err := gorm.G[db.RequestDraft](s.db).Where("id = ?", dto.RequestId).Update(s.appCtx, "authType", dto.AuthType)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (s *Storage) updateDraftParents(id string, delta map[string]interface{}) error {
 	tx := s.db.Model(&db.RequestDraft{}).Where("id = ?", id).Updates(delta)
 
@@ -423,15 +473,27 @@ func (s *Storage) GetUIState() (*models.UIStateDTO, error) {
 	}
 
 	return &models.UIStateDTO{
-		OpenTabs:      string(r.OpenTabs),
-		Layout:        r.Layout,
-		ActiveTab:     r.ActiveTab,
-		IsSidebarOpen: r.IsSidebarOpen,
+		OpenTabs:               string(r.OpenTabs),
+		Layout:                 r.Layout,
+		ActiveTab:              r.ActiveTab,
+		IsSidebarOpen:          r.IsSidebarOpen,
+		AlwaysDiscard:          r.AlwaysDiscardDrafts,
+		AlwaysDiscardEnvDrafts: r.AlwaysDiscardEnvDrafts,
 	}, nil
 }
 
 func (s *Storage) UpdateActiveTab(tabId string) error {
 	_, err := gorm.G[db.UIState](s.db).Where("id = ?", db.DEFAULT_UI_STATE_ID).Update(s.appCtx, "activeTab", tabId)
+	return err
+}
+
+func (s *Storage) UpdateAlwaysDiscardDraftsPreference(alwaysDiscard bool) error {
+	_, err := gorm.G[db.UIState](s.db).Where("id = ?", db.DEFAULT_UI_STATE_ID).Update(s.appCtx, "alwaysDiscardDrafts", alwaysDiscard)
+	return err
+}
+
+func (s *Storage) UpdateAlwaysDiscardEnvDraftsPreference(alwaysDiscard bool) error {
+	_, err := gorm.G[db.UIState](s.db).Where("id = ?", db.DEFAULT_UI_STATE_ID).Update(s.appCtx, "alwaysDiscardEnvDrafts", alwaysDiscard)
 	return err
 }
 
@@ -582,6 +644,189 @@ func (s *Storage) SaveFile(srcFilePath string) error {
 
 	if err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (s *Storage) GetEnvironments() ([]models.EnvironmentDTO, error) {
+
+	envs, err := gorm.G[db.Environment](s.db).Find(s.appCtx)
+
+	if err != nil {
+		return []models.EnvironmentDTO{}, err
+	}
+
+	var results = []models.EnvironmentDTO{}
+
+	for _, env := range envs {
+		results = append(results, env.ToEnvironmentDTO())
+	}
+
+	return results, nil
+}
+
+func (s *Storage) AddEnvironment(dto models.AddEnvironmentDTO) error {
+	return gorm.G[db.Environment](s.db).Create(s.appCtx, &db.Environment{
+		Id:   dto.Id,
+		Name: dto.Name,
+	})
+}
+
+func (s *Storage) addEnv(r *db.Environment) error {
+	return gorm.G[db.Environment](s.db).Create(s.appCtx, r)
+}
+
+func (s *Storage) FindEnvDraft(id string) (models.EnvironmentDraftDTO, error) {
+	r, err := gorm.G[db.EnvironmentDraft](s.db).Where("id = ?", id).First(s.appCtx)
+
+	if err != nil {
+		return models.EnvironmentDraftDTO{}, err
+	}
+
+	return r.ToEnvironmentDraftDTO(), nil
+}
+
+func (s *Storage) AddFreshEnvDraft(id string) error {
+	return gorm.G[db.EnvironmentDraft](s.db).Create(s.appCtx, &db.EnvironmentDraft{
+		Id:   id,
+		Name: "New Environment",
+	})
+}
+
+func (s *Storage) AddEnvironmentDraft(dto models.AddEnvironmentDraftDTO) error {
+
+	newDraft := &db.EnvironmentDraft{}
+
+	env, err := gorm.G[db.Environment](s.db).Where("id = ?", dto.EnvId).First(s.appCtx)
+
+	if err != nil {
+		return err
+	}
+
+	newDraft.FromEnvironment(dto, &env)
+
+	return gorm.G[db.EnvironmentDraft](s.db).Create(s.appCtx, newDraft)
+}
+
+func (s *Storage) RemoveEnvDraft(id string) error {
+	_, err := gorm.G[db.EnvironmentDraft](s.db).Where("id = ?", id).Delete(s.appCtx)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *Storage) RemoveEnv(id string) error {
+	_, err := gorm.G[db.Environment](s.db).Where("id = ?", id).Delete(s.appCtx)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *Storage) UpdateEnvDraftData(dto models.UpdateEnvDraftDataDTO) error {
+
+	_, err := gorm.G[db.EnvironmentDraft](s.db).Where("id = ?", dto.DraftId).Update(s.appCtx, "data",
+		datatypes.JSON([]byte(dto.DataJSON)),
+	)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *Storage) findEnvDraft(id string) (db.EnvironmentDraft, error) {
+	return gorm.G[db.EnvironmentDraft](s.db).Where("id = ?", id).First(s.appCtx)
+}
+
+func (s *Storage) findEnv(id string) (db.Environment, error) {
+	return gorm.G[db.Environment](s.db).Where("id = ?", id).First(s.appCtx)
+}
+
+func (s *Storage) updateEnvDraftParents(id string, delta map[string]any) error {
+	tx := s.db.Model(&db.EnvironmentDraft{}).Where("id = ?", id).Updates(delta)
+
+	if tx.Error != nil {
+		return tx.Error
+	}
+
+	return nil
+}
+
+func (s *Storage) SaveEnvDraftAsEnv(dto models.SaveEnvDraftAsEnvDTO) error {
+
+	draft, err := s.findEnvDraft(dto.DraftId)
+
+	if err != nil {
+		return err
+	}
+
+	//update draft
+	err = s.updateEnvDraftParents(dto.DraftId, map[string]any{
+		"parentEnvId":   dto.EnvId,
+		"parentEnvName": dto.Name,
+	})
+
+	if err != nil {
+		return err
+	}
+
+	existing, err := s.findEnv(dto.EnvId)
+
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			env := &db.Environment{}
+
+			env.FromEnvironmentDraft(&dto, &draft)
+
+			createErr := s.addEnv(env)
+
+			if createErr != nil {
+				return createErr
+			}
+
+			return nil
+		} else {
+			return err
+		}
+	}
+
+	//delete existing env and instead create new record.
+	err = s.RemoveEnv(existing.Id)
+
+	if err != nil {
+		return err
+	}
+
+	//create new env with same id and new data
+	env := &db.Environment{}
+
+	env.FromEnvironmentDraft(&dto, &draft)
+
+	createErr := s.addEnv(env)
+
+	if createErr != nil {
+		return createErr
+	}
+
+	return nil
+}
+
+func (s *Storage) DeleteEnvDraftsUnderEnv(envId string) error {
+	tx := s.db.Model(&db.EnvironmentDraft{}).Where("parentEnvId = ?", envId).Updates(map[string]any{
+		"parentEnvId":   "",
+		"parentEnvName": "",
+	})
+
+	if tx.Error != nil {
+		return tx.Error
 	}
 
 	return nil

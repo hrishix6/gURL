@@ -83,27 +83,27 @@ func main() {
 
 	// Create application with options
 	err = wails.Run(&options.App{
-		Title: "gURL v0.4.0",
+		Title: "gURL v0.5.0",
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},
 		BackgroundColour: &options.RGBA{R: 27, G: 38, B: 54, A: 1},
 		OnStartup: func(ctx context.Context) {
-			err := storage.Startup(storageInstance, ctx)
+			err := storage.Startup(&storageInstance, ctx)
 
 			if err != nil {
 				log.Fatalf("unable to initialize storage %v", err)
 			}
 
-			err = executor.Startup(executorInstance, ctx, mimedbJson)
+			err = executor.Startup(&executorInstance, ctx, mimedbJson)
 
 			if err != nil {
 				log.Fatalf("unable to initialize executor %v", err)
 			}
 		},
 		OnBeforeClose: func(ctx context.Context) (prevent bool) {
-			storage.Shutdown(storageInstance)
-			executor.Shutdown(executorInstance, ctx)
+			storage.Shutdown(&storageInstance)
+			executor.Shutdown(&executorInstance, ctx)
 
 			return false
 		},
@@ -112,8 +112,8 @@ func main() {
 		MinHeight:        1280,
 		DisableResize:    false,
 		Bind: []interface{}{
-			storageInstance,
-			executorInstance,
+			&storageInstance,
+			&executorInstance,
 		},
 		Linux: &linux.Options{
 			WebviewGpuPolicy:    linux.WebviewGpuPolicyAlways,

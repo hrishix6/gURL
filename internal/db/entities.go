@@ -7,11 +7,6 @@ import (
 	"gorm.io/datatypes"
 )
 
-const (
-	DEFAULT_COLLECTION  = "gurl_default_collection"
-	DEFAULT_UI_STATE_ID = "gurl_ui_state"
-)
-
 type MimeRecord struct {
 	Id         string `gorm:"primaryKey"`
 	Extensions string //comma separated list of extensions
@@ -32,13 +27,15 @@ func (mr *MimeRecord) FromJsonRecord(key string, record models.MimeData) MimeRec
 }
 
 type UIState struct {
-	Id            string         `gorm:"primaryKey;column:id"`
-	OpenTabs      datatypes.JSON `gorm:"column:openTabs;default:'[]'"`
-	ActiveTab     string         `gorm:"column:activeTab"`
-	IsSidebarOpen bool           `gorm:"column:sidebarOpen;default:false"`
-	Layout        string         `gorm:"column:layout;default:r"`
-	Created       int            `gorm:"autoCreateTime;column:created"`
-	UpdatedAt     int            `gorm:"autoUpdateTime;column:updated"`
+	Id                     string         `gorm:"primaryKey;column:id"`
+	OpenTabs               datatypes.JSON `gorm:"column:openTabs;default:'[]'"`
+	ActiveTab              string         `gorm:"column:activeTab"`
+	IsSidebarOpen          bool           `gorm:"column:sidebarOpen;default:false"`
+	AlwaysDiscardDrafts    bool           `gorm:"column:alwaysDiscardDrafts;default:false"`
+	AlwaysDiscardEnvDrafts bool           `gorm:"column:alwaysDiscardEnvDrafts;default:false"`
+	Layout                 string         `gorm:"column:layout;default:r"`
+	Created                int            `gorm:"autoCreateTime;column:created"`
+	UpdatedAt              int            `gorm:"autoUpdateTime;column:updated"`
 }
 
 type Collection struct {
@@ -70,6 +67,11 @@ type RequestDraft struct {
 	BinaryBody         datatypes.JSON `gorm:"column:binarybody"`
 	Method             string         `gorm:"column:method;default:GET"`
 	BodyType           string         `gorm:"column:bodyType;default:none"`
+	AuthEnabled        bool           `gorm:"column:authEnabled;default:false"`
+	AuthType           string         `gorm:"column:authType;default:no_auth"`
+	BasicAuth          datatypes.JSON `gorm:"column:basicAuth"`
+	ApiKeyAuth         datatypes.JSON `gorm:"column:apiKeyAuth"`
+	TokenAuth          datatypes.JSON `gorm:"column:tokenAuth"`
 	ParentRequestId    string         `gorm:"column:parentRequestId"`
 	ParentRequestName  string         `gorm:"column:parentRequestName"`
 	ParentCollectionId string         `gorm:"column:parentCollectionId"`
@@ -97,6 +99,13 @@ func (r *RequestDraft) FromRequestDraftDTO(dto *models.RequestDraftDTO) {
 	r.UrlEncodedForm = datatypes.JSON([]byte(dto.UrlEncodedFormBody))
 	r.MultipartForm = datatypes.JSON([]byte(dto.MultipartFormBody))
 	r.BinaryBody = datatypes.JSON([]byte(dto.BinaryBody))
+
+	//auth
+	r.ApiKeyAuth = datatypes.JSON([]byte(dto.ApiKeyAuth))
+	r.BasicAuth = datatypes.JSON([]byte(dto.BasicAuth))
+	r.TokenAuth = datatypes.JSON([]byte(dto.TokenAuth))
+	r.AuthType = dto.AuthType
+	r.AuthEnabled = dto.AuthEnabled
 }
 
 func (r *RequestDraft) ToRequestDraftDTO() *models.RequestDraftDTO {
@@ -115,6 +124,11 @@ func (r *RequestDraft) ToRequestDraftDTO() *models.RequestDraftDTO {
 		ParentRequestId:    r.ParentRequestId,
 		ParentRequestName:  r.ParentRequestName,
 		ParentCollectionId: r.ParentCollectionId,
+		AuthEnabled:        r.AuthEnabled,
+		AuthType:           r.AuthType,
+		BasicAuth:          string(r.BasicAuth),
+		ApiKeyAuth:         string(r.ApiKeyAuth),
+		TokenAuth:          string(r.TokenAuth),
 	}
 }
 
@@ -131,6 +145,11 @@ type Request struct {
 	BinaryBody     datatypes.JSON `gorm:"column:binarybody"`
 	Method         string         `gorm:"column:method;default:GET"`
 	BodyType       string         `gorm:"column:bodyType;default:none"`
+	AuthEnabled    bool           `gorm:"column:authEnabled;default:false"`
+	AuthType       string         `gorm:"column:authType;default:no_auth"`
+	BasicAuth      datatypes.JSON `gorm:"column:basicAuth"`
+	ApiKeyAuth     datatypes.JSON `gorm:"column:apiKeyAuth"`
+	TokenAuth      datatypes.JSON `gorm:"column:tokenAuth"`
 	CollectionId   string         `gorm:"not null"`
 	Collection     Collection     `gorm:"constraint:OnDelete:CASCADE;"`
 	Created        int            `gorm:"autoCreateTime;column:created"`
@@ -152,6 +171,11 @@ func (r *Request) ToRequestDTO() *models.RequestDTO {
 		TextBody:           r.TextBody,
 		BinaryBody:         string(r.BinaryBody),
 		CollectionId:       r.CollectionId,
+		AuthEnabled:        r.AuthEnabled,
+		AuthType:           r.AuthType,
+		BasicAuth:          string(r.BasicAuth),
+		ApiKeyAuth:         string(r.ApiKeyAuth),
+		TokenAuth:          string(r.TokenAuth),
 	}
 }
 
@@ -173,4 +197,73 @@ func (r *Request) FromRequestDraft(payload *models.SaveDraftAsReqDTO, dto *Reque
 	r.BinaryBody = dto.BinaryBody
 	r.CollectionId = payload.CollectionId
 	r.Name = payload.Name
+
+	//auth
+	r.ApiKeyAuth = dto.ApiKeyAuth
+	r.BasicAuth = dto.BasicAuth
+	r.TokenAuth = dto.TokenAuth
+	r.AuthType = dto.AuthType
+	r.AuthEnabled = dto.AuthEnabled
+}
+
+type EnvironmentDraft struct {
+	Id            string         `gorm:"primaryKey"`
+	Name          string         `gorm:"column:name"`
+	Data          datatypes.JSON `gorm:"column:data;default:'[]'"`
+	ParentEnvId   string         `gorm:"column:parentEnvId"`
+	ParentEnvName string         `gorm:"column:parentEnvName"`
+	Created       int            `gorm:"autoCreateTime;column:created"`
+	UpdatedAt     int            `gorm:"autoUpdateTime;column:updated"`
+}
+
+func (ed *EnvironmentDraft) ToEnvironmentDraftDTO() models.EnvironmentDraftDTO {
+
+	return models.EnvironmentDraftDTO{
+		Id:            ed.Id,
+		Name:          ed.Name,
+		Data:          string(ed.Data),
+		ParentEnvId:   ed.ParentEnvId,
+		ParentEnvName: ed.ParentEnvName,
+	}
+}
+
+func (ed *EnvironmentDraft) FromEnvironment(dto models.AddEnvironmentDraftDTO, e *Environment) {
+
+	if ed == nil {
+		ed = &EnvironmentDraft{}
+	}
+
+	ed.Id = dto.DraftId
+	ed.Name = e.Name
+	ed.ParentEnvName = e.Name
+	ed.ParentEnvId = e.Id
+	ed.Data = e.Data
+}
+
+type Environment struct {
+	Id        string         `gorm:"primaryKey"`
+	Name      string         `gorm:"column:name"`
+	Data      datatypes.JSON `gorm:"column:data;default:'[]'"`
+	Created   int            `gorm:"autoCreateTime;column:created"`
+	UpdatedAt int            `gorm:"autoUpdateTime;column:updated"`
+}
+
+func (e *Environment) ToEnvironmentDTO() models.EnvironmentDTO {
+
+	return models.EnvironmentDTO{
+		Id:   e.Id,
+		Name: e.Name,
+		Data: string(e.Data),
+	}
+}
+
+func (e *Environment) FromEnvironmentDraft(dto *models.SaveEnvDraftAsEnvDTO, env *EnvironmentDraft) {
+
+	if e == nil {
+		e = &Environment{}
+	}
+
+	e.Id = dto.EnvId
+	e.Name = dto.Name
+	e.Data = env.Data
 }

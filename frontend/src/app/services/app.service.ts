@@ -13,13 +13,18 @@ import {
 	ClearCollection,
 	DeleteCollection,
 	DeleteDraftsUnderCollection,
+	DeleteEnvDraftsUnderEnv,
 	DeleteRequestDrafts,
 	DeleteSavedReq,
 	GetAllCollections,
+	GetEnvironments,
 	GetSavedRequests,
 	GetUIState,
+	RemoveEnv,
 	RenameCollection,
 	SaveRequestCopy,
+	UpdateAlwaysDiscardDraftsPreference,
+	UpdateAlwaysDiscardEnvDraftsPreference,
 	UpdateLayoutPreference,
 	UpdateSideBarPreference,
 } from "@wailsjs/go/storage/Storage";
@@ -27,6 +32,9 @@ import { nanoid } from "nanoid";
 import { debounceTime, Subject } from "rxjs";
 import {
 	DEFAULT_THEME,
+	ENV_TOKEN_REGEX,
+	ENV_VAR_REGEX,
+	NO_ENV_ID,
 	SUPPORTED_THEMES,
 	THEME_LOCALSTORAGE_KEY,
 } from "@/constants";
@@ -37,7 +45,10 @@ import {
 	AppTabType,
 	type AppTheme,
 	type DropDownItem,
+	type EnvironmentItem,
 	FormLayout,
+	type GlobalEnvMap,
+	type InputToken,
 	type ReqHistoryItem,
 } from "@/types";
 import { TabsService } from "./tabs.service";
@@ -50,6 +61,27 @@ export class AppService {
 	public appState = computed(() => this._appState());
 	private tabSvc = inject(TabsService);
 	private destoyRef = inject(DestroyRef);
+	private discardReqDraftsDbSync$ = new Subject<boolean>();
+	private discardEnvDraftsDbSync$ = new Subject<boolean>();
+	public activeEnvChange$ = new Subject<void>();
+
+	private _alwaysDiscardReqDrafts = signal<boolean>(false);
+	public alwaysDiscardDrafts = computed(() => this._alwaysDiscardReqDrafts());
+
+	public setAlwaysDiscardDrafts(v: boolean) {
+		this._alwaysDiscardReqDrafts.set(v);
+		this.discardReqDraftsDbSync$.next(v);
+	}
+
+	private _alwaysDiscardEnvDrafts = signal<boolean>(false);
+	public alwaysDiscardEnvDrafts = computed(() =>
+		this._alwaysDiscardEnvDrafts(),
+	);
+
+	public setAlwaysDiscardEnvDrafts(v: boolean) {
+		this._alwaysDiscardEnvDrafts.set(v);
+		this.discardEnvDraftsDbSync$.next(v);
+	}
 
 	public activeItemInfo = signal<ActiveItemInfo>({
 		show: false,
@@ -59,26 +91,142 @@ export class AppService {
 	});
 
 	//#region environments
-	private _environments = signal<DropDownItem<string>[]>([
-		{
-			id: "none",
-			displayName: "No environment",
-		},
-	]);
+	public extractEnvTokens(v: string): InputToken[] {
+		const tokens: InputToken[] = [];
+		if (v && v.trim() !== "") {
+			v.split(ENV_TOKEN_REGEX).forEach((word) => {
+				if (word.match(ENV_TOKEN_REGEX) !== null) {
+					const innerVar = word.match(ENV_VAR_REGEX);
+					const varKey = innerVar ? innerVar[1] : "";
+					const envToken: InputToken = {
+						type: "env",
+						value: word,
+						valid: false,
+						key: varKey,
+						interpolated: "",
+					};
 
-	private _activeEnvironment = signal<DropDownItem<string>>(
-		this._environments()[0],
-	);
+					[envToken.valid, envToken.interpolated] =
+						this.validateInterpolatedToken(envToken);
+					tokens.push(envToken);
+				} else {
+					if (word !== "") {
+						tokens.push({
+							type: "text",
+							value: word,
+							valid: true,
+							key: "",
+							interpolated: "",
+						});
+					}
+				}
+			});
+		}
+		return tokens;
+	}
 
-	public environments = computed(() => this._environments());
+	public interPolateEnvTokens(v: string): string {
+		let o = "";
+
+		const tokens = this.extractEnvTokens(v);
+
+		if (!tokens.length) {
+			return o;
+		}
+
+		for (const token of tokens) {
+			if (token.type === "env") {
+				o += token.valid ? token.interpolated : "";
+			}
+
+			if (token.type === "text") {
+				o += token.value;
+			}
+		}
+
+		return o;
+	}
+
+	public validateInterpolatedToken(token: InputToken): [boolean, string] {
+		const currentEnv = this.activeEnvironment();
+		if (!currentEnv) {
+			return [false, ""];
+		}
+
+		const env = this._globalEnvMap()[currentEnv];
+
+		if (!env) {
+			return [false, ""];
+		}
+
+		if (!Object.keys(env).length) {
+			return [false, ""];
+		}
+
+		if (token.key in env) {
+			return [!!env[token.key], env[token.key] || ""];
+		}
+
+		return [false, ""];
+	}
+
+	private _envSearchKey = signal<string>("");
+
+	public refreshEnvs$ = new Subject<void>();
+
+	public envSearchKeyChange$ = new Subject<string>();
+
+	private _environments = signal<models.EnvironmentDTO[]>([]);
+	public environments = computed(() => {
+		const key = this._envSearchKey().toLocaleLowerCase();
+		if (!key) {
+			return this._environments();
+		}
+
+		return this._environments().filter((env) =>
+			env.name.toLocaleLowerCase().includes(key),
+		);
+	});
+
+	private _globalEnvMap = signal<GlobalEnvMap>({});
+
+	public isEnvWithSameNameExists(name: string) {
+		const exists = this._environments().findIndex((x) => x.name === name);
+		return exists !== -1;
+	}
+
+	public environmentDropdownItems = computed<DropDownItem<string>[]>(() => {
+		const t = this._environments().map((env) => ({
+			id: env.id,
+			displayName: env.name,
+		}));
+
+		return [{ id: NO_ENV_ID, displayName: "No Environment" }, ...t];
+	});
+
+	private _activeEnvironment = signal<string>(NO_ENV_ID);
+
 	public activeEnvironment = computed(() => this._activeEnvironment());
 
 	public setActiveEnvironment(id: string) {
-		const index = this._environments().findIndex((x) => x.id === id);
+		const index = this.environmentDropdownItems().findIndex((x) => x.id === id);
 		if (index > -1) {
-			this._activeEnvironment.set(this._environments()[index]);
+			this._activeEnvironment.set(id);
+			this.activeEnvChange$.next();
 		}
 	}
+
+	public async DeleteEnv(id: string) {
+		try {
+			await RemoveEnv(id);
+			await DeleteEnvDraftsUnderEnv(id);
+			await this.initializeEnvironments();
+			this.tabSvc.refreshNotifier.next(AppTabType.Env);
+		} catch (error) {
+			console.error(error);
+		}
+	}
+
 	//#endregion environments
 
 	//#region history
@@ -133,7 +281,7 @@ export class AppService {
 			await DeleteRequestDrafts(requestId);
 			//refresh from db
 			await this.initializeSavedRequests();
-			this.tabSvc.refreshNotifier.next();
+			this.tabSvc.refreshNotifier.next(AppTabType.Req);
 		} catch (error) {
 			console.error(error);
 		}
@@ -152,7 +300,6 @@ export class AppService {
 	//#endregion requests
 
 	//#region collections
-	public refreshCollections$ = new Subject<void>();
 	public collectionSearchKeyChange$ = new Subject<string>();
 	private _collections = signal<models.CollectionDTO[]>([]);
 	private _collectionSearchKey = signal<string>("");
@@ -165,7 +312,7 @@ export class AppService {
 		};
 		try {
 			await AddCollection(newCollection);
-			this.refreshCollections$.next();
+			await this.initializeCollections();
 		} catch (error) {
 			console.error(error);
 		} finally {
@@ -181,7 +328,7 @@ export class AppService {
 
 			await this.initializeCollections();
 			await this.initializeSavedRequests();
-			this.tabSvc.refreshNotifier.next();
+			this.tabSvc.refreshNotifier.next(AppTabType.Req);
 		} catch (error) {
 			console.error(error);
 		}
@@ -190,7 +337,7 @@ export class AppService {
 	public async renameCollection(id: string, name: string) {
 		try {
 			await RenameCollection(id, name);
-			this.refreshCollections$.next();
+			await this.initializeCollections();
 		} catch (error) {
 			console.error(error);
 		}
@@ -203,7 +350,7 @@ export class AppService {
 
 			//refresh from db
 			await this.initializeSavedRequests();
-			this.tabSvc.refreshNotifier.next();
+			this.tabSvc.refreshNotifier.next(AppTabType.Req);
 		} catch (error) {
 			console.error(error);
 		}
@@ -320,6 +467,28 @@ export class AppService {
 			}
 		});
 
+		effect(() => {
+			const environments = this._environments();
+			const globalMap = environments.reduce((acc, curr) => {
+				const { id, dataJSON } = curr;
+				if (dataJSON && dataJSON.trim() !== "") {
+					const parsed = JSON.parse(dataJSON) as EnvironmentItem[];
+					acc[id] = parsed.reduce(
+						(acc, curr) => {
+							acc[curr.key] = curr.val;
+							return acc;
+						},
+						{} as Record<string, string>,
+					);
+				}
+
+				return acc;
+			}, {} as GlobalEnvMap);
+
+			this._globalEnvMap.set(globalMap);
+			this.activeEnvChange$.next();
+		});
+
 		this.layoutChange$.pipe(takeUntilDestroyed(this.destoyRef)).subscribe({
 			next: (v) => {
 				console.log(`saving layout preference ${v} in db`);
@@ -335,12 +504,11 @@ export class AppService {
 				},
 			});
 
-		this.refreshCollections$
-			.pipe(takeUntilDestroyed(this.destoyRef))
+		this.envSearchKeyChange$
+			.pipe(takeUntilDestroyed(this.destoyRef), debounceTime(500))
 			.subscribe({
-				next: () => {
-					console.log(`refreshing collections from db`);
-					this.initializeCollections();
+				next: (v) => {
+					this._envSearchKey.set(v);
 				},
 			});
 
@@ -352,6 +520,13 @@ export class AppService {
 					this.initializeSavedRequests();
 				},
 			});
+
+		this.refreshEnvs$.pipe(takeUntilDestroyed(this.destoyRef)).subscribe({
+			next: () => {
+				console.log(`refreshing envs from db`);
+				this.initializeEnvironments();
+			},
+		});
 
 		this.collectionSearchKeyChange$
 			.pipe(takeUntilDestroyed(this.destoyRef), debounceTime(500))
@@ -370,6 +545,26 @@ export class AppService {
 					});
 				},
 			});
+
+		this.discardReqDraftsDbSync$
+			.pipe(takeUntilDestroyed(this.destoyRef))
+			.subscribe({
+				next: (v) => {
+					UpdateAlwaysDiscardDraftsPreference(v).then(() => {
+						console.log(`always discard drafts preference saved to db`);
+					});
+				},
+			});
+
+		this.discardEnvDraftsDbSync$
+			.pipe(takeUntilDestroyed(this.destoyRef))
+			.subscribe({
+				next: (v) => {
+					UpdateAlwaysDiscardEnvDraftsPreference(v).then(() => {
+						console.log(`always discard env drafts preference saved to db`);
+					});
+				},
+			});
 	}
 
 	//#region init
@@ -380,6 +575,19 @@ export class AppService {
 			this._activeTheme.set(theme);
 		} else {
 			this._activeTheme.set(DEFAULT_THEME);
+		}
+	}
+
+	async initializeEnvironments() {
+		try {
+			const environments = await GetEnvironments();
+			if (Array.isArray(environments) && environments.length) {
+				this._environments.set(environments);
+			} else {
+				this._environments.set([]);
+			}
+		} catch (error) {
+			console.error(error);
 		}
 	}
 
@@ -416,6 +624,7 @@ export class AppService {
 				(uiState.layout as FormLayout) || FormLayout.Responsive,
 			);
 			this._isDesktopSidebarOpen.set(uiState.isSidebarOpen);
+			this._alwaysDiscardReqDrafts.set(uiState.alwaysDiscardDrafts);
 			await this.tabSvc.init(uiState);
 		} catch (_error) {
 			this._appState.set("error");
@@ -428,6 +637,7 @@ export class AppService {
 			//initialize collections + saved requests
 			await this.initializeCollections();
 			await this.initializeSavedRequests();
+			await this.initializeEnvironments();
 			await this.initializeUIState();
 			this._appState.set("loaded");
 		} catch (_error) {
