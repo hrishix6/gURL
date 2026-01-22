@@ -27,16 +27,17 @@ import {
 	URLENCODED_ID_PLACEHOLDER,
 } from "@/constants";
 import { AppService, TabsService } from "@/services";
-import type {
-	DraftParentMetadata,
-	KeyValItem,
-	MultipartItem,
-	ReqBodyType,
-	ReqState,
-	ReqTabId,
-	RequestAuthType,
-	RequestMethod,
-	ResTabId,
+import {
+	AppTabType,
+	type DraftParentMetadata,
+	type KeyValItem,
+	type MultipartItem,
+	type ReqBodyType,
+	type ReqState,
+	type ReqTabId,
+	type RequestAuthType,
+	type RequestMethod,
+	type ResTabId,
 } from "@/types";
 import { AuthService } from "./http/auth.service";
 import { BodyService } from "./http/body.service";
@@ -65,38 +66,39 @@ export class FormService {
 	public bodySvc = new BodyService(this.destroyRef);
 	public urlSvc = new UrlService(this.destroyRef);
 
-	public saveDraftModalTitle = computed(()=> {
-		const {parentRequestId, parentRequestName} = this.draftParentData();
+	public saveDraftModalTitle = computed(() => {
+		const { parentRequestId, parentRequestName } = this.draftParentData();
 
-		if(!parentRequestId) {
+		if (!parentRequestId) {
 			return "Save draft as request ?";
 		}
 
-		return `Save changes for request "${parentRequestName}" ?`
+		return `Save changes for request "${parentRequestName}" ?`;
 	});
 
-	public saveDraftModalMessage = computed(()=> {
-		const {parentRequestId} = this.draftParentData();
+	public saveDraftModalMessage = computed(() => {
+		const { parentRequestId } = this.draftParentData();
 
-		if(!parentRequestId) {
+		if (!parentRequestId) {
 			return "Your changes will be lost, save these changes to avoid losing work.";
 		}
 
 		return "Your changes to the request will be lost, save these changes to avoid losing work.";
 	});
 
-
 	constructor() {
 		//tab refresh notification
 		this._tabSvc.refreshNotifier
 			.pipe(takeUntilDestroyed(this.destroyRef))
 			.subscribe({
-				next: () => {
-					console.log(`received signal to refresh self`);
-					this.initializeReqForm(this._requestId);
+				next: (v) => {
+					if (v === AppTabType.Req) {
+						console.log(`received signal to refresh self`);
+						this.initializeReqForm(this._requestId);
+					}
 				},
 			});
-		this._tabSvc.closeTabEvent$
+		this._tabSvc.closeReqTabEvent$
 			.pipe(takeUntilDestroyed(this.destroyRef))
 			.subscribe({
 				next: (tab) => {
@@ -104,33 +106,42 @@ export class FormService {
 						return;
 					}
 
-					console.log(`received signal to handle tab close for ${tab.id} and draft ${this._requestId}`);
-					const {parentRequestId} = this.draftParentData();
+					console.log(
+						`received signal to handle tab close for ${tab.id} and draft ${this._requestId}`,
+					);
+					const { parentRequestId } = this.draftParentData();
 
-					if(parentRequestId) {
-						if(tab.isModified) {
-							if(!this._appSvc.alwaysDiscardDrafts()) {
-							console.log(`draft is linked to ${parentRequestId} and modified asking to save`);
-							this._tabSvc.setActiveTab(tab.id)
-							this._isDraftSavePreferenceModalOpen.set(true);
-							return;
-						   }
+					if (parentRequestId) {
+						if (tab.isModified) {
+							if (!this._appSvc.alwaysDiscardDrafts()) {
+								console.log(
+									`draft is linked to ${parentRequestId} and modified asking to save`,
+								);
+								this._tabSvc.setActiveTab(tab.id);
+								this._isDraftSavePreferenceModalOpen.set(true);
+								return;
+							}
 						}
-						console.log(`draft is linked to ${parentRequestId} and not modified, closing tab`);
-						this._tabSvc.deleteTab(tab.id);
-					}
-					else {
-						if(tab.isModified){
-								if(!this._appSvc.alwaysDiscardDrafts()) {
-								console.log(`draft is not linked to any request, asking to save as new request`);
-								this._tabSvc.setActiveTab(tab.id)
+						console.log(
+							`draft is linked to ${parentRequestId} and not modified, closing tab`,
+						);
+						this._tabSvc.deleteTab(tab.id, AppTabType.Req);
+					} else {
+						if (tab.isModified) {
+							if (!this._appSvc.alwaysDiscardDrafts()) {
+								console.log(
+									`draft is not linked to any request, asking to save as new request`,
+								);
+								this._tabSvc.setActiveTab(tab.id);
 								this._isDraftSavePreferenceModalOpen.set(true);
 								return;
 							}
 						}
 
-						console.log(`draft is not linked to any request and user doesn't want to save drafts, closing tab`);
-						this._tabSvc.deleteTab(tab.id);
+						console.log(
+							`draft is not linked to any request and user doesn't want to save drafts, closing tab`,
+						);
+						this._tabSvc.deleteTab(tab.id, AppTabType.Req);
 					}
 				},
 			});
@@ -139,8 +150,8 @@ export class FormService {
 	//#region request-ops
 	private _isDraftSavePreferenceModalOpen = signal<boolean>(false);
 
-	public isDraftSavePreferenceModalOpen = computed(
-		() => this._isDraftSavePreferenceModalOpen(),
+	public isDraftSavePreferenceModalOpen = computed(() =>
+		this._isDraftSavePreferenceModalOpen(),
 	);
 
 	public toggleDraftSavePreferenceModal() {
@@ -274,12 +285,13 @@ export class FormService {
 	public setUrl(v: string) {
 		this.urlSvc.setUrl(v);
 		this._tabSvc.updateActiveTab("name", v);
-		this._tabSvc.updateModifiedStatus(true);
 	}
 
 	public parseUrl() {
 		this.urlSvc._parseUrl();
-		this._tabSvc.updateModifiedStatus(true);
+		if (this.urlSvc.url()) {
+			this._tabSvc.updateModifiedStatus(true);
+		}
 	}
 
 	public bulkUpdateQueryParams(items: KeyValItem[]) {
@@ -338,10 +350,10 @@ export class FormService {
 	}
 
 	public updateMultiPartField(
-			id: string,
-			prop: Exclude<keyof MultipartItem, "id" | "val">,
-			v: string,
-		) {
+		id: string,
+		prop: Exclude<keyof MultipartItem, "id" | "val">,
+		v: string,
+	) {
 		this.bodySvc._updateMultiPartField(id, prop, v);
 		this._tabSvc.updateModifiedStatus(true);
 	}
@@ -349,8 +361,8 @@ export class FormService {
 		this.bodySvc._updateMultipartFieldValue(id, v);
 		this._tabSvc.updateModifiedStatus(true);
 	}
-	
-	public clearMultipartFileInput(id: string){
+
+	public clearMultipartFileInput(id: string) {
 		this.bodySvc._clearMultipartFileInput(id);
 		this._tabSvc.updateModifiedStatus(true);
 	}
@@ -365,7 +377,7 @@ export class FormService {
 		this._tabSvc.updateModifiedStatus(true);
 	}
 
-	public  updateUrlEncodedField(
+	public updateUrlEncodedField(
 		id: string,
 		prop: Exclude<keyof KeyValItem, "id">,
 		v: string,
@@ -373,7 +385,7 @@ export class FormService {
 		this.bodySvc._updateUrlEncodedField(id, prop, v);
 		this._tabSvc.updateModifiedStatus(true);
 	}
-	
+
 	public deleteUrlEncodedField(id: string) {
 		this.bodySvc._deleteUrlEncodedField(id);
 		this._tabSvc.updateModifiedStatus(true);
@@ -387,7 +399,7 @@ export class FormService {
 	public setTextBody(v: string) {
 		this.bodySvc._setTextBody(v);
 		this._tabSvc.updateModifiedStatus(true);
-	}	
+	}
 
 	public clearBinaryBody() {
 		this.bodySvc._clearBinaryBody();
@@ -512,12 +524,74 @@ export class FormService {
 		this._res.set(null);
 	}
 
-	public async send() {
-		if (!this.urlSvc.isValidUrl()) {
-			console.log(`invalid URL`);
-			return;
-		}
+	public interpolatedPayload(payload: models.GurlReq): models.GurlReq {
+		const o: Partial<models.GurlReq> = {
+			...payload,
+			headers: payload.headers.map((h) => {
+				return {
+					...h,
+					key: this._appSvc.interPolateEnvTokens(h.key),
+					value: this._appSvc.interPolateEnvTokens(h.value),
+				};
+			}),
+			query: payload.query.map((q) => {
+				return {
+					...q,
+					key: this._appSvc.interPolateEnvTokens(q.key),
+					value: this._appSvc.interPolateEnvTokens(q.value),
+				};
+			}),
+			cookies: payload.cookies.map((c) => {
+				return {
+					...c,
+					key: this._appSvc.interPolateEnvTokens(c.key),
+					value: this._appSvc.interPolateEnvTokens(c.value),
+				};
+			}),
+			urlencoded: payload.urlencoded.map((u) => {
+				return {
+					...u,
+					key: this._appSvc.interPolateEnvTokens(u.key),
+					value: this._appSvc.interPolateEnvTokens(u.value),
+				};
+			}),
+			multipart: payload.multipart.map((m) => {
+				return {
+					...m,
+					key: this._appSvc.interPolateEnvTokens(m.key),
+					value: this._appSvc.interPolateEnvTokens(m.value),
+				};
+			}),
+			url: this._appSvc.interPolateEnvTokens(payload.url),
+		};
 
+		const { apiKeyAuth, authEnabled, authType, basicAuth, tokenAuth } =
+			payload.auth;
+
+		const substitutedAuth: Partial<models.GurlAuth> = {
+			authEnabled,
+			authType,
+			apiKeyAuth: {
+				...apiKeyAuth,
+				key: this._appSvc.interPolateEnvTokens(apiKeyAuth.key),
+				value: this._appSvc.interPolateEnvTokens(apiKeyAuth.value),
+			},
+			basicAuth: {
+				...basicAuth,
+				username: this._appSvc.interPolateEnvTokens(basicAuth.username),
+				password: this._appSvc.interPolateEnvTokens(basicAuth.password),
+			},
+			tokenAuth: {
+				...tokenAuth,
+				token: this._appSvc.interPolateEnvTokens(tokenAuth.token),
+			},
+		};
+
+		o.auth = substitutedAuth as models.GurlAuth;
+		return o as models.GurlReq;
+	}
+
+	public async send() {
 		if (this.urlSvc.url() === "") {
 			return;
 		}
@@ -540,9 +614,13 @@ export class FormService {
 				auth: this.auth.requestAuthData(),
 			};
 
-			console.dir(payload);
+			const substitudedPayload = this.interpolatedPayload(
+				payload as models.GurlReq,
+			);
 
-			const res = await SendHttpReq(payload as models.GurlReq);
+			console.dir(substitudedPayload);
+
+			const res = await SendHttpReq(substitudedPayload);
 
 			console.dir(res);
 

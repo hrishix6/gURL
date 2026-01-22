@@ -55,7 +55,6 @@ export class UrlService {
 	public isValidUrl = computed(() => this._isUrlValid());
 
 	public setUrl(v: string) {
-		this._isUrlValid.set(true);
 		this._url.set(v);
 		this.urlDbSync$.next(v);
 	}
@@ -63,7 +62,6 @@ export class UrlService {
 	public _parseUrl() {
 		try {
 			const parsed = new URL(this._url());
-
 			const baseUrl = `${parsed.origin}${parsed.pathname}`;
 			const searchParams = parsed.searchParams;
 
@@ -73,7 +71,7 @@ export class UrlService {
 
 			this.setUrl(baseUrl);
 		} catch (_error) {
-			this._isUrlValid.set(false);
+			console.error(`invalid URL: ${_error}`);
 		}
 	}
 
