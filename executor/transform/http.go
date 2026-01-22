@@ -68,7 +68,7 @@ func (htf *HttpTransformer) toURLEncodedFormData(r *models.GurlReq) (io.Reader, 
 	f := url.Values{}
 
 	for _, item := range r.UrlEncodedForm {
-		if item.Enabled {
+		if item.Enabled && item.Key != "" {
 			f.Add(item.Key, item.Value)
 		}
 	}
@@ -83,7 +83,7 @@ func (htf *HttpTransformer) toMultipartFormData(r *models.GurlReq) (io.Reader, s
 
 	for _, item := range r.MultiPartForm {
 
-		if item.Enabled {
+		if item.Enabled && item.Key != "" {
 
 			if item.IsFile {
 
@@ -183,18 +183,21 @@ func applyAuth(r *models.GurlReq, req *http.Request) {
 		case "basic":
 			req.SetBasicAuth(r.Auth.BasicAuth.Username, r.Auth.BasicAuth.Password)
 		case "api_key":
-			if r.Auth.ApiKeyAuth.Location == "header" {
+			if r.Auth.ApiKeyAuth.Location == "header" && r.Auth.ApiKeyAuth.Key != "" {
 				req.Header.Add(r.Auth.ApiKeyAuth.Key, r.Auth.ApiKeyAuth.Value)
 			}
 
-			if r.Auth.ApiKeyAuth.Location == "query" {
+			if r.Auth.ApiKeyAuth.Location == "query" && r.Auth.ApiKeyAuth.Key != "" {
 				q := req.URL.Query()
 				q.Add(r.Auth.ApiKeyAuth.Key, r.Auth.ApiKeyAuth.Value)
 				req.URL.RawQuery = q.Encode()
 			}
 		case "token":
 			caser := cases.Title(language.English)
-			req.Header.Add("Authorization", fmt.Sprintf("%s %s", caser.String(r.Auth.TokenAuth.Type), r.Auth.TokenAuth.Token))
+			if r.Auth.TokenAuth.Type != "" {
+				req.Header.Add("Authorization", fmt.Sprintf("%s %s", caser.String(r.Auth.TokenAuth.Type), r.Auth.TokenAuth.Token))
+			}
+
 		}
 	}
 }
@@ -205,7 +208,7 @@ func (htf *HttpTransformer) TransformToHttp(ctx context.Context, r *models.GurlR
 	queryParams := url.Values{}
 
 	for _, q := range r.Query {
-		if q.Enabled {
+		if q.Enabled && q.Key != "" {
 			queryParams.Add(q.Key, q.Value)
 		}
 	}
@@ -237,7 +240,7 @@ func (htf *HttpTransformer) TransformToHttp(ctx context.Context, r *models.GurlR
 
 	//set User Defined headers
 	for _, header := range r.Headers {
-		if header.Enabled {
+		if header.Enabled && header.Key != "" {
 			req.Header.Add(header.Key, header.Value)
 		}
 	}

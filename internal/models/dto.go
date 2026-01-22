@@ -124,11 +124,12 @@ type SaveDraftAsReqDTO struct {
 }
 
 type UIStateDTO struct {
-	OpenTabs      string `json:"openTabsJson"`
-	Layout        string `json:"layout"`
-	ActiveTab     string `json:"activeTab"`
-	IsSidebarOpen bool   `json:"isSidebarOpen"`
-	AlwaysDiscard bool   `json:"alwaysDiscardDrafts"`
+	OpenTabs               string `json:"openTabsJson"`
+	Layout                 string `json:"layout"`
+	ActiveTab              string `json:"activeTab"`
+	IsSidebarOpen          bool   `json:"isSidebarOpen"`
+	AlwaysDiscard          bool   `json:"alwaysDiscardDrafts"`
+	AlwaysDiscardEnvDrafts bool   `json:"alwaysDiscardEnvDrafts"`
 }
 
 type SaveRequestCopyDTO struct {
@@ -159,4 +160,39 @@ type UpdateDraftAuthEnabledDTO struct {
 type UpdateDraftAuthTypeDTO struct {
 	RequestId string `json:"requestId"`
 	AuthType  string `json:"authType"`
+}
+
+type EnvironmentDraftDTO struct {
+	Id            string `json:"id"`
+	Name          string `json:"name"`
+	Data          string `json:"dataJSON"`
+	ParentEnvId   string `json:"parentEnvId"`
+	ParentEnvName string `json:"parentEnvName"`
+}
+
+type EnvironmentDTO struct {
+	Id   string `json:"id"`
+	Name string `json:"name"`
+	Data string `json:"dataJSON"`
+}
+
+type AddEnvironmentDTO struct {
+	Id   string `json:"id"`
+	Name string `json:"name"`
+}
+
+type AddEnvironmentDraftDTO struct {
+	DraftId string `json:"draftId"`
+	EnvId   string `json:"envId"`
+}
+
+type UpdateEnvDraftDataDTO struct {
+	DraftId  string `json:"draftId"`
+	DataJSON string `json:"dataJSON"`
+}
+
+type SaveEnvDraftAsEnvDTO struct {
+	DraftId string `json:"draftId"`
+	EnvId   string `json:"envId"`
+	Name    string `json:"name"`
 }
