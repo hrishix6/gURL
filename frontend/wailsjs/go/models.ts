@@ -14,6 +14,34 @@ export namespace models {
 	        this.name = source["name"];
 	    }
 	}
+	export class AddEnvironmentDTO {
+	    id: string;
+	    name: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new AddEnvironmentDTO(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.name = source["name"];
+	    }
+	}
+	export class AddEnvironmentDraftDTO {
+	    draftId: string;
+	    envId: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new AddEnvironmentDraftDTO(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.draftId = source["draftId"];
+	        this.envId = source["envId"];
+	    }
+	}
 	export class AddFreshDraftDTO {
 	    id: string;
 	
@@ -68,6 +96,42 @@ export namespace models {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
 	        this.name = source["name"];
+	    }
+	}
+	export class EnvironmentDTO {
+	    id: string;
+	    name: string;
+	    dataJSON: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new EnvironmentDTO(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.name = source["name"];
+	        this.dataJSON = source["dataJSON"];
+	    }
+	}
+	export class EnvironmentDraftDTO {
+	    id: string;
+	    name: string;
+	    dataJSON: string;
+	    parentEnvId: string;
+	    parentEnvName: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new EnvironmentDraftDTO(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.name = source["name"];
+	        this.dataJSON = source["dataJSON"];
+	        this.parentEnvId = source["parentEnvId"];
+	        this.parentEnvName = source["parentEnvName"];
 	    }
 	}
 	export class FileStats {
@@ -453,6 +517,22 @@ export namespace models {
 	        this.name = source["name"];
 	    }
 	}
+	export class SaveEnvDraftAsEnvDTO {
+	    draftId: string;
+	    envId: string;
+	    name: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new SaveEnvDraftAsEnvDTO(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.draftId = source["draftId"];
+	        this.envId = source["envId"];
+	        this.name = source["name"];
+	    }
+	}
 	export class SaveRequestCopyDTO {
 	    sourceId: string;
 	    id: string;
@@ -476,6 +556,7 @@ export namespace models {
 	    activeTab: string;
 	    isSidebarOpen: boolean;
 	    alwaysDiscardDrafts: boolean;
+	    alwaysDiscardEnvDrafts: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new UIStateDTO(source);
@@ -488,6 +569,7 @@ export namespace models {
 	        this.activeTab = source["activeTab"];
 	        this.isSidebarOpen = source["isSidebarOpen"];
 	        this.alwaysDiscardDrafts = source["alwaysDiscardDrafts"];
+	        this.alwaysDiscardEnvDrafts = source["alwaysDiscardEnvDrafts"];
 	    }
 	}
 	export class UpdateDraftApiKeyAuthDTO {
@@ -698,6 +780,20 @@ export namespace models {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.requestId = source["requestId"];
 	        this.urlencodedJson = source["urlencodedJson"];
+	    }
+	}
+	export class UpdateEnvDraftDataDTO {
+	    draftId: string;
+	    dataJSON: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new UpdateEnvDraftDataDTO(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.draftId = source["draftId"];
+	        this.dataJSON = source["dataJSON"];
 	    }
 	}
 	export class UpdateOpenTabsDTO {
