@@ -9,6 +9,7 @@ import {
 	Trash2,
 } from "lucide-angular";
 import { AppDropdown } from "@/common/components";
+import { HighlightedInput } from "@/common/components/highlighted.input";
 import { REQ_METHODS } from "@/constants";
 import { SaveRequestModal } from "@/modals/save.request";
 import { FormService } from "@/services";
@@ -27,7 +28,7 @@ import type { RequestMethod } from "@/types";
       >
     </app-dropdown>
       <div class="flex-1">
-        <input
+        <!-- <input
           type="text"
           [ngClass]="{
             'input w-full': true,
@@ -38,7 +39,15 @@ import type { RequestMethod } from "@/types";
           [value]="f.urlSvc.url()"
           (input)="f.setUrl($event.target.value)"
           (blur)="f.parseUrl()"
-        />
+        /> -->
+        <div highlightedInp
+          [disabled]="false"
+          [placeHolder]="'https://example.com'"
+          [text]="f.urlSvc.url()"
+          (onInput)="f.setUrl($event)"
+          (blur)="f.parseUrl()"
+        >
+        </div>
       </div>
       <div class="flex gap-2.5">
         <button
@@ -77,7 +86,13 @@ import type { RequestMethod } from "@/types";
     }
 
   `,
-	imports: [LucideAngularModule, NgClass, AppDropdown, SaveRequestModal],
+	imports: [
+		LucideAngularModule,
+		NgClass,
+		AppDropdown,
+		SaveRequestModal,
+		HighlightedInput,
+	],
 })
 export class ReqFormHeader {
 	readonly SendIcon = ArrowRight;
@@ -88,7 +103,7 @@ export class ReqFormHeader {
 	readonly reqMethods = REQ_METHODS;
 
 	@HostBinding("class")
-	defaultClass = "flex flex-col gap-2 p-2 border-t-2 border-base-100";
+	defaultClass = "flex flex-col gap-2 p-2";
 
 	readonly f = inject(FormService);
 

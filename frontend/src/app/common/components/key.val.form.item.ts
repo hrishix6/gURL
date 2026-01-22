@@ -2,6 +2,7 @@ import { NgClass } from "@angular/common";
 import { Component, HostBinding, input, output } from "@angular/core";
 import { LucideAngularModule, X } from "lucide-angular";
 import type { KeyValItem } from "@/types";
+import { HighlightedInput } from "./highlighted.input";
 
 @Component({
 	selector: "app-keyval-item",
@@ -15,23 +16,26 @@ import type { KeyValItem } from "@/types";
         [checked]="item.enabled === 'on'"
         (change)="handleEnable(item.id, $event)"
       />
-      <input
-        type="text"
-        placeholder="key"
-        class="input input-sm flex-1 input-ghost bg-base-300 input-primary xl:input-md"
-        [value]="item.key"
-        (input)="handleUpdateKey(item.id, $event.target.value)"
-        (blur)="handleBlur()"
-      />
-      <input
-        type="text"
-        placeholder="value"
-        class="input input-sm flex-2 input-ghost bg-base-300 input-primary xl:input-md"
-        [disabled]="item.key == '' || item.key.trim() == ''"
-        [value]="item.val"
-        (input)="handleUpdateVal(item.id, $event.target.value)"
-        (blur)="handleBlur()"
-      />
+      <div
+        highlightedInp
+        [placeHolder]="'key'"
+        [disabled]="false"
+        [text]="item.key"
+        (onInput)="handleUpdateKey(item.id, $event)"
+        (onBlur)="handleBlur()"
+      >
+      </div>
+      <div class="flex-2">
+          <div
+          [placeHolder]="'value'"
+          highlightedInp
+          [disabled]="item.key == '' || item.key.trim() == ''"
+          [text]="item.val"
+          (onInput)="handleUpdateVal(item.id, $event)"
+          (onBlur)="handleBlur()"
+        >
+        </div>
+      </div>
       <button
         [ngClass]="{
           'btn btn-xs btn-ghost btn-square xl:btn-sm': true,
@@ -44,7 +48,7 @@ import type { KeyValItem } from "@/types";
     </div>
     }
   `,
-	imports: [LucideAngularModule, NgClass],
+	imports: [LucideAngularModule, NgClass, HighlightedInput],
 })
 export class KeyValFormItem {
 	@HostBinding("class")
