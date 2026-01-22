@@ -57,6 +57,14 @@ export interface KeyValItem {
 	enabled: string;
 }
 
+export interface EnvironmentItem {
+	id: string;
+	key: string;
+	val: string;
+	isSecret: boolean;
+	description: string;
+}
+
 export interface MultipartItem {
 	id: string;
 	key: string;
@@ -156,6 +164,7 @@ export interface ActiveItemInfo {
 export enum AppSidebarContent {
 	History = "history",
 	Collections = "collections",
+	Environments = "environments",
 }
 
 export interface ReqHistoryItem {
@@ -199,6 +208,11 @@ export interface ApiKeyAuth {
 	location: APIKeyLocation;
 }
 
+export interface EnvironmentDraftParent {
+	parentEnvId: string;
+	parentEnvName: string;
+}
+
 export type TokenAuthType =
 	| "bearer"
 	| "digest"
@@ -209,4 +223,14 @@ export type TokenAuthType =
 export interface TokenAuth {
 	type: TokenAuthType;
 	token: string;
+}
+
+export type GlobalEnvMap = Record<string, Record<string, string>>;
+
+export interface InputToken {
+	type: "env" | "text";
+	value: string;
+	valid: boolean;
+	key: string;
+	interpolated: string;
 }

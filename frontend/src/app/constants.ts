@@ -199,11 +199,16 @@ export const DEFAULT_REQ_TAB: ReqTabId = "req_headers";
 export const DEFAULT_RES_TAB: ResTabId = "res_body";
 export const DEFAULT_COLLECTION_ID = "gurl_default_collection";
 
+export const NO_ENV_ID = "no_env";
+export const ENV_TOKEN_REGEX = /({{.*?}})/g;
+export const ENV_VAR_REGEX = /{{(.*?)}}/;
+
 export const QID_PLACEHOLDER = "qid_default";
 export const HID_PLACEHOLDER = "hid_default";
 export const COOKIE_PLACEHOLDER = "cookie_default";
 export const MULTIPART_ID_PLACEHOLDER = "mid_default";
 export const URLENCODED_ID_PLACEHOLDER = "uid_default";
+export const ENV_ID_PLACEHOLDER = "eid_default";
 export const DB_NAME = "gurl-db";
 export const DB_VERSION = 4;
 export const ROOT_USER = "gurl-default-user";
