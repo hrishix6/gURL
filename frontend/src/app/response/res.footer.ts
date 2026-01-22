@@ -3,6 +3,7 @@ import type { models } from "@wailsjs/go/models";
 import {
 	ArrowDownFromLine,
 	ArrowUpFromLine,
+	Eraser,
 	Eye,
 	EyeOff,
 	LucideAngularModule,
@@ -62,21 +63,10 @@ import { FormService } from "@/services";
                       <lucide-angular [img]="TimerIcon"  class="size-4"/>
                       TFFB : {{data().ttfbMs}}ms
                 </div>
-
-                  <!-- @if(["GET", "POST", "PUT","PATCH","DELETE"].includes(formSvc.method().id)){
-                    @if(data().body?.reportedMileType !== data().body?.detectedMimeType){
-                        |
-                        <div class="tooltip">
-                          <div class="tooltip-content text-xs">
-                              Server reported {{data().body?.reportedMileType}} but it's likely {{data().body?.detectedMimeType}}
-                          </div>
-                          <div class="flex gap-1 items-center px-2 py-1 text-warning">
-                              <lucide-angular [img]="AlertIcon"  class="size-4"/>
-                              Content mismatch
-                          </div>
-                      </div>
-                  }
-                } -->
+                <button class="btn btn-sm btn-soft" (click)="formSvc.clearResponse()">
+                  <lucide-angular [img]="ClearIcon"  class="size-4"/>
+                  Clear
+                </button>
               </section>
            </div>
     `,
@@ -84,6 +74,7 @@ import { FormService } from "@/services";
 })
 export class ResFooter {
 	readonly UploadIcon = ArrowUpFromLine;
+	readonly ClearIcon = Eraser;
 	readonly DownloadSizeIcon = ArrowDownFromLine;
 	readonly AlertIcon = TriangleAlert;
 	readonly TimerIcon = Timer;

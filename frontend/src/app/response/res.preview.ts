@@ -32,7 +32,7 @@ import { ResponseTextPreview } from "./text.preview";
         @if(formSvc.res()?.body?.canRender){
             <div class="flex-1 flex relative overflow-auto shadow-md border-2 border-base-100 rounded-box">
                  <div [ngClass]="{
-                    'flex-1': true,
+                    'flex-1 flex': true,
                     'hidden': !formSvc.previewMode(),
                  }">
                     @switch (formSvc.res()?.body?.html5Element) {
@@ -79,7 +79,7 @@ import { ResponseTextPreview } from "./text.preview";
                         <!-- TEXT -->
                         @case("text") {
                             <div [ngClass]="{
-                                'flex-1 h-full text-lg p-2 break-normal': true,
+                                'flex-1 flex text-lg': true,
                             }" appResTextPreview [src]="formSvc.res()?.body?.src"></div>
                         }
                     }

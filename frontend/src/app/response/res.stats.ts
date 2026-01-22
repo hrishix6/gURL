@@ -15,10 +15,6 @@ import { FormService } from "@/services";
           <div class="badge join-item badge-soft">
             {{ data().time }} ms
           </div>
-          <button class="btn btn-xs btn-soft join-item" (click)="formSvc.clearResponse()">
-            <lucide-angular [img]="ClearIcon"  class="size-4"/>
-            Clear
-          </button>
     </div>
   `,
 	imports: [LucideAngularModule],

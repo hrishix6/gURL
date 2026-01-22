@@ -1,4 +1,3 @@
-import { NgClass } from "@angular/common";
 import { Component, HostBinding, inject } from "@angular/core";
 import {
 	ArrowRight,
@@ -88,7 +87,6 @@ import type { RequestMethod } from "@/types";
   `,
 	imports: [
 		LucideAngularModule,
-		NgClass,
 		AppDropdown,
 		SaveRequestModal,
 		HighlightedInput,

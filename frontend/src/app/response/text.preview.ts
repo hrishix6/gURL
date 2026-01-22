@@ -2,7 +2,14 @@ import { Component, effect, input, signal } from "@angular/core";
 
 @Component({
 	selector: "div[appResTextPreview]",
-	template: `{{text()}}`,
+	template: `
+		<textarea
+		class="textarea textarea-lg focus:outline-0 textarea-ghost bg-base-300 flex-1"
+		[value]="text()"
+		readonly
+		>
+		</textarea>
+	`,
 })
 export class ResponseTextPreview {
 	src = input<string>();
