@@ -1,7 +1,7 @@
 {
   "$schema": "https://wails.io/schemas/config.v2.json",
-  "name": "gURL_v05",
-  "outputfilename": "gURL_v05",
+  "name": "gURL_v0.6.0",
+  "outputfilename": "gURL_v0.6.0",
   "frontend:install": "pnpm install",
   "frontend:build": "pnpm run build",
   "frontend:dev:watcher": "pnpm start",

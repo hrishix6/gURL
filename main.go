@@ -5,6 +5,7 @@ import (
 	"embed"
 	"fmt"
 	"gurl/executor"
+	"gurl/exporter"
 	"gurl/internal"
 	"gurl/internal/db"
 	"gurl/internal/utils"
@@ -80,10 +81,11 @@ func main() {
 	//bounded structs
 	storageInstance := storage.NewStorage(dbConn)
 	executorInstance := executor.NewExecutor(dbConn, appName, tmpDir)
+	exporterInstance := exporter.NewExporter(dbConn, tmpDir)
 
 	// Create application with options
 	err = wails.Run(&options.App{
-		Title: "gURL v0.5.0",
+		Title: "gURL v0.6.0",
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},
@@ -100,20 +102,27 @@ func main() {
 			if err != nil {
 				log.Fatalf("unable to initialize executor %v", err)
 			}
+
+			err = exporter.Startup(&exporterInstance, ctx)
+
+			if err != nil {
+				log.Fatalf("unable to initialize exporter %v", err)
+			}
 		},
 		OnBeforeClose: func(ctx context.Context) (prevent bool) {
 			storage.Shutdown(&storageInstance)
 			executor.Shutdown(&executorInstance, ctx)
-
+			exporter.ShutDown(&exporterInstance)
 			return false
 		},
 		WindowStartState: options.Maximised,
 		MinWidth:         667,
-		MinHeight:        1280,
+		MinHeight:        1028,
 		DisableResize:    false,
 		Bind: []interface{}{
 			&storageInstance,
 			&executorInstance,
+			&exporterInstance,
 		},
 		Linux: &linux.Options{
 			WebviewGpuPolicy:    linux.WebviewGpuPolicyAlways,
