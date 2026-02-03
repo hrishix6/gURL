@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"gurl/internal/db"
 	"gurl/internal/models"
+	"gurl/internal/utils"
 	"io"
 	"log"
 	"os"
@@ -594,21 +595,7 @@ func (s *Storage) ChooseFile() (*models.FileStats, error) {
 		return nil, err
 	}
 
-	info, err := os.Stat(file)
-
-	if err != nil {
-		return nil, err
-	}
-
-	if info.IsDir() {
-		return nil, fmt.Errorf("chosen item is not a file")
-	}
-
-	return &models.FileStats{
-		Name: info.Name(),
-		Size: info.Size(),
-		Path: file,
-	}, nil
+	return utils.GetFileStats(file)
 }
 
 func (s *Storage) SaveFile(srcFilePath string) error {
@@ -633,12 +620,14 @@ func (s *Storage) SaveFile(srcFilePath string) error {
 	if err != nil {
 		return err
 	}
+	defer srcF.Close()
 
 	dstF, err := os.Create(dst)
 
 	if err != nil {
 		return err
 	}
+	defer dstF.Close()
 
 	_, err = io.Copy(dstF, srcF)
 
@@ -667,7 +656,7 @@ func (s *Storage) GetEnvironments() ([]models.EnvironmentDTO, error) {
 }
 
 func (s *Storage) AddEnvironment(dto models.AddEnvironmentDTO) error {
-	return gorm.G[db.Environment](s.db).Create(s.appCtx, &db.Environment{
+	return s.addEnv(&db.Environment{
 		Id:   dto.Id,
 		Name: dto.Name,
 	})
