@@ -2,7 +2,7 @@ import { Component, HostBinding, inject } from "@angular/core";
 import { AppService } from "./services";
 
 @Component({
-	selector: "app-spinner",
+	selector: "gurl-spinner",
 	template: `
     @if (appSvc.appState() === "initializing") {
     <span class="loading loading-bars loading-sm xl:loading-lg text-primary"></span>
@@ -12,9 +12,9 @@ import { AppService } from "./services";
     }
   `,
 })
-export class AppSpinner {
+export class GlobalSpinner {
 	@HostBinding("class")
 	def = "h-screen w-dvw bg-base-300 flex items-center justify-center z-999";
 
-	appSvc = inject(AppService);
+	protected appSvc = inject(AppService);
 }

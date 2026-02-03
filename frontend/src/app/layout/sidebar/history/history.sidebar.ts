@@ -1,10 +1,10 @@
 import { Component, HostBinding, inject, signal } from "@angular/core";
 import { Ban, LucideAngularModule, Search } from "lucide-angular";
 import { AppService } from "@/services";
-import { RequestHistoryItem } from "./history.item";
+import { GurlHistoryItem } from "./history.item";
 
 @Component({
-	selector: `div[gurlReqHistory]`,
+	selector: `gurl-history`,
 	template: `
     <div class="px-2 pt-2">
       <label class="input input-ghost w-full input-primary bg-base-300">
@@ -21,7 +21,7 @@ import { RequestHistoryItem } from "./history.item";
     @if (appSvc.historyItems().length) {
     <div class="flex-1 flex flex-col overflow-y-auto gap-1 p-2">
       @for (item of appSvc.historyItems(); track item.id) {
-      <a href="#" role="button" [data]="item" gurlReqHistoryItem></a>
+      <a href="#" role="button" [data]="item" gurl-history-item></a>
       }
     </div>
     }@else {
@@ -31,20 +31,20 @@ import { RequestHistoryItem } from "./history.item";
       </div>
     }
   `,
-	imports: [RequestHistoryItem, LucideAngularModule],
+	imports: [GurlHistoryItem, LucideAngularModule],
 })
-export class AppRequestHistory {
-	readonly NoneIcon = Ban;
-	readonly SearchIcon = Search;
-
-	appSvc = inject(AppService);
-
+export class GurlReqHistory {
 	@HostBinding("class")
 	def = "flex flex-1 flex-col overflow-hidden";
 
-	searchInput = signal<string>("");
+	protected readonly NoneIcon = Ban;
+	protected readonly SearchIcon = Search;
 
-	handleInput(e: Event) {
+	protected readonly appSvc = inject(AppService);
+
+	protected searchInput = signal<string>("");
+
+	protected handleInput(e: Event) {
 		const target = e.target as HTMLInputElement;
 		this.searchInput.set(target.value);
 		this.appSvc.searchHistoryKeyChange$.next(target.value);

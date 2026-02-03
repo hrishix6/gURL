@@ -31,7 +31,7 @@ export class TabsService {
 	public activeTab = computed(() => this._activeTab());
 	public destoyRef = inject(DestroyRef);
 	private tabChanges$ = new Subject<ApplicationTab[]>();
-	private activeTabChanges$ = new Subject<string>();
+	public activeTabChanges$ = new Subject<string>();
 	private reqChanges$ = new Subject<string>();
 	private envDraftrmDbSync$ = new Subject<string>();
 	public tabCount = computed(() => this._openTabs().length);
@@ -342,6 +342,10 @@ export class TabsService {
 	public setActiveTab(id: string | null) {
 		this._activeTab.set(id);
 		this.activeTabChanges$.next(id || "");
+	}
+
+	public getTabById(id: string) {
+		return this._openTabs().find((x) => x.id === id) || null;
 	}
 
 	public updateModifiedStatus(isModified: boolean) {

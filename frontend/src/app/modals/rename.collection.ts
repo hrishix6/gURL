@@ -1,18 +1,17 @@
 import { NgClass } from "@angular/common";
 import {
-	type AfterViewChecked,
+	type AfterViewInit,
 	Component,
 	type ElementRef,
 	HostBinding,
 	input,
-	type OnInit,
 	output,
 	signal,
 	viewChild,
 } from "@angular/core";
 
 @Component({
-	selector: `dialog[mvCollectionModal]`,
+	selector: `dialog[gurl-rename-collection-modal]`,
 	template: `
     <div class="modal-box">
       <div class="flex flex-col gap-2">
@@ -48,9 +47,7 @@ import {
   `,
 	imports: [NgClass],
 })
-export class RenameCollectionModal implements OnInit, AfterViewChecked {
-	firstInputEl = viewChild.required<ElementRef<HTMLInputElement>>("firstInput");
-
+export class RenameCollectionModal implements AfterViewInit {
 	@HostBinding("class")
 	def = "modal";
 
@@ -61,30 +58,29 @@ export class RenameCollectionModal implements OnInit, AfterViewChecked {
 	actionInProgress = input.required<boolean>();
 	isOpen = input.required<boolean>();
 	initialValue = input.required<string>();
-	collectionName = signal<string>("");
 	onCancel = output<void>();
 	onConfirm = output<string>();
 
-	ngOnInit(): void {
+	ngAfterViewInit(): void {
 		this.collectionName.set(this.initialValue());
-	}
-
-	ngAfterViewChecked(): void {
 		this.firstInputEl()?.nativeElement.focus();
 	}
 
-	error = signal<boolean>(false);
+	protected collectionName = signal<string>("");
+	private readonly firstInputEl =
+		viewChild.required<ElementRef<HTMLInputElement>>("firstInput");
+	protected error = signal<boolean>(false);
 
-	onInput(text: string) {
+	protected onInput(text: string) {
 		this.error.set(false);
 		this.collectionName.set(text);
 	}
 
-	onClose() {
+	protected onClose() {
 		this.onCancel.emit();
 	}
 
-	onSubmit() {
+	protected onSubmit() {
 		if (this.collectionName() === "" || this.collectionName().trim() === "") {
 			this.error.set(true);
 			return;

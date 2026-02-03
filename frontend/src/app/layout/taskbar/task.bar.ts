@@ -1,40 +1,25 @@
 import { Component, HostBinding } from "@angular/core";
-import { BookOpen, Cog, LucideAngularModule } from "lucide-angular";
-import { AppCollectionsToggle } from "./collections.toggle";
-import { EnvironmentToggle } from "./env.toggle";
-import { AppHistoryToggle } from "./history.toggle";
+import { Cog, LucideAngularModule } from "lucide-angular";
+import { GurlSidebarToggle } from "./sidebar.toggle";
 
 @Component({
-	selector: `section[appTaskBar]`,
+	selector: `gurl-taskbar`,
 	template: `
     <header class="flex flex-col gap-4 items-center">
-      <div>
-        <button class="btn btn-sm btn-ghost">
-          <lucide-angular [img]="HomeImage" class="size-5" />
-        </button>
-      </div>
-      <div appHistoryToggle></div>
-      <div appCollectionsToggle></div>
-      <div appEnvironmentToggle></div>
+      <div gurl-sidebar-toggle></div>
     </header>
-    <footer class="mt-auto flex justify-center flex-col">
+    <footer class="mt-auto flex justify-center flex-col gap-4">
       <button class="btn btn-sm btn-ghost">
         <lucide-angular [img]="SettingsIcon" class="size-5" />
       </button>
     </footer>
   `,
-	imports: [
-		LucideAngularModule,
-		AppHistoryToggle,
-		AppCollectionsToggle,
-		EnvironmentToggle,
-	],
+	imports: [LucideAngularModule, GurlSidebarToggle],
 })
-export class AppTaskbar {
-	readonly HomeImage = BookOpen;
-	readonly SettingsIcon = Cog;
-
+export class Taskbar {
 	@HostBinding("class")
 	def =
-		"basis-16 grow-0 shrink-0 bg-base-100 flex flex-col items-center p-2 relative";
+		"basis-16 grow-0 shrink-0 bg-base-200 flex flex-col items-center p-2 relative border-r-2 border-base-100";
+
+	protected readonly SettingsIcon = Cog;
 }

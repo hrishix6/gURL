@@ -1,7 +1,7 @@
 import { Component, effect, input, signal } from "@angular/core";
 
 @Component({
-	selector: "div[appResTextPreview]",
+	selector: "div[gurl-res-text-preview]",
 	template: `
 		<textarea
 		class="textarea textarea-lg focus:outline-0 textarea-ghost bg-base-300 flex-1"

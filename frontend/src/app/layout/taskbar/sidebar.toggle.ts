@@ -10,7 +10,7 @@ import { AppService } from "@/services";
  * This renders the button that toggles sidebar on mobile and desktops
  */
 @Component({
-	selector: `div[appSidebarToggle]`,
+	selector: `div[gurl-sidebar-toggle]`,
 	template: `
     <!-- this label toggles mobile sidebar -->
     <button
@@ -37,11 +37,11 @@ import { AppService } from "@/services";
   `,
 	imports: [LucideAngularModule],
 })
-export class AppSidebarToggle {
-	readonly ExpandSidebarIcon = PanelRightClose;
-	readonly ShrinkSidebarIcon = PanelRightOpen;
-	readonly appSvc = inject(AppService);
-
+export class GurlSidebarToggle {
 	@HostBinding("class")
 	def = "flex items-center justify-center";
+
+	protected readonly ExpandSidebarIcon = PanelRightClose;
+	protected readonly ShrinkSidebarIcon = PanelRightOpen;
+	protected readonly appSvc = inject(AppService);
 }

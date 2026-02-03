@@ -7,39 +7,27 @@ import {
 	Save,
 	Trash2,
 } from "lucide-angular";
-import { AppDropdown } from "@/common/components";
-import { HighlightedInput } from "@/common/components/highlighted.input";
+import { GurlDropdown } from "@/common/components";
+import { GurlHighlightedInput } from "@/common/components/highlighted.input";
 import { REQ_METHODS } from "@/constants";
 import { SaveRequestModal } from "@/modals/save.request";
 import { FormService } from "@/services";
 import type { RequestMethod } from "@/types";
 
 @Component({
-	selector: "app-req-form-header",
+	selector: "gurl-req-form-header",
 	template: `
     <div class="flex gap-2.5 p-2 bg-base-300 items-center rounded-box">
-      <app-dropdown
+      <gurl-dropdown
         [items]="reqMethods"
         [activeItem]="this.f.urlSvc.method()"
         [size]="'md'"
         [varient]="'ghost'"
         (onItemSelection)="handleActiveItemSelection($event)"
       >
-    </app-dropdown>
+    </gurl-dropdown>
       <div class="flex-1">
-        <!-- <input
-          type="text"
-          [ngClass]="{
-            'input w-full': true,
-            'input-primary input-ghost': f.urlSvc.isValidUrl() || f.urlSvc.url() === '',
-            'input-error': !f.urlSvc.isValidUrl(),
-          }"
-          placeholder="https://example.com"
-          [value]="f.urlSvc.url()"
-          (input)="f.setUrl($event.target.value)"
-          (blur)="f.parseUrl()"
-        /> -->
-        <div highlightedInp
+        <div gurl-highlighted-input
           [disabled]="false"
           [placeHolder]="'https://example.com'"
           [text]="f.urlSvc.url()"
@@ -81,35 +69,34 @@ import type { RequestMethod } from "@/types";
       </div>
     </div>
     @if(this.f.isSaveRequestModalOpen()) {
-    <dialog saveRequestModal></dialog>
+    <dialog gurl-save-request-modal></dialog>
     }
 
   `,
 	imports: [
 		LucideAngularModule,
-		AppDropdown,
+		GurlDropdown,
 		SaveRequestModal,
-		HighlightedInput,
+		GurlHighlightedInput,
 	],
 })
 export class ReqFormHeader {
-	readonly SendIcon = ArrowRight;
-	readonly RequestOptionsIcon = EllipsisVertical;
-	readonly SaveIcon = Save;
-	readonly CopyIcon = Copy;
-	readonly DeleteIcon = Trash2;
-	readonly reqMethods = REQ_METHODS;
-
 	@HostBinding("class")
 	defaultClass = "flex flex-col gap-2 p-2";
 
-	readonly f = inject(FormService);
+	protected readonly SendIcon = ArrowRight;
+	protected readonly RequestOptionsIcon = EllipsisVertical;
+	protected readonly SaveIcon = Save;
+	protected readonly CopyIcon = Copy;
+	protected readonly DeleteIcon = Trash2;
+	protected readonly reqMethods = REQ_METHODS;
+	protected readonly f = inject(FormService);
 
-	handleActiveItemSelection(id: RequestMethod) {
+	protected handleActiveItemSelection(id: RequestMethod) {
 		this.f.setMethod(id);
 	}
 
-	handleOpenSaveRequestModal() {
+	protected handleOpenSaveRequestModal() {
 		this.f.toggleSaveRequestModal();
 	}
 }

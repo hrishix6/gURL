@@ -10,6 +10,7 @@ import type { models } from "@wailsjs/go/models";
 import {
 	Container,
 	EllipsisVertical,
+	FileDown,
 	LucideAngularModule,
 	Trash2,
 } from "lucide-angular";
@@ -17,7 +18,7 @@ import { DeleteConfirmationModal } from "@/modals/delete.confirmation";
 import { AppService, TabsService } from "@/services";
 
 @Component({
-	selector: `div[environmentItem]`,
+	selector: `div[gurl-environment-item]`,
 	template: `
     <div class="flex items-center gap-2 p-2 bg-base-300 rounded box">
       <a
@@ -45,11 +46,17 @@ import { AppService, TabsService } from "@/services";
 			  	    Delete
               </a>
             </li>
+			<li>
+				<button role="link" (click)="appSvc.exportEnvironment(data().id)">
+					<lucide-angular [img]="ExportIcon" class="size-4" />
+					Export
+				</button>
+            </li>
         </ul>
       </div>
     </div>
     @if(this.isDeleteModalOpen()) {
-      <dialog rmModal
+      <dialog gurl-rm-confirmation-modal
         [title]="deleteModalTitle()"
         [message]="deleteModalMessage"
         [isOpen]="isDeleteModalOpen()"
@@ -61,45 +68,46 @@ import { AppService, TabsService } from "@/services";
   `,
 	imports: [LucideAngularModule, DeleteConfirmationModal],
 })
-export class EnvironmentItem {
-	readonly EnvironmentIcon = Container;
-	readonly EnvironmentOptionsIcon = EllipsisVertical;
-	readonly DeleteIcon = Trash2;
-
-	readonly tabSvc = inject(TabsService);
-	readonly appSvc = inject(AppService);
-
-	openEnvironmentTab() {
-		this.tabSvc.createEnvTabFromSaved(this.data());
-	}
-
-	data = input.required<models.EnvironmentDTO>();
-
+export class GurlEnvironmentItem {
 	@HostBinding("class")
 	def = "flex flex-col gap-1";
 
-	readonly deleteModalTitle = computed(() => {
+	data = input.required<models.EnvironmentDTO>();
+
+	protected readonly EnvironmentIcon = Container;
+	protected readonly EnvironmentOptionsIcon = EllipsisVertical;
+	protected readonly ExportIcon = FileDown;
+	protected readonly DeleteIcon = Trash2;
+
+	private readonly tabSvc = inject(TabsService);
+	protected readonly appSvc = inject(AppService);
+
+	protected openEnvironmentTab() {
+		this.tabSvc.createEnvTabFromSaved(this.data());
+	}
+
+	protected readonly deleteModalTitle = computed(() => {
 		return `Delete Environment "${this.data().name}" ?`;
 	});
 
-	readonly deleteModalMessage =
+	protected readonly deleteModalMessage =
 		"This action is irreversible, environment along with all secrets will be deleted.";
 
-	isDeleteModalOpen = signal<boolean>(false);
-	delInProgress = signal<boolean>(false);
+	protected isDeleteModalOpen = signal<boolean>(false);
+	protected delInProgress = signal<boolean>(false);
 
-	toggleDeleteModal() {
+	protected toggleDeleteModal() {
 		this.isDeleteModalOpen.update((x) => !x);
 	}
 
-	async handleConfirmDeletion() {
+	protected async handleConfirmDeletion() {
 		this.delInProgress.set(true);
 		await this.appSvc.DeleteEnv(this.data().id);
 		this.delInProgress.set(false);
 		this.toggleDeleteModal();
 	}
 
-	handleCancelDeletion() {
+	protected handleCancelDeletion() {
 		this.toggleDeleteModal();
 	}
 }

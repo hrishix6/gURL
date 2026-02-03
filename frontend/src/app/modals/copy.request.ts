@@ -1,6 +1,5 @@
 import { NgClass } from "@angular/common";
 import {
-	type AfterViewChecked,
 	Component,
 	type ElementRef,
 	HostBinding,
@@ -12,7 +11,7 @@ import {
 } from "@angular/core";
 
 @Component({
-	selector: `dialog[cpRequestModal]`,
+	selector: `dialog[gurl-cp-request-modal]`,
 	template: `
     <div class="modal-box">
       <div class="flex flex-col gap-2">
@@ -48,9 +47,7 @@ import {
   `,
 	imports: [NgClass],
 })
-export class CopyRequestModal implements OnInit, AfterViewChecked {
-	firstInputEl = viewChild.required<ElementRef<HTMLInputElement>>("firstInput");
-
+export class CopyRequestModal implements OnInit {
 	@HostBinding("class")
 	def = "modal";
 
@@ -61,30 +58,30 @@ export class CopyRequestModal implements OnInit, AfterViewChecked {
 	actionInProgress = input.required<boolean>();
 	isOpen = input.required<boolean>();
 	initialValue = input.required<string>();
-	requestName = signal<string>("");
 	onCancel = output<void>();
 	onConfirm = output<string>();
 
 	ngOnInit(): void {
 		this.requestName.set(this.initialValue());
-	}
-
-	ngAfterViewChecked(): void {
 		this.firstInputEl()?.nativeElement.focus();
 	}
 
-	error = signal<boolean>(false);
+	private readonly firstInputEl =
+		viewChild.required<ElementRef<HTMLInputElement>>("firstInput");
 
-	onInput(text: string) {
+	protected error = signal<boolean>(false);
+	protected requestName = signal<string>("");
+
+	protected onInput(text: string) {
 		this.error.set(false);
 		this.requestName.set(text);
 	}
 
-	onClose() {
+	protected onClose() {
 		this.onCancel.emit();
 	}
 
-	onSubmit() {
+	protected onSubmit() {
 		if (this.requestName() === "" || this.requestName().trim() === "") {
 			this.error.set(true);
 			return;

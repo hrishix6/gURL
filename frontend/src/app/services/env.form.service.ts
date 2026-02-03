@@ -228,6 +228,7 @@ export class EnvFormService {
 
 			this._tabSvc.updateActiveTab("name", this.environmentName());
 			this._tabSvc.updateModifiedStatus(false);
+			this._appSvc.refreshBreadcrumb$.next();
 		} catch (error) {
 			console.error(error);
 		}

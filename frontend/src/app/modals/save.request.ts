@@ -1,6 +1,6 @@
 import { NgClass } from "@angular/common";
 import {
-	type AfterViewChecked,
+	type AfterViewInit,
 	Component,
 	type ElementRef,
 	HostBinding,
@@ -12,7 +12,7 @@ import { DEFAULT_COLLECTION_ID } from "@/constants";
 import { AppService, FormService } from "@/services";
 
 @Component({
-	selector: `dialog[saveRequestModal]`,
+	selector: `dialog[gurl-save-request-modal]`,
 	template: `
     <div class="modal-box">
       <div class="flex flex-col gap-2">
@@ -50,48 +50,48 @@ import { AppService, FormService } from "@/services";
   `,
 	imports: [NgClass],
 })
-export class SaveRequestModal implements AfterViewChecked {
+export class SaveRequestModal implements AfterViewInit {
 	@HostBinding("class")
 	def = "modal";
-
-	reqNameInputEl =
-		viewChild.required<ElementRef<HTMLInputElement>>("reqNameInputEl");
-
-	formSvc = inject(FormService);
-	appSvc = inject(AppService);
 
 	@HostBinding("attr.open") get checkOpen() {
 		return this.formSvc.isSaveRequestModalOpen() ? "" : null;
 	}
 
-	ngAfterViewChecked(): void {
+	ngAfterViewInit(): void {
 		this.reqNameInputEl()?.nativeElement.focus();
 	}
 
-	requestName = signal<string>(
+	private readonly reqNameInputEl =
+		viewChild.required<ElementRef<HTMLInputElement>>("reqNameInputEl");
+
+	private readonly formSvc = inject(FormService);
+	protected readonly appSvc = inject(AppService);
+
+	protected requestName = signal<string>(
 		this.formSvc.draftParentData().parentRequestName || "",
 	);
 
-	selectedCollectionId = signal<string>(
+	protected selectedCollectionId = signal<string>(
 		this.formSvc.draftParentData().parentCollectionId || DEFAULT_COLLECTION_ID,
 	);
-	error = signal<boolean>(false);
+	protected error = signal<boolean>(false);
 
-	onInput(text: string) {
+	protected onInput(text: string) {
 		this.error.set(false);
 		this.requestName.set(text);
 	}
 
-	onCollectionChange(e: Event) {
+	protected onCollectionChange(e: Event) {
 		const target = e.target as HTMLSelectElement;
 		this.selectedCollectionId.set(target.value);
 	}
 
-	onClose() {
+	protected onClose() {
 		this.formSvc.toggleSaveRequestModal();
 	}
 
-	onSubmit() {
+	protected onSubmit() {
 		if (this.requestName() === "" || this.requestName().trim() === "") {
 			this.error.set(true);
 			return;

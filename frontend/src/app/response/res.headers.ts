@@ -3,7 +3,7 @@ import { Ban, LucideAngularModule } from "lucide-angular";
 import { FormService } from "@/services";
 
 @Component({
-	selector: "div[resHeaders]",
+	selector: "gurl-res-headers",
 	template: `
     @if(formSvc.res()?.resHeaders?.length) {
         <div class="overflow-auto flex-1 p-2 flex rounded-box shadow-md border-2 border-base-100">
@@ -86,8 +86,9 @@ import { FormService } from "@/services";
 	imports: [LucideAngularModule],
 })
 export class ResHeaders {
-	readonly NoneIcon = Ban;
-	formSvc = inject(FormService);
 	@HostBinding("class")
 	def = "flex-1 flex overflow-hidden relative";
+
+	protected readonly NoneIcon = Ban;
+	protected readonly formSvc = inject(FormService);
 }

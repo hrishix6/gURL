@@ -5,7 +5,7 @@ import { BytesPipe } from "@/common/pipes/bytes.pipe";
 import { FormService } from "@/services";
 
 @Component({
-	selector: "app-file-input",
+	selector: "gurl-file-input",
 	template: `
     <div class="flex">
       @if(f.bodySvc.binaryBody()){
@@ -30,11 +30,12 @@ import { FormService } from "@/services";
 	imports: [BytesPipe, LucideAngularModule],
 })
 export class FileInput {
-	readonly BinaryIcon = Paperclip;
-	readonly CancelIcon = X;
-	readonly f = inject(FormService);
+	protected readonly BinaryIcon = Paperclip;
+	protected readonly CancelIcon = X;
 
-	async openFileDialogue() {
+	protected readonly f = inject(FormService);
+
+	protected async openFileDialogue() {
 		try {
 			const fileStats = await ChooseFile();
 			this.f.setBinaryBody(fileStats);
@@ -43,7 +44,7 @@ export class FileInput {
 		}
 	}
 
-	clearFileInput() {
+	protected clearFileInput() {
 		this.f.clearBinaryBody();
 	}
 }

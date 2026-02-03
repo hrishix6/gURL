@@ -15,18 +15,18 @@ import { AppService, FormService, TabsService } from "@/services";
 import { AppTabType, FormLayout } from "@/types";
 
 @Component({
-	selector: `app-request-tab`,
+	selector: `gurl-req-tab`,
 	template: `
-    <app-req-form-header></app-req-form-header>
+    <gurl-req-form-header />
     <div [ngClass]="layoutClass()">
-      <app-req-form-details></app-req-form-details>
+      <gurl-req-form-details />
       <div class="p-px bg-base-100"></div>
-      <app-res-details></app-res-details>
+      <gurl-res-details />
     </div>
 	@if(
       !appSvc.alwaysDiscardDrafts() && formSvc.isDraftSavePreferenceModalOpen()
     ){
-      <dialog draftSavePreferenceModal
+      <dialog gurl-draft-save-preference-modal
 	    [title]="formSvc.saveDraftModalTitle()"
 		[message]="formSvc.saveDraftModalMessage()"
         [isOpen]="formSvc.isDraftSavePreferenceModalOpen()"
@@ -46,12 +46,28 @@ import { AppTabType, FormLayout } from "@/types";
 	providers: [FormService],
 })
 export class RequestTab implements OnInit {
+	@HostBinding("class") get defaultClass() {
+		if (this.activeId() === this.tabId()) {
+			return "flex-1 flex flex-col overflow-hidden";
+		}
+
+		return "hidden";
+	}
+
+	ngOnInit(): void {
+		console.log(`called`);
+		this.formSvc.initializeReqForm(this.draftId());
+	}
+
 	activeId = input.required<string | null>();
 	tabId = input.required<string>();
 	draftId = input.required<string>();
-	tabSvc = inject(TabsService);
 
-	layoutClass = computed(() => {
+	private readonly tabSvc = inject(TabsService);
+	protected readonly formSvc = inject(FormService);
+	protected readonly appSvc = inject(AppService);
+
+	protected layoutClass = computed(() => {
 		const layout = this.appSvc.formLayout();
 		const defaults = ["flex-1 overflow-hidden flex"];
 		switch (layout) {
@@ -67,38 +83,20 @@ export class RequestTab implements OnInit {
 				break;
 			}
 		}
-
 		const cls = defaults.join(" ");
-		console.log(`layout class - ${cls}`);
 		return cls;
 	});
 
-	formSvc = inject(FormService);
-	appSvc = inject(AppService);
-
-	@HostBinding("class") get defaultClass() {
-		if (this.activeId() === this.tabId()) {
-			return "flex-1 flex flex-col overflow-hidden";
-		}
-
-		return "hidden";
-	}
-
-	ngOnInit(): void {
-		console.log(`called`);
-		this.formSvc.initializeReqForm(this.draftId());
-	}
-
-	handleSaveDraft() {
+	protected handleSaveDraft() {
 		this.formSvc.toggleDraftSavePreferenceModal();
 		this.formSvc.toggleSaveRequestModal();
 	}
 
-	handleClose() {
+	protected handleClose() {
 		this.formSvc.toggleDraftSavePreferenceModal();
 	}
 
-	handleNoSaveDraft(alwaysDiscard: boolean) {
+	protected handleNoSaveDraft(alwaysDiscard: boolean) {
 		this.appSvc.setAlwaysDiscardDrafts(alwaysDiscard);
 		this.tabSvc.deleteTab(this.tabId(), AppTabType.Req);
 		this.formSvc.toggleDraftSavePreferenceModal();

@@ -213,4 +213,4 @@ export const DB_NAME = "gurl-db";
 export const DB_VERSION = 4;
 export const ROOT_USER = "gurl-default-user";
 export const MIME_JSON_FILE = "/mime.db.json";
-export const APP_VERSION = "v0.4.0";
+export const APP_VERSION = "v0.6.0";

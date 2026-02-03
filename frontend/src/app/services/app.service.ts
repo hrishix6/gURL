@@ -7,6 +7,12 @@ import {
 	signal,
 } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import {
+	ExportCollection,
+	ExportEnvironment,
+	ImportCollection,
+	ImportEnvironment,
+} from "@wailsjs/go/exporter/Exporter";
 import type { models } from "@wailsjs/go/models";
 import {
 	AddCollection,
@@ -28,6 +34,7 @@ import {
 	UpdateLayoutPreference,
 	UpdateSideBarPreference,
 } from "@wailsjs/go/storage/Storage";
+
 import { nanoid } from "nanoid";
 import { debounceTime, Subject } from "rxjs";
 import {
@@ -64,6 +71,7 @@ export class AppService {
 	private discardReqDraftsDbSync$ = new Subject<boolean>();
 	private discardEnvDraftsDbSync$ = new Subject<boolean>();
 	public activeEnvChange$ = new Subject<void>();
+	public refreshBreadcrumb$ = new Subject<void>();
 
 	private _alwaysDiscardReqDrafts = signal<boolean>(false);
 	public alwaysDiscardDrafts = computed(() => this._alwaysDiscardReqDrafts());
@@ -89,6 +97,13 @@ export class AppService {
 		parent: "",
 		type: AppTabType.Req,
 	});
+
+	private _createReqModalOpen = signal<boolean>(false);
+	public isCreateReqModalOpen = computed(() => this._createReqModalOpen());
+
+	public toggleCreateReqModal() {
+		this._createReqModalOpen.update((x) => !x);
+	}
 
 	//#region environments
 	public extractEnvTokens(v: string): InputToken[] {
@@ -123,6 +138,13 @@ export class AppService {
 			});
 		}
 		return tokens;
+	}
+
+	private _createEnvModalOpen = signal<boolean>(false);
+	public isCreateEnvModalOpen = computed(() => this._createEnvModalOpen());
+
+	public toggleCreateEnvModal() {
+		this._createEnvModalOpen.update((x) => !x);
 	}
 
 	public interPolateEnvTokens(v: string): string {
@@ -227,6 +249,23 @@ export class AppService {
 		}
 	}
 
+	public async importEnvironment() {
+		try {
+			await ImportEnvironment();
+			await this.initializeEnvironments();
+		} catch (error) {
+			console.error(error);
+		}
+	}
+
+	public async exportEnvironment(id: string) {
+		try {
+			await ExportEnvironment(id);
+		} catch (error) {
+			console.error(error);
+		}
+	}
+
 	//#endregion environments
 
 	//#region history
@@ -316,7 +355,7 @@ export class AppService {
 		} catch (error) {
 			console.error(error);
 		} finally {
-			this._collectionModalOpen.set(false);
+			this._newCollectionModalOpen.set(false);
 		}
 	}
 
@@ -356,15 +395,45 @@ export class AppService {
 		}
 	}
 
+	public async exportCollection(id: string) {
+		try {
+			await ExportCollection(id);
+		} catch (error) {
+			console.error(error);
+		}
+	}
+
+	public async importCollection() {
+		try {
+			await ImportCollection();
+			await this.initializeCollections();
+			await this.initializeSavedRequests();
+		} catch (error) {
+			console.error(error);
+		}
+	}
+
 	//#endregion collections
 
 	//#region Modals
-	private _collectionModalOpen = signal<boolean>(false);
-	public isCollectionModalOpen = computed(() => this._collectionModalOpen());
+	private _createCollectionModalOpen = signal<boolean>(false);
+	public isCreateCollectionModalOpen = computed(() =>
+		this._createCollectionModalOpen(),
+	);
 
-	public toggleCollectionModal() {
-		this._collectionModalOpen.update((x) => !x);
+	public toggleCreateCollectionModal() {
+		this._createCollectionModalOpen.update((x) => !x);
 	}
+
+	private _newCollectionModalOpen = signal<boolean>(false);
+	public isNewCollectionModalOpen = computed(() =>
+		this._newCollectionModalOpen(),
+	);
+
+	public toggleNewCollectionModal() {
+		this._newCollectionModalOpen.update((x) => !x);
+	}
+
 	//#endregion Modals
 
 	//#region layout
@@ -431,7 +500,7 @@ export class AppService {
 	private _workspaces = signal<DropDownItem<string>[]>([
 		{
 			id: "default",
-			displayName: "Default",
+			displayName: "Select Workspace",
 		},
 		{
 			id: "workspace1",
@@ -440,6 +509,38 @@ export class AppService {
 		{
 			id: "workspace2",
 			displayName: "Workspace2",
+		},
+		{
+			id: "workspace3",
+			displayName: "Workspace3",
+		},
+		{
+			id: "workspace4",
+			displayName: "Workspace4",
+		},
+		{
+			id: "workspace5",
+			displayName: "Workspace5",
+		},
+		{
+			id: "workspace6",
+			displayName: "Workspace6",
+		},
+		{
+			id: "workspace7",
+			displayName: "Workspace7",
+		},
+		{
+			id: "workspace8",
+			displayName: "Workspace8",
+		},
+		{
+			id: "workspace9",
+			displayName: "Workspace9",
+		},
+		{
+			id: "workspace10",
+			displayName: "Workspace10",
 		},
 	]);
 

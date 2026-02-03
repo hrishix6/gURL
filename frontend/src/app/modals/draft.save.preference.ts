@@ -8,7 +8,7 @@ import {
 } from "@angular/core";
 
 @Component({
-	selector: `dialog[draftSavePreferenceModal]`,
+	selector: `dialog[gurl-draft-save-preference-modal]`,
 	template: `
         <div class="modal-box">
             <div class="flex flex-col gap-4">
@@ -47,35 +47,37 @@ import {
 export class DraftSavePreferenceModal implements OnInit {
 	@HostBinding("class")
 	def = "modal";
+
+	@HostBinding("attr.open") get checkOpen() {
+		return this.isOpen() ? "" : null;
+	}
+
 	isOpen = input.required<boolean>();
 	title = input.required<string>();
 	message = input.required<string>();
 	onCancel = output<void>();
 	onSave = output<void>();
 	onNoSave = output<boolean>();
-	alwaysDiscard = signal<boolean>(false);
 
 	ngOnInit(): void {
 		this.alwaysDiscard.set(false);
 	}
 
-	@HostBinding("attr.open") get checkOpen() {
-		return this.isOpen() ? "" : null;
-	}
+	protected alwaysDiscard = signal<boolean>(false);
 
-	alwaysDiscardChanges() {
+	protected alwaysDiscardChanges() {
 		this.alwaysDiscard.update((x) => !x);
 	}
 
-	handleClose() {
+	protected handleClose() {
 		this.onCancel.emit();
 	}
 
-	handleSave() {
+	protected handleSave() {
 		this.onSave.emit();
 	}
 
-	handleNoSave() {
+	protected handleNoSave() {
 		this.onNoSave.emit(this.alwaysDiscard());
 	}
 }

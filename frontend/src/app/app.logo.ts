@@ -2,7 +2,7 @@ import { NgClass } from "@angular/common";
 import { Component, input } from "@angular/core";
 
 @Component({
-	selector: "app-logo",
+	selector: "gurl-logo",
 	template: `
     <div class="text-primary">
       <svg
@@ -47,6 +47,6 @@ import { Component, input } from "@angular/core";
   `,
 	imports: [NgClass],
 })
-export class AppLogo {
+export class Logo {
 	size = input.required<"xs" | "sm" | "md" | "xl" | "2xl">();
 }

@@ -4,23 +4,22 @@ import { KeyValFormItem } from "@/common/components";
 import { parseTextAsCookies } from "@/common/utils/time";
 import { BULK_EDIT_COOKIES_INSTRUCTION, COOKIE_PLACEHOLDER } from "@/constants";
 import { FormService } from "@/services";
-import { BulkKeyValEditor } from "./bulk.editor";
+import { BulkKeyValEditor } from "../common/components/bulk.editor";
 
 @Component({
-	selector: "app-req-cookies",
+	selector: "gurl-req-cookies",
 	template: `
    <div class="flex-1 p-1 overflow-y-auto">
          @if(f.cookieSvc.bulkEditModeCookies()){
-         <app-bulk-keyval-editor
+         <gurl-bulk-editor
           [editInstructions]="bulkcookieEditInstruction"
           [parseFn]="parseCookieTextFn"
           [initialValue]="f.cookieSvc.bulkCookiesText()"
           (onChange)="f.bulkUpdateCookieParams($event)"
-          >
-        </app-bulk-keyval-editor>
+          />
       }
       @else {
-         <app-keyval-item
+         <gurl-keyval-item
           [placeholderId]="placeHolderId"
           [items]="f.cookieSvc.cookies()"
           (onDelete)="f.deleteCookie($event)"
@@ -28,7 +27,7 @@ import { BulkKeyValEditor } from "./bulk.editor";
           (onValUpdate)="f.updateCookie($event.id, 'val', $event.v)"
           (onBlur)="f.cookieSvc.addCookie()"
           (onEnabledUpdate)="f.updateCookie($event.id, 'enabled', $event.v)">
-        </app-keyval-item>
+        </gurl-keyval-item>
       }
    </div>
   `,
@@ -38,9 +37,9 @@ export class ReqCookies {
 	@HostBinding("class")
 	defaultClass = "flex-1 flex flex-col overflow-hidden";
 
-	readonly bulkcookieEditInstruction = BULK_EDIT_COOKIES_INSTRUCTION;
-	readonly parseCookieTextFn = parseTextAsCookies;
+	protected readonly bulkcookieEditInstruction = BULK_EDIT_COOKIES_INSTRUCTION;
+	protected readonly parseCookieTextFn = parseTextAsCookies;
 
-	readonly placeHolderId = COOKIE_PLACEHOLDER;
-	readonly f = inject(FormService);
+	protected readonly placeHolderId = COOKIE_PLACEHOLDER;
+	protected readonly f = inject(FormService);
 }

@@ -1,15 +1,27 @@
-import { Component, HostBinding, inject, type OnInit } from "@angular/core";
+import {
+	Component,
+	computed,
+	HostBinding,
+	inject,
+	type OnInit,
+} from "@angular/core";
 import { LucideAngularModule } from "lucide-angular";
 import { APP_VERSION } from "@/constants";
 import { AppService, TabsService } from "@/services";
+import { Breadcrumbs } from "./app.breadcrumb";
+import { EntityCreationButton } from "./app.entity.create";
 import { AppHome } from "./app.home";
-import { AppSpinner } from "./app.spinner";
-import { AppFooter } from "./layout/footer/footer";
+import { GlobalSpinner } from "./app.spinner";
+import { GurlDropdown } from "./common/components";
+import { GurlFooter } from "./layout/footer/footer";
 import { DesktopSidebar } from "./layout/sidebar/desktop.sidebar";
 import { MobileSidebar } from "./layout/sidebar/mobile.sidebar";
-import { AppTaskbar } from "./layout/taskbar/task.bar";
+import { Taskbar } from "./layout/taskbar/task.bar";
+import { CreateCollectionModal } from "./modals/create.collection";
+import { CreateEnvironmentModal } from "./modals/create.env";
+import { CreateRequestModal } from "./modals/create.req";
 import { NewCollectionModal } from "./modals/new.collection";
-import { AppTabsWrapper } from "./tabs/req.tabs.container";
+import { TabsWrapper } from "./tabs/req.tabs.container";
 
 @Component({
 	selector: "app",
@@ -22,68 +34,128 @@ import { AppTabsWrapper } from "./tabs/req.tabs.container";
       [checked]="appSvc.isMobileSidebarOpen()"
     />
     <div class="drawer-content">
-      <main class="h-screen flex relative">
+      <main class="h-screen flex flex-col relative overflow-hidden">
         @if (appSvc.appState() === "loaded") {
-        <section appTaskBar></section>
-        @if(appSvc.isDesktopSidebarOpen()){
-        <aside appDesktopSidebar></aside>
-        }
-        <!-- Main view -->
-        <main class="flex flex-1 flex-col bg-base-200 overflow-hidden">
-          <!-- Main header -->
-          <header class="flex basis-12 grow-0 shrink-0 items-center p-2">
-            @if(tabsSvc.tabCount()){
-            <div class="flex-1 px-2">
+          <nav class="flex p-2 gap-4 items-center bg-base-300 shadow-md">
+              <h2 class="text-lg ml-2 font-semibold text-primary">
+                gURL
+              </h2>
+            <div class="flex-1 flex items-center gap-2">
             </div>
-            <div class="flex items-center gap-2 px-2">
-            </div>
-            }
-          </header>
-          <!-- Main content -->
-          @if(tabsSvc.tabCount()){
-          <section appReqTabs></section>
-          }@else {
-          <section appHome></section>
-          }
-          <!-- Main footer -->
-          <footer appFooter></footer>
-        </main>
-        } @else {
-        <app-spinner />
+             <div class="flex items-center gap-2">
+              <gurl-dropdown
+                [items]="appSvc.workspaces()"
+                [activeItem]="appSvc.activeWorkSpace()"
+                [align]="'end'"
+                [direction]="'down'"
+                [size]="'md'"
+                [varient]="'soft'"
+                (onItemSelection)="handleActiveItemSelection($event)"
+                >
+                </gurl-dropdown>
+                <div gurl-entity-creation></div>
+             </div>
+          </nav>
+          <main class="flex flex-1 overflow-hidden">
+                  <gurl-taskbar />
+                  @if(appSvc.isDesktopSidebarOpen()){
+                  <aside gurl-desktop-sidebar></aside>
+                  }
+                  <!-- Main view -->
+                  <main class="flex flex-1 flex-col bg-base-200 overflow-hidden">
+                    <!-- Main header -->
+                    <header class="flex grow-0 shrink-0 items-center p-2">
+                        <div class="flex-1 overflow-hidden px-2">
+                          <div gurl-breadcrumbs></div>
+                        </div>
+                        <div class="flex items-center">
+                           <gurl-dropdown
+                              [activeItem]="activeItem()!"
+                              [items]="appSvc.environmentDropdownItems()"
+                              (onItemSelection)="appSvc.setActiveEnvironment($event)"
+                              [size]="'md'"
+                              [align]="'end'"
+                              [direction]="'down'"
+                              [varient]="'soft'"
+                              >
+                          </gurl-dropdown>
+                        </div>
+                    </header>
+                    <!-- Main content -->
+                    @if(tabsSvc.tabCount()){
+                    <section appReqTabs></section>
+                    }@else {
+                    <section appHome></section>
+                    }
+                  </main>
+             
+          </main>
+           <!-- Main footer -->
+          <footer gurl-footer></footer>
+        }@else {
+          <gurl-spinner />
         }
       </main>
     </div>
     <!-- This content is rendered inside mobile sidebar -->
     <div class="drawer-side">
       <label class="drawer-overlay" (click)="appSvc.toggleMobileSidebar()"></label>
-      <aside appMobileSidebar></aside>
+      <aside gurl-mobile-sidebar></aside>
     </div>
     <!-- modals -->
-    @if(appSvc.isCollectionModalOpen()){
-    <dialog newCollectionModal></dialog>
+    @if(appSvc.isCreateCollectionModalOpen()){
+      <dialog gurl-create-collection-modal></dialog>
+    }
+    @if(appSvc.isNewCollectionModalOpen()){
+      <dialog gurl-new-collection-modal></dialog>
+    }
+    @if(appSvc.isCreateEnvModalOpen()){
+      <dialog gurl-create-env-modal></dialog>
+    }
+     @if(appSvc.isCreateReqModalOpen()){
+      <dialog gurl-create-req-modal></dialog>
     }
   `,
 	imports: [
 		LucideAngularModule,
-		AppTaskbar,
-		AppSpinner,
-		AppFooter,
+		GlobalSpinner,
+		GurlFooter,
 		DesktopSidebar,
 		MobileSidebar,
-		AppTabsWrapper,
+		TabsWrapper,
 		AppHome,
 		NewCollectionModal,
+		GurlDropdown,
+		CreateCollectionModal,
+		CreateEnvironmentModal,
+		CreateRequestModal,
+		Taskbar,
+		Breadcrumbs,
+		EntityCreationButton,
 	],
 })
 export class App implements OnInit {
 	@HostBinding("class")
 	def = "drawer";
-	tabsSvc = inject(TabsService);
-	appSvc = inject(AppService);
-
-	readonly appVersion = APP_VERSION;
 
 	async ngOnInit() {
 		await this.appSvc.init();
+	}
+
+	protected tabsSvc = inject(TabsService);
+	protected appSvc = inject(AppService);
+
+	protected activeItem = computed(() => {
+		return this.appSvc
+			.environmentDropdownItems()
+			.find((x) => x.id === this.appSvc.activeEnvironment());
+	});
+
+	protected readonly appVersion = APP_VERSION;
+
+	protected handleActiveItemSelection(id: string) {
+		this.appSvc.setActiveWorkspace(id);
+		const activeItem = document.activeElement as HTMLAnchorElement;
+		activeItem?.blur();
 	}
 }

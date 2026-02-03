@@ -4,7 +4,7 @@ import { Eraser, LucideAngularModule } from "lucide-angular";
 import { FormService } from "@/services";
 
 @Component({
-	selector: `app-res-stats`,
+	selector: `gurl-res-stats`,
 	template: `
     <div class="join">
          @if(data().success){
@@ -22,8 +22,9 @@ import { FormService } from "@/services";
 export class ResStats {
 	@HostBinding("class")
 	dc = "flex items-center gap-2 px-2";
-	readonly ClearIcon = Eraser;
 
 	data = input.required<models.GurlRes>();
-	formSvc = inject(FormService);
+
+	protected readonly ClearIcon = Eraser;
+	protected readonly formSvc = inject(FormService);
 }

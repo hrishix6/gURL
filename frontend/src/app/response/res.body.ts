@@ -9,7 +9,7 @@ import { FormService } from "@/services";
 import { ResPreview } from "./res.preview";
 
 @Component({
-	selector: "div[resBody]",
+	selector: "gurl-res-body",
 	template: `
         @switch (formSvc.reqState()) {
             <!-- IDLE / NOT SENT -->
@@ -20,16 +20,14 @@ import { ResPreview } from "./res.preview";
             }
             <!-- IN PROGRESS -->
             @case("progress"){
-                <div class="flex-1 flex items-center justify-center shadow-md border-2 border-base-100">
-                        <button class="btn btn-primary btn-lg xl:btn-xl" (click)="formSvc.cancel()">
-                            <span class="loading loading-ring text-primary loading-sm xl:loading-lg"></span>
-                            Abort
-                        </button>
+                <div class="flex-1 flex flex-col gap-2 items-center justify-center shadow-md border-2 border-base-100">
+                        <span class="loading loading-ring text-primary loading-sm xl:loading-lg"></span>
+                        <button class="btn btn-soft btn-primary btn-lg" (click)="formSvc.cancel()">Abort</button>
                 </div>
             }
             <!-- SUCESSFUL -->
             @case("success"){
-                <div resPreview></div>
+                <gurl-res-preview />
             }
             <!-- FAILED -->
             @case("error") {
@@ -50,10 +48,11 @@ import { ResPreview } from "./res.preview";
 	imports: [LucideAngularModule, ResPreview],
 })
 export class ResBody {
-	readonly NoneIcon = Ban;
-	readonly AbortedIcon = MessageCircleOff;
-	readonly FailedIcon = CircleAlert;
-	readonly formSvc = inject(FormService);
 	@HostBinding("class")
 	def = "flex-1 flex overflow-hidden";
+
+	protected readonly NoneIcon = Ban;
+	protected readonly AbortedIcon = MessageCircleOff;
+	protected readonly FailedIcon = CircleAlert;
+	protected readonly formSvc = inject(FormService);
 }

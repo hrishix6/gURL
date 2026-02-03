@@ -1,7 +1,7 @@
 import { Component, HostBinding, input, output } from "@angular/core";
 
 @Component({
-	selector: `dialog[rmModal]`,
+	selector: `dialog[gurl-rm-confirmation-modal]`,
 	template: `
     <div class="modal-box">
       <div class="flex flex-col gap-2">
@@ -30,6 +30,11 @@ import { Component, HostBinding, input, output } from "@angular/core";
 export class DeleteConfirmationModal {
 	@HostBinding("class")
 	def = "modal";
+
+	@HostBinding("attr.open") get checkOpen() {
+		return this.isOpen() ? "" : null;
+	}
+
 	title = input.required<string>();
 	message = input.required<string>();
 	isOpen = input.required<boolean>();
@@ -37,15 +42,11 @@ export class DeleteConfirmationModal {
 	onCancel = output<void>();
 	onConfirm = output<void>();
 
-	@HostBinding("attr.open") get checkOpen() {
-		return this.isOpen() ? "" : null;
-	}
-
-	onClose() {
+	protected onClose() {
 		this.onCancel.emit();
 	}
 
-	onSubmit() {
+	protected onSubmit() {
 		this.onConfirm.emit();
 	}
 }

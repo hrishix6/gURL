@@ -1,7 +1,7 @@
 import { Component, HostBinding, input } from "@angular/core";
 
 @Component({
-	selector: `div[methodTag]`,
+	selector: `div[gurl-req-tag]`,
 	template: `{{ method() }}`,
 })
 export class ReqMethodTag {

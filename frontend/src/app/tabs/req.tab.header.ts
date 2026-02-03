@@ -12,12 +12,12 @@ import { TabsService } from "@/services";
 import type { ApplicationTab } from "@/types";
 
 @Component({
-	selector: `div[appReqTabHeader]`,
+	selector: `div[gurl-tab-header]`,
 	template: `
     <div class="flex flex-1 items-center gap-1.5 overflow-hidden">
 	   @switch (data().entityType) {
 		   	@case("req") {
-				<div methodTag [size]="'xs'" [method]="data().tag"></div>
+				<div gurl-req-tag  [size]="'xs'" [method]="data().tag"></div>
 			}
 			@case("env") {
 				<lucide-angular [img]="EnvironmentIcon" class="size-4" />
@@ -44,14 +44,6 @@ import type { ApplicationTab } from "@/types";
 	imports: [LucideAngularModule, ReqMethodTag],
 })
 export class TabHeader {
-	readonly CancelIcon = X;
-	readonly EnvironmentIcon = Container;
-	isActive = input.required<boolean>();
-	data = input.required<ApplicationTab>();
-	onCloseTab = output();
-	onSelectTab = output();
-	tabSvc = inject(TabsService);
-
 	@HostBinding("class") get def() {
 		const defaults = [
 			"flex",
@@ -85,17 +77,23 @@ export class TabHeader {
 		}
 	}
 
-	@HostListener("contextmenu", ["$event"])
-	handleRightClick(_e: PointerEvent) {}
-
-	handleClose(e: Event) {
-		e.stopPropagation();
-		this.onCloseTab.emit();
-	}
-
 	@HostListener("click", ["$event"])
 	handleActivation(e: Event) {
 		e.stopPropagation();
 		this.onSelectTab.emit();
+	}
+
+	isActive = input.required<boolean>();
+	data = input.required<ApplicationTab>();
+	onCloseTab = output();
+	onSelectTab = output();
+
+	protected readonly tabSvc = inject(TabsService);
+	protected readonly CancelIcon = X;
+	protected readonly EnvironmentIcon = Container;
+
+	protected handleClose(e: Event) {
+		e.stopPropagation();
+		this.onCloseTab.emit();
 	}
 }

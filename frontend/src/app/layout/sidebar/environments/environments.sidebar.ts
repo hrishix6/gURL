@@ -1,10 +1,10 @@
 import { Component, HostBinding, inject, signal } from "@angular/core";
 import { Ban, LucideAngularModule, Search } from "lucide-angular";
 import { AppService } from "@/services";
-import { EnvironmentItem } from "./environment.item";
+import { GurlEnvironmentItem } from "./environment.item";
 
 @Component({
-	selector: `div[gurlEnvironments]`,
+	selector: `gurl-environments`,
 	template: `
     <div class="px-2 pt-2">
       <label class="input input-ghost w-full input-primary bg-base-300">
@@ -22,8 +22,8 @@ import { EnvironmentItem } from "./environment.item";
     <div class="flex-1 flex flex-col overflow-y-auto gap-1 p-2">
       @for (item of appSvc.environments(); track item.id) {
        <div
+       gurl-environment-item
        [data]="item"
-       environmentItem
        >
        </div>
       }
@@ -35,20 +35,19 @@ import { EnvironmentItem } from "./environment.item";
       </div>
     }
   `,
-	imports: [LucideAngularModule, EnvironmentItem],
+	imports: [LucideAngularModule, GurlEnvironmentItem],
 })
-export class EnvironmentSidebar {
-	readonly NoneIcon = Ban;
-	readonly SearchIcon = Search;
-
-	appSvc = inject(AppService);
-
+export class GurlEnvironments {
 	@HostBinding("class")
 	def = "flex flex-1 flex-col overflow-hidden";
 
-	searchInput = signal<string>("");
+	protected readonly NoneIcon = Ban;
+	protected readonly SearchIcon = Search;
+	protected appSvc = inject(AppService);
 
-	handleInput(e: Event) {
+	protected searchInput = signal<string>("");
+
+	protected handleInput(e: Event) {
 		const target = e.target as HTMLInputElement;
 		this.searchInput.set(target.value);
 		this.appSvc.envSearchKeyChange$.next(target.value);

@@ -5,7 +5,7 @@ import { ENV_ID_PLACEHOLDER } from "@/constants";
 import type { EnvironmentItem } from "@/types";
 
 @Component({
-	selector: `div[appEnvFormItem]`,
+	selector: `div[gurl-env-form-item]`,
 	template: `
       <button
         [ngClass]="{
@@ -56,14 +56,10 @@ import type { EnvironmentItem } from "@/types";
 	imports: [LucideAngularModule, NgClass],
 })
 export class EnvironmentFormItem {
-	readonly MaskIcon = Key;
-
 	@HostBinding("class")
 	hostClass = "flex gap-2.5 items-center";
 
-	readonly CancelIcon = X;
 	item = input.required<EnvironmentItem>();
-	placeholderId = ENV_ID_PLACEHOLDER;
 	onKeyUpdate = output<{ id: string; v: string }>();
 	onValUpdate = output<{ id: string; v: string }>();
 	onDescriptionUpdate = output<{ id: string; v: string }>();
@@ -71,27 +67,31 @@ export class EnvironmentFormItem {
 	onBlur = output();
 	onDelete = output<string>();
 
-	handleUpdateKey(id: string, v: string) {
+	protected placeholderId = ENV_ID_PLACEHOLDER;
+	protected readonly CancelIcon = X;
+	protected readonly MaskIcon = Key;
+
+	protected handleUpdateKey(id: string, v: string) {
 		this.onKeyUpdate.emit({ id, v });
 	}
 
-	handleUpdateVal(id: string, v: string) {
+	protected handleUpdateVal(id: string, v: string) {
 		this.onValUpdate.emit({ id, v });
 	}
 
-	handleUpdateDescription(id: string, v: string) {
+	protected handleUpdateDescription(id: string, v: string) {
 		this.onDescriptionUpdate.emit({ id, v });
 	}
 
-	handleSecretStatusToggle(id: string) {
+	protected handleSecretStatusToggle(id: string) {
 		this.onSecretStatusChange.emit({ id });
 	}
 
-	handleDeleteItem(id: string) {
+	protected handleDeleteItem(id: string) {
 		this.onDelete.emit(id);
 	}
 
-	handleBlur() {
+	protected handleBlur() {
 		this.onBlur.emit();
 	}
 }

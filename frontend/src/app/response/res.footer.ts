@@ -14,7 +14,7 @@ import { BytesPipe } from "@/common/pipes/bytes.pipe";
 import { FormService } from "@/services";
 
 @Component({
-	selector: `div[resFooter]`,
+	selector: `gurl-res-footer`,
 	template: `
            <div class="flex-1 flex justify-between items-center">
               <div class="flex items-center">
@@ -73,18 +73,13 @@ import { FormService } from "@/services";
 	imports: [LucideAngularModule, BytesPipe],
 })
 export class ResFooter {
-	readonly UploadIcon = ArrowUpFromLine;
-	readonly ClearIcon = Eraser;
-	readonly DownloadSizeIcon = ArrowDownFromLine;
-	readonly AlertIcon = TriangleAlert;
-	readonly TimerIcon = Timer;
-	readonly PreviewOpenIcon = Eye;
-	readonly PreviewCloseIcon = EyeOff;
+	@HostBinding("class")
+	def = "flex items-center p-2";
 
 	data = input.required<models.GurlRes>();
-	formSvc = inject(FormService);
 
-	ctypeMismatch = computed(() => {
+	protected readonly formSvc = inject(FormService);
+	protected ctypeMismatch = computed(() => {
 		const body = this.data().body;
 
 		if (body) {
@@ -94,6 +89,11 @@ export class ResFooter {
 		return false;
 	});
 
-	@HostBinding("class")
-	def = "flex items-center p-2";
+	protected readonly UploadIcon = ArrowUpFromLine;
+	protected readonly ClearIcon = Eraser;
+	protected readonly DownloadSizeIcon = ArrowDownFromLine;
+	protected readonly AlertIcon = TriangleAlert;
+	protected readonly TimerIcon = Timer;
+	protected readonly PreviewOpenIcon = Eye;
+	protected readonly PreviewCloseIcon = EyeOff;
 }

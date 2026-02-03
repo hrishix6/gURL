@@ -1,34 +1,34 @@
 import { Component, HostBinding, inject } from "@angular/core";
 import { AppService } from "@/services";
-import { AppSidebarHeader } from "./app.sidebar.header";
-import { AppCollectionsSidebar } from "./collections/collection.sidebar";
-import { EnvironmentSidebar } from "./environments/environments.sidebar";
-import { AppRequestHistory } from "./history/history.sidebar";
+import { GurlCollections } from "./collections/collection.sidebar";
+import { GurlEnvironments } from "./environments/environments.sidebar";
+import { GurlReqHistory } from "./history/history.sidebar";
+import { GurlSidebarHeader } from "./sidebar.header";
 
 @Component({
-	selector: "aside[appMobileSidebar]",
+	selector: "aside[gurl-mobile-sidebar]",
 	template: `<div class="flex-1 flex flex-col overflow-hidden">
-    <div appSidebarHeader></div>
+    <gurl-sidebar-header />
     @switch (appSvc.appSidebarContent()) { @case ("history") {
-    <div gurlReqHistory></div>
+    <gurl-history />
     } @case("collections"){
-    <app-collections />
+    <gurl-collections />
     }
     @case("environments"){
-       <div gurlEnvironments></div>
+       <gurl-environments />
        }
    }
   </div>`,
 	imports: [
-		AppCollectionsSidebar,
-		AppSidebarHeader,
-		AppRequestHistory,
-		EnvironmentSidebar,
+		GurlSidebarHeader,
+		GurlCollections,
+		GurlEnvironments,
+		GurlReqHistory,
 	],
 })
 export class MobileSidebar {
 	@HostBinding("class")
-	def = "bg-base-200 min-h-full w-96 flex flex-col";
+	def = "bg-base-200 min-h-full w-[450px] flex flex-col";
 
 	appSvc = inject(AppService);
 }

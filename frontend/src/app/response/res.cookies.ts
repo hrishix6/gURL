@@ -3,7 +3,7 @@ import { Ban, Eye, EyeOff, LucideAngularModule } from "lucide-angular";
 import { FormService } from "@/services";
 
 @Component({
-	selector: `div[resCookies]`,
+	selector: `gurl-res-cookies`,
 	template: `
         @if(formSvc.res()?.cookies?.length){
             <div class="flex-1 flex overflow-auto shadow-md border-2 border-base-100">
@@ -137,13 +137,11 @@ import { FormService } from "@/services";
 	imports: [LucideAngularModule],
 })
 export class ResCookies {
-	readonly PreviewOpenIcon = Eye;
-	readonly PreviewCloseIcon = EyeOff;
-
 	@HostBinding("class")
 	def = "flex-1 flex overflow-hidden";
 
-	readonly NoneIcon = Ban;
-
-	readonly formSvc = inject(FormService);
+	protected readonly PreviewOpenIcon = Eye;
+	protected readonly PreviewCloseIcon = EyeOff;
+	protected readonly NoneIcon = Ban;
+	protected readonly formSvc = inject(FormService);
 }

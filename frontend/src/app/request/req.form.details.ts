@@ -12,32 +12,32 @@ import { ReqHeaders } from "./req.headers";
 import { ReqQuery } from "./req.query";
 
 @Component({
-	selector: "app-req-form-details",
+	selector: "gurl-req-form-details",
 	template: `
     <header class="flex justify-between items-center">
-      <app-section-tab
+      <gurl-section-tabs
         [defaultActive]="formSvc.activeReqTab()"
         (onActiveChange)="handleTabChange($event)"
         [tabs]="reqDetailsTabs"
         [activeTab]="formSvc.activeReqTab()"
-      ></app-section-tab>
+      ></gurl-section-tabs>
     </header>
     <div class="flex-1 p-2 flex flex-col gap-2 overflow-hidden mt-2">
       @switch (formSvc.activeReqTab()) { @case ("req_headers") {
-      <app-req-headers />
+      <gurl-req-headers />
       } @case ("req_query") {
-      <app-req-query />
+      <gurl-req-query />
       } @case ("req_body") {
-      <app-req-body />
+      <gurl-req-body />
       } @case ("req_auth") {
-      <app-req-auth></app-req-auth>
+      <gurl-req-auth />
       }
       @case("req_cookies"){
-        <app-req-cookies></app-req-cookies>
+      <gurl-req-cookies />
       }
     }
     </div>
-    <app-req-footer></app-req-footer>
+    <gurl-req-footer />
   `,
 	imports: [
 		Tab,
@@ -54,10 +54,10 @@ export class RequestFormDetails {
 	@HostBinding("class")
 	hostClass = "flex-1 flex flex-col overflow-hidden";
 
-	readonly formSvc = inject(FormService);
-	readonly reqDetailsTabs = REQ_DETAILS_TABS;
+	protected readonly formSvc = inject(FormService);
+	protected readonly reqDetailsTabs = REQ_DETAILS_TABS;
 
-	handleTabChange(id: ReqTabId) {
+	protected handleTabChange(id: ReqTabId) {
 		this.formSvc.setActiveReqTab(id);
 	}
 }

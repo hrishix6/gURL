@@ -1,13 +1,11 @@
 import {
 	Component,
-	computed,
 	type ElementRef,
 	HostBinding,
 	inject,
 	viewChild,
 } from "@angular/core";
 import { LucideAngularModule, Plus } from "lucide-angular";
-import { AppDropdown } from "@/common/components";
 import { EnvironmentTab } from "@/environments/environment.tab";
 import { AppService, TabsService } from "@/services";
 import { RequestTab } from "./req.tab";
@@ -16,20 +14,20 @@ import { TabHeader } from "./req.tab.header";
 @Component({
 	selector: "section[appReqTabs]",
 	template: `
-    <div class="flex items-center relative py-1 px-2 border-b-2 border-base-100">
+    <div class="flex items-center py-1 px-2 border-b-2 border-base-100">
       <!-- Button to add  new tab -->
-      <button class="btn btn-ghost btn-square btn-sm mr-1" (click)="tabsSvc.createFreshTab()">
+      <button class="btn btn-square btn-ghost mr-1" (click)="tabsSvc.createFreshTab()">
         <lucide-angular [img]="PlusIcon" class="size-4" />
       </button>
       <!-- Tabs -->
       <div
-        class="flex flex-1 gap-0.5 overflow-x-auto no-scrollbar whitespace-nowrap"
+        class="flex flex-1 gap-0.5 overflow-x-auto no-scrollbar whitespace-nowrap relative"
         #tabsContainer
         (wheel)="handleWheel($event)"
       >
         @for (tab of tabsSvc.openTabs(); track tab.id) {
         <div
-          appReqTabHeader
+          gurl-tab-header
           [data]="tab"
           [isActive]="tabsSvc.activeTab() === tab.id"
           (onCloseTab)="tabsSvc.emitTabCloseEvent(tab.id)"
@@ -37,69 +35,39 @@ import { TabHeader } from "./req.tab.header";
         ></div>
         }
       </div>
-      <div class="ml-1 relative">
-          <!-- Gradient Shadow to indicate scrollable area -->
-          <div
-          class="pointer-events-none absolute -left-10 top-0 h-full w-10 bg-linear-to-r from-transparent to-bg-base-100/5"
-        ></div>
-          <app-dropdown
-              [activeItem]="activeItem()!"
-              [items]="appSvc.environmentDropdownItems()"
-              (onItemSelection)="appSvc.setActiveEnvironment($event)"
-              [size]="'md'"
-              [align]="'end'"
-              [direction]="'down'"
-              [varient]="'soft'"
-              >
-          </app-dropdown>
-      </div>
     </div>
     <!-- Tab content view -->
-    @for (tab of tabsSvc.openTabs(); track tab.id) {        
-
+    @for (tab of tabsSvc.openTabs(); track tab.id) {
       @if(tab.entityType === 'req') {
-        <app-request-tab
+        <gurl-req-tab
                 [tabId]="tab.id"
                 [draftId]="tab.entityId"
                 [activeId]="tabsSvc.activeTab()"
-          ></app-request-tab>
+        />
       }
-      
       @if(tab.entityType === 'env') {
-        <app-env-tab
+        <gurl-env-tab
         [tab]="tab"
         [activeId]="tabsSvc.activeTab()"
         >
-        </app-env-tab>
+        </gurl-env-tab>
       }
     } 
   `,
-	imports: [
-		LucideAngularModule,
-		TabHeader,
-		RequestTab,
-		AppDropdown,
-		EnvironmentTab,
-	],
+	imports: [LucideAngularModule, TabHeader, RequestTab, EnvironmentTab],
 })
-export class AppTabsWrapper {
-	readonly PlusIcon = Plus;
-	readonly tabsSvc = inject(TabsService);
-	readonly appSvc = inject(AppService);
-
-	activeItem = computed(() => {
-		return this.appSvc
-			.environmentDropdownItems()
-			.find((x) => x.id === this.appSvc.activeEnvironment());
-	});
-
+export class TabsWrapper {
 	@HostBinding("class")
 	def = "flex-1 flex flex-col overflow-hidden";
 
-	tabContainer =
+	protected readonly PlusIcon = Plus;
+	protected readonly tabsSvc = inject(TabsService);
+	protected readonly appSvc = inject(AppService);
+
+	private readonly tabContainer =
 		viewChild.required<ElementRef<HTMLDivElement>>("tabsContainer");
 
-	handleWheel(e: WheelEvent) {
+	protected handleWheel(e: WheelEvent) {
 		e.preventDefault();
 		this.tabContainer().nativeElement.scrollBy({
 			left: e.deltaY < 0 ? -100 : 100,

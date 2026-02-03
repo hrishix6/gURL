@@ -14,10 +14,10 @@ import { TabsService } from "@/services";
 import type { ReqHistoryItem } from "@/types";
 
 @Component({
-	selector: `a[gurlReqHistoryItem]`,
+	selector: `a[gurl-history-item]`,
 	template: `
     <div class="flex items-center gap-2">
-      <div methodTag [size]="'xs'" [method]="data().method"></div>
+      <div gurl-req-tag  [size]="'xs'" [method]="data().method"></div>
       @if (data().success) {
       <div class="badge badge-soft badge-success badge-sm">{{ data().statusText }}</div>
       }@else {
@@ -30,15 +30,17 @@ import type { ReqHistoryItem } from "@/types";
   `,
 	imports: [ReqMethodTag],
 })
-export class RequestHistoryItem implements OnInit, OnDestroy {
-	data = input.required<ReqHistoryItem>();
-	tabSvc = inject(TabsService);
-	timerRef: number | null = null;
-	timeSince = signal<string>("");
-
+export class GurlHistoryItem implements OnInit, OnDestroy {
 	@HostBinding("class")
 	def =
 		"flex shrink-0 border-2 border-base-100 shadow-md grow-0 flex-col gap-4 rounded-box p-2 overflow-hidden hover:bg-base-100 focus:outline-none focus:ring-2 focus:ring-primary hover:cursor-pointer transition-all delay-50 ease-in-out";
+
+	@HostListener("click")
+	handleClick() {
+		this.tabSvc.createTabFromHistory(this.data());
+	}
+
+	data = input.required<ReqHistoryItem>();
 
 	ngOnInit(): void {
 		this.timeSince.set(humanTime(this.data().executed));
@@ -46,14 +48,14 @@ export class RequestHistoryItem implements OnInit, OnDestroy {
 			this.timeSince.set(humanTime(this.data().executed));
 		}, 5000);
 	}
+
 	ngOnDestroy(): void {
 		if (this.timerRef) {
 			clearInterval(this.timerRef);
 		}
 	}
 
-	@HostListener("click")
-	handleClick() {
-		this.tabSvc.createTabFromHistory(this.data());
-	}
+	private readonly tabSvc = inject(TabsService);
+	protected timerRef: number | null = null;
+	protected timeSince = signal<string>("");
 }

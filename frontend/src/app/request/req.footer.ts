@@ -1,6 +1,6 @@
 import { Component, computed, HostBinding, inject } from "@angular/core";
 import { Eye, EyeOff, LucideAngularModule } from "lucide-angular";
-import { AppDropdown } from "@/common/components";
+import { GurlDropdown } from "@/common/components";
 import {
 	API_KEY_LOCATION,
 	REQ_AUTH_TYPES,
@@ -17,10 +17,11 @@ import type {
 } from "@/types";
 
 @Component({
-	selector: `app-req-footer`,
+	selector: `gurl-req-footer`,
 	template: `
         @switch (f.activeReqTab()) {
-            @case ("req_headers") {
+            @case ("req_headers")
+            {
                 <div class="flex-1 flex items-center">
                  <label class="label ml-auto">
                             <input type="checkbox" [checked]="f.headerSvc.bulkEditModeHeaders()" (change)="handleEditModeSwitch('req_headers')" class="toggle toggle-primary" />
@@ -52,7 +53,7 @@ import type {
                              Enabled
                         </label>
                     }
-                    <app-dropdown
+                    <gurl-dropdown
                                 [items]="reqAuthTypes"
                                 [activeItem]="f.auth.activeAuth()"
                                 [direction]="'top'"
@@ -62,9 +63,9 @@ import type {
                                 [primary]="false"
                                 (onItemSelection)="handleActiveAuthSelection($event)"
                                 >
-                    </app-dropdown>
+                    </gurl-dropdown>
                     @if(["api_key"].includes(f.auth.activeAuth().id)){
-                        <app-dropdown
+                        <gurl-dropdown
                                 [items]="apiKeyLocations"
                                 [activeItem]="apiKeyLocationItem()!"
                                 [direction]="'top'"
@@ -74,11 +75,11 @@ import type {
                                 [primary]="false"
                                 (onItemSelection)="handleSetApiKeyLocation($event)"
                                 >
-                        </app-dropdown>
+                        </gurl-dropdown>
                     }
 
                     @if(["token"].includes(f.auth.activeAuth().id)){
-                        <app-dropdown
+                        <gurl-dropdown
                                     [items]="tokenAuthTypes"
                                     [activeItem]="tokenAuthTypeItem()!"
                                     [direction]="'top'"
@@ -88,7 +89,7 @@ import type {
                                     [primary]="false"
                                     (onItemSelection)="handleSetTokenAuthType($event)"
                                     >
-                        </app-dropdown>
+                        </gurl-dropdown>
                     }
                 
                     @if(["basic"].includes(f.auth.activeAuth().id)){
@@ -101,7 +102,7 @@ import type {
             }
             @case('req_body'){
                 <div class="flex-1 flex gap-4 items-center">
-                <app-dropdown
+                <gurl-dropdown
                             [items]="reqBodyTypes"
                             [activeItem]="f.bodySvc.bodyType()"
                             [direction]="'top'"
@@ -111,9 +112,9 @@ import type {
                             [primary]="false"
                             (onItemSelection)="handleActiveItemSelection($event)"
                             >
-                </app-dropdown>
+                </gurl-dropdown>
                 @if(["urlencoded"].includes(f.bodySvc.bodyType().id)){
-                        <label class="label ml-auto">
+                    <label class="label ml-auto">
                             <input type="checkbox" [checked]="f.bodySvc.bulkEditModeUrlEncodedForm()" (change)="handleEditModeSwitch('req_body')" class="toggle toggle-primary" />
                              Raw
                     </label>
@@ -122,50 +123,50 @@ import type {
         }
     }
     `,
-	imports: [LucideAngularModule, AppDropdown],
+	imports: [LucideAngularModule, GurlDropdown],
 })
 export class ReqFooter {
-	readonly PreviewOpenIcon = Eye;
-	readonly PreviewCloseIcon = EyeOff;
+	@HostBinding("class")
+	def = "flex text-xs p-2";
 
-	readonly f = inject(FormService);
-	readonly reqBodyTypes = REQ_BODY_TYPES;
-	readonly reqAuthTypes = REQ_AUTH_TYPES;
-	readonly tokenAuthTypes = TOKEN_AUTH_TYPES;
-	readonly apiKeyLocations = API_KEY_LOCATION;
+	protected readonly PreviewOpenIcon = Eye;
+	protected readonly PreviewCloseIcon = EyeOff;
 
-	apiKeyLocationItem = computed(() => {
+	protected readonly f = inject(FormService);
+	protected readonly reqBodyTypes = REQ_BODY_TYPES;
+	protected readonly reqAuthTypes = REQ_AUTH_TYPES;
+	protected readonly tokenAuthTypes = TOKEN_AUTH_TYPES;
+	protected readonly apiKeyLocations = API_KEY_LOCATION;
+
+	protected apiKeyLocationItem = computed(() => {
 		return this.apiKeyLocations.find(
 			(x) => x.id === this.f.auth.apiKey().location,
 		);
 	});
 
-	tokenAuthTypeItem = computed(() => {
+	protected tokenAuthTypeItem = computed(() => {
 		return this.tokenAuthTypes.find(
 			(x) => x.id === this.f.auth.tokenAuth().type,
 		);
 	});
 
-	@HostBinding("class")
-	def = "flex text-xs p-2";
-
-	handleActiveItemSelection(id: ReqBodyType) {
+	protected handleActiveItemSelection(id: ReqBodyType) {
 		this.f.setBodyType(id);
 	}
 
-	handleActiveAuthSelection(id: RequestAuthType) {
+	protected handleActiveAuthSelection(id: RequestAuthType) {
 		this.f.setAuth(id);
 	}
 
-	handleSetApiKeyLocation(location: APIKeyLocation) {
+	protected handleSetApiKeyLocation(location: APIKeyLocation) {
 		this.f.updateApiKey("location", location);
 	}
 
-	handleSetTokenAuthType(type: TokenAuthType) {
+	protected handleSetTokenAuthType(type: TokenAuthType) {
 		this.f.updateTokenAuth("type", type);
 	}
 
-	handleEditModeSwitch(tabId: ReqTabId) {
+	protected handleEditModeSwitch(tabId: ReqTabId) {
 		switch (tabId) {
 			case "req_headers": {
 				return this.f.headerSvc.toggleEditModeHeaders();

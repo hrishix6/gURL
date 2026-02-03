@@ -12,7 +12,7 @@ import { FormService } from "@/services";
 import { ResponseTextPreview } from "./text.preview";
 
 @Component({
-	selector: "div[resPreview]",
+	selector: "gurl-res-preview",
 	template: `
     @if(formSvc.res()?.limitExceeded){
         <div class="flex-1 flex items-center rounded-box justify-center shadow-md border-2 border-base-100">
@@ -80,7 +80,7 @@ import { ResponseTextPreview } from "./text.preview";
                         @case("text") {
                             <div [ngClass]="{
                                 'flex-1 flex text-lg': true,
-                            }" appResTextPreview [src]="formSvc.res()?.body?.src"></div>
+                            }" gurl-res-text-preview [src]="formSvc.res()?.body?.src"></div>
                         }
                     }
                  </div>
@@ -124,9 +124,10 @@ import { ResponseTextPreview } from "./text.preview";
 	],
 })
 export class ResPreview {
-	readonly DownloadIcon = HardDriveDownload;
-	readonly ErroredReqIcon = CircleAlert;
-	formSvc = inject(FormService);
 	@HostBinding("class")
 	def = "flex-1 flex overflow-hidden";
+
+	protected readonly DownloadIcon = HardDriveDownload;
+	protected readonly ErroredReqIcon = CircleAlert;
+	protected readonly formSvc = inject(FormService);
 }

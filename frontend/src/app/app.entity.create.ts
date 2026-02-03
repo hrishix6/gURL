@@ -2,57 +2,74 @@ import { Component, HostBinding, inject } from "@angular/core";
 import {
 	ChevronsUpDown,
 	Container,
+	FileDown,
 	Layers,
 	LucideAngularModule,
 	Plus,
+	RadioTower,
 } from "lucide-angular";
-import { AppService, TabsService } from "./services";
+import { AppService } from "./services";
 
 @Component({
-	selector: `div[appEntityCreation]`,
+	selector: `div[gurl-entity-creation]`,
 	template: `
-    <div tabindex="0" role="button" class="btn btn-soft btn-primary btn-sm xl:btn-md">
+    <div tabindex="0" role="button" class="btn btn-soft btn-primary">
 		<lucide-angular [img]="PlusIcon" class="size-4" />
 		<span>Create</span>
 	</div>
     <ul
       tabindex="-1"
-      class="dropdown-content menu bg-base-100 rounded-box z-50 w-48 p-2 shadow-sm"
+      class="dropdown-content menu bg-base-100 rounded-box z-50 w-52 p-2 shadow-sm"
     >
-      <li class="my-0.5">
-        <button (click)="toggleCollectionModal()">
-			<lucide-angular [img]="CollectionsIcon" class="size-4"  />
-			Collection
-		</button>
-		 <button (click)="handleNewEnvironmentCreation()">
-			<lucide-angular [img]="EnvironmentIcon" class="size-4"  />
-			Environment
-		</button>
-      </li>
+		<li>
+			<a (click)="toggleCollectionModal()">
+				<lucide-angular [img]="CollectionsIcon" class="size-4"  />
+				Collection
+			</a>
+		</li>
+		<li>
+			<a (click)="toggleEnvModal()">
+				<lucide-angular [img]="EnvironmentIcon" class="size-4"  />
+				Environment
+			</a>
+		</li>
+		<li>
+			<a (click)="toggleReqModal()">
+				<lucide-angular [img]="RequestsIcon" class="size-4"  />
+				Request
+			</a>
+		</li>
     </ul>
   `,
 	imports: [LucideAngularModule],
 })
-export class AppEntityCreationButton {
-	readonly DropdownIcon = ChevronsUpDown;
-	readonly PlusIcon = Plus;
-	readonly CollectionsIcon = Layers;
-	readonly EnvironmentIcon = Container;
-
+export class EntityCreationButton {
 	@HostBinding("class")
 	def = "dropdown dropdown-end";
 
-	appSvc = inject(AppService);
-	tabSvc = inject(TabsService);
+	private readonly appSvc = inject(AppService);
 
-	toggleCollectionModal() {
-		this.appSvc.toggleCollectionModal();
+	protected readonly DropdownIcon = ChevronsUpDown;
+	protected readonly PlusIcon = Plus;
+	protected readonly CollectionsIcon = Layers;
+	protected readonly EnvironmentIcon = Container;
+	protected readonly RequestsIcon = RadioTower;
+	protected readonly ImportIcon = FileDown;
+
+	protected toggleCollectionModal() {
+		this.appSvc.toggleCreateCollectionModal();
 		const activeElement = document.activeElement as HTMLAnchorElement;
 		activeElement?.blur();
 	}
 
-	handleNewEnvironmentCreation() {
-		this.tabSvc.createFreshEnvTab();
+	protected toggleEnvModal() {
+		this.appSvc.toggleCreateEnvModal();
+		const activeElement = document.activeElement as HTMLAnchorElement;
+		activeElement?.blur();
+	}
+
+	protected toggleReqModal() {
+		this.appSvc.toggleCreateReqModal();
 		const activeElement = document.activeElement as HTMLAnchorElement;
 		activeElement?.blur();
 	}

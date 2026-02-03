@@ -1,5 +1,6 @@
 import { NgClass } from "@angular/common";
 import {
+	type AfterViewInit,
 	Component,
 	type ElementRef,
 	HostBinding,
@@ -16,7 +17,7 @@ import { type ApplicationTab, AppTabType } from "@/types";
 import { EnvironmentFormItem } from "./environment.form.item";
 
 @Component({
-	selector: "app-env-tab",
+	selector: "gurl-env-tab",
 	template: `
         <header class="flex items-center px-4 py-2">
             <div class="flex-1 flex gap-2.5 p-2 bg-base-300 items-center rounded-box">
@@ -48,7 +49,7 @@ import { EnvironmentFormItem } from "./environment.form.item";
         }
         <div class="flex flex-1 overflow-y-auto flex-col gap-2.5 p-4">
             @for (item of envFormSvc.environmentFormItems(); track $index) {
-            <div appEnvFormItem
+            <div gurl-env-form-item
                  [item]="item"
                  (onBlur)="envFormSvc.addItem()"
                  (onDelete)="envFormSvc.deleteItem($event)"
@@ -62,7 +63,7 @@ import { EnvironmentFormItem } from "./environment.form.item";
         @if(
         !appSvc.alwaysDiscardEnvDrafts() && envFormSvc.isDraftSavePreferenceModalOpen()
         ){
-      <dialog draftSavePreferenceModal
+      <dialog gurl-draft-save-preference-modal
 	    [title]="envFormSvc.saveDraftModalTitle()"
 		[message]="envFormSvc.saveDraftModalMessage()"
         [isOpen]="envFormSvc.isDraftSavePreferenceModalOpen()"
@@ -80,19 +81,7 @@ import { EnvironmentFormItem } from "./environment.form.item";
 		DraftSavePreferenceModal,
 	],
 })
-export class EnvironmentTab implements OnInit {
-	readonly SaveIcon = Save;
-	readonly EditIcon = Pencil;
-	readonly DeleteIcon = Trash2;
-
-	activeId = input.required<string | null>();
-	firstInputEl =
-		viewChild.required<ElementRef<HTMLInputElement>>("firstInputEl");
-	appSvc = inject(AppService);
-	tab = input.required<ApplicationTab>();
-	envFormSvc = inject(EnvFormService);
-	tabSvc = inject(TabsService);
-
+export class EnvironmentTab implements OnInit, AfterViewInit {
 	@HostBinding("class") get defaultClass() {
 		if (this.activeId() === this.tab().id) {
 			return "flex-1 flex flex-col overflow-hidden";
@@ -101,22 +90,37 @@ export class EnvironmentTab implements OnInit {
 		return "hidden";
 	}
 
+	activeId = input.required<string | null>();
+	tab = input.required<ApplicationTab>();
+
 	ngOnInit(): void {
-		console.log(`called`);
 		this.envFormSvc.initializeEnvForm(this.tab().entityId);
+	}
+
+	ngAfterViewInit(): void {
 		this.firstInputEl().nativeElement?.focus();
 	}
 
-	async handleSaveDraft() {
+	private readonly tabSvc = inject(TabsService);
+
+	protected readonly SaveIcon = Save;
+	protected readonly DeleteIcon = Trash2;
+	protected readonly EditIcon = Pencil;
+	protected firstInputEl =
+		viewChild.required<ElementRef<HTMLInputElement>>("firstInputEl");
+	protected readonly appSvc = inject(AppService);
+	protected readonly envFormSvc = inject(EnvFormService);
+
+	protected async handleSaveDraft() {
 		await this.envFormSvc.saveEnv();
 		this.envFormSvc.toggleDraftSavePreferenceModal();
 	}
 
-	handleClose() {
+	protected handleClose() {
 		this.envFormSvc.toggleDraftSavePreferenceModal();
 	}
 
-	handleNoSaveDraft(alwaysDiscard: boolean) {
+	protected handleNoSaveDraft(alwaysDiscard: boolean) {
 		this.appSvc.setAlwaysDiscardEnvDrafts(alwaysDiscard);
 		this.tabSvc.deleteTab(this.tab().id, AppTabType.Env);
 		this.envFormSvc.toggleDraftSavePreferenceModal();

@@ -6,15 +6,15 @@ import { AppService } from "@/services";
 import type { AppTheme } from "@/types";
 
 @Component({
-	selector: "div[appThemeSwithcer]",
+	selector: "div[gurl-theme-switcher]",
 	template: `
       <div class="dropdown dropdown-top dropdown-end">
-        <div tabindex="0" role="button" class="btn btn-sm btn-square btn-ghost">
+        <div tabindex="0" role="button" class="btn btn-ghost btn-square btn-sm">
           <lucide-angular [img]="ThemeSwitcherIcon" class="size-5" />
         </div>
         <ul
           tabindex="-1"
-          class="menu dropdown-content bg-base-100 rounded-box z-1 w-52 p-2 shadow-sm"
+          class="menu dropdown-content bg-base-100 rounded-box z-50 w-52 p-2 shadow-sm"
         >
            @for (item of supportedThemes; track item.id) {
           <li class="my-0.5">
@@ -35,19 +35,19 @@ import type { AppTheme } from "@/types";
   `,
 	imports: [LucideAngularModule, NgClass],
 })
-export class AppThemeSwitcher {
-	readonly CheckedIcon = Check;
-	readonly ThemeSwitcherIcon = Palette;
-	readonly supportedThemes = SUPPORTED_THEMES;
+export class GurlThemeSwitcher {
+	@HostBinding("class")
+	def = "flex items-center justify-center";
 
-	appSvc = inject(AppService);
+	protected readonly CheckedIcon = Check;
+	protected readonly ThemeSwitcherIcon = Palette;
+	protected readonly supportedThemes = SUPPORTED_THEMES;
 
-	setActiveTheme(id: AppTheme) {
+	protected readonly appSvc = inject(AppService);
+
+	protected setActiveTheme(id: AppTheme) {
 		this.appSvc.setActiveTheme(id);
 		const activeEl = document.activeElement as HTMLAnchorElement;
 		activeEl?.blur();
 	}
-
-	@HostBinding("class")
-	def = "flex items-center justify-center";
 }

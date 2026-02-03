@@ -19,12 +19,12 @@ import { ReqMethodTag } from "@/request/method.tag";
 import { AppService, TabsService } from "@/services";
 
 @Component({
-	selector: `div[collectionRequestItem]`,
+	selector: `div[gurl-request-item]`,
 	template: `
     <div class="flex flex-col gap-2 p-2">
 	  <div class="flex items-center">
 			<div class="flex-1 flex items-center flex-nowrap gap-2 overflow-hidden">
-				<div methodTag [size]="'xs'" [method]="data().method"></div>
+				<div gurl-req-tag [size]="'xs'" [method]="data().method"></div>
 				<a href="#" class="block focus:underline focus:outline-0 flex-1 text-sm truncate" (click)="handleOpenRequest()">
 					{{ data().name }}
 				</a>
@@ -57,7 +57,7 @@ import { AppService, TabsService } from "@/services";
       </p>
     </div>
 	@if(this.isDeleteModalOpen()) {
-      <dialog rmModal
+      <dialog gurl-rm-confirmation-modal
         [title]="deleteTitle()"
         [message]="deleteMessage"
         [isOpen]="isDeleteModalOpen()"
@@ -67,7 +67,7 @@ import { AppService, TabsService } from "@/services";
       ></dialog>
     }
 	@if(this.isCopyModalOpen()) {
-      <dialog cpRequestModal
+      <dialog gurl-cp-request-modal
         [initialValue]="data().name + '-copy'"
         [isOpen]="isCopyModalOpen()"
         [actionInProgress]="isCopyInProgress()"
@@ -83,66 +83,67 @@ import { AppService, TabsService } from "@/services";
 		CopyRequestModal,
 	],
 })
-export class CollectionRequest {
-	data = input.required<models.RequestDTO>();
-	tabSvc = inject(TabsService);
-	appSvc = inject(AppService);
-
-	readonly RequestOptsIcon = EllipsisVertical;
-	readonly DeleteIcon = Trash2;
-	readonly CopyIcon = Copy;
-
-	readonly deleteTitle = computed(
-		() => `Delete Request '${this.data().name}' ?`,
-	);
-	readonly deleteMessage = `This action is irreversible`;
-
+export class GurlRequestItem {
 	@HostBinding("class")
 	def = "border-2 border-base-100 shadow-md rounded-box";
 
-	handleOpenRequest() {
+	data = input.required<models.RequestDTO>();
+
+	private readonly tabSvc = inject(TabsService);
+	private readonly appSvc = inject(AppService);
+
+	protected readonly RequestOptsIcon = EllipsisVertical;
+	protected readonly DeleteIcon = Trash2;
+	protected readonly CopyIcon = Copy;
+
+	protected readonly deleteTitle = computed(
+		() => `Delete Request '${this.data().name}' ?`,
+	);
+	protected readonly deleteMessage = `This action is irreversible`;
+
+	protected handleOpenRequest() {
 		this.tabSvc.createTabFromSaved(this.data());
 		const parentTarget = document.activeElement as HTMLAnchorElement;
 		parentTarget.blur();
 	}
 
-	isDeleteModalOpen = signal<boolean>(false);
-	isDeletionInProgress = signal<boolean>(false);
+	protected isDeleteModalOpen = signal<boolean>(false);
+	protected isDeletionInProgress = signal<boolean>(false);
 
-	toggleDeleteModal() {
+	protected toggleDeleteModal() {
 		this.isDeleteModalOpen.update((x) => !x);
 		const target = document.activeElement as HTMLAnchorElement;
 		target.blur();
 	}
 
-	isCopyModalOpen = signal<boolean>(false);
-	isCopyInProgress = signal<boolean>(false);
+	protected isCopyModalOpen = signal<boolean>(false);
+	protected isCopyInProgress = signal<boolean>(false);
 
-	toggleCopyModal() {
+	protected toggleCopyModal() {
 		this.isCopyModalOpen.update((x) => !x);
 		const target = document.activeElement as HTMLAnchorElement;
 		target.blur();
 	}
 
-	async handleConfirmCopy(name: string) {
+	protected async handleConfirmCopy(name: string) {
 		this.isCopyInProgress.set(true);
 		await this.appSvc.copyRequest(this.data().id, name);
 		this.isCopyInProgress.set(false);
 		this.toggleCopyModal();
 	}
 
-	handleCancelCopy() {
+	protected handleCancelCopy() {
 		this.toggleCopyModal();
 	}
 
-	async handleConfirmDeletion() {
+	protected async handleConfirmDeletion() {
 		this.isDeletionInProgress.set(true);
 		this.appSvc.deleteRequest(this.data().id);
 		this.isDeletionInProgress.set(false);
 		this.toggleDeleteModal();
 	}
 
-	handleCancelDeletion() {
+	protected handleCancelDeletion() {
 		this.toggleDeleteModal();
 	}
 }

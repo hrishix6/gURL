@@ -14,6 +14,7 @@ import {
 	ChevronUp,
 	EllipsisVertical,
 	Eraser,
+	FileDown,
 	Layers,
 	LucideAngularModule,
 	SquarePen,
@@ -23,12 +24,12 @@ import { DEFAULT_COLLECTION_ID } from "@/constants";
 import { DeleteConfirmationModal } from "@/modals/delete.confirmation";
 import { RenameCollectionModal } from "@/modals/rename.collection";
 import { AppService } from "@/services";
-import { CollectionRequest } from "./collection.request.item";
+import { GurlRequestItem } from "./collection.request.item";
 
 @Component({
-	selector: `div[collectionItem]`,
+	selector: `div[gurl-collection-item]`,
 	template: `
-    <div class="flex items-center gap-2 p-2 bg-base-300 rounded box">
+    <div class="flex items-center gap-2 p-2 bg-base-300 rounded box basis-">
       <div
         class="flex flex-1 items-center gap-2"
       >
@@ -63,6 +64,12 @@ import { CollectionRequest } from "./collection.request.item";
 				Clear
 			</button>
             </li>
+			<li>
+              <button role="link" (click)="appSvc.exportCollection(data().id)">
+				<lucide-angular [img]="ExportIcon" class="size-4" />
+				Export
+			</button>
+            </li>
           } 
           @else {
              <li class="my-0.5">
@@ -79,6 +86,12 @@ import { CollectionRequest } from "./collection.request.item";
 						Clear
 					</button>
             	</li>
+				<li>
+					<button role="link" (click)="appSvc.exportCollection(data().id)">
+						<lucide-angular [img]="ExportIcon" class="size-4" />
+						Export
+					</button>
+            	</li>
 			}
             <li>
               <button role="link" (click)="toggleDeleteModal()">
@@ -90,7 +103,7 @@ import { CollectionRequest } from "./collection.request.item";
         </ul>
       </div>
     </div>
-    <dialog rmModal
+    <dialog gurl-rm-confirmation-modal
     [title]="deleteModalTitle()"
     [message]="deleteModalMessage()"
     [isOpen]="isDeleteModalOpen()"
@@ -99,7 +112,7 @@ import { CollectionRequest } from "./collection.request.item";
     (onConfirm)="handleConfirmDeletion()"
     >
     </dialog>
-	<dialog rmModal
+	<dialog gurl-rm-confirmation-modal
     [title]="clearModalTitle()"
     [message]="clearModalMessage()"
     [isOpen]="isClearModalOpen()"
@@ -109,7 +122,7 @@ import { CollectionRequest } from "./collection.request.item";
     >
     </dialog>
     @if(isRenameModalOpen()){
-      <dialog  mvCollectionModal
+      <dialog  gurl-rename-collection-modal
       [initialValue]="data().name"
       [isOpen]="isRenameModalOpen()"
       [actionInProgress]="mvInProgress()"
@@ -121,7 +134,7 @@ import { CollectionRequest } from "./collection.request.item";
     @if(isOpen()) {
     <section class="flex flex-col gap-1">
       @if (requestItems().length) { @for (item of requestItems(); track item.id) {
-      <div collectionRequestItem [data]="item"></div>
+      <div gurl-request-item [data]="item"></div>
       } } @else {
       <div class="flex items-center gap-2 my-2 justify-center text-sm opacity-25">
         <lucide-angular [img]="EmptyIcon" class="size-4" />
@@ -133,68 +146,80 @@ import { CollectionRequest } from "./collection.request.item";
   `,
 	imports: [
 		LucideAngularModule,
-		CollectionRequest,
+		GurlRequestItem,
 		NgClass,
 		RenameCollectionModal,
 		DeleteConfirmationModal,
 	],
 })
-export class CollectionList {
-	readonly CollectionsIcon = Layers;
-	readonly CollectionOptionsIcon = EllipsisVertical;
-	readonly EmptyIcon = Ban;
-	readonly OpenIcon = ChevronDown;
-	readonly CloseIcon = ChevronUp;
-	readonly ClearIcon = Eraser;
-	readonly RenameIcon = SquarePen;
-	readonly DeleteIcon = Trash2;
+export class GurlCollectionItem {
+	@HostBinding("class")
+	def = "flex flex-col gap-1";
 
-	readonly defaultCollectionID = DEFAULT_COLLECTION_ID;
+	data = input.required<models.CollectionDTO>();
 
-	readonly deleteModalTitle = computed(() => {
+	protected readonly appSvc = inject(AppService);
+	protected readonly CollectionsIcon = Layers;
+	protected readonly CollectionOptionsIcon = EllipsisVertical;
+	protected readonly EmptyIcon = Ban;
+	protected readonly ExportIcon = FileDown;
+	protected readonly OpenIcon = ChevronDown;
+	protected readonly CloseIcon = ChevronUp;
+	protected readonly ClearIcon = Eraser;
+	protected readonly RenameIcon = SquarePen;
+	protected readonly DeleteIcon = Trash2;
+	protected readonly defaultCollectionID = DEFAULT_COLLECTION_ID;
+
+	protected readonly deleteModalTitle = computed(() => {
 		return `Delete Collection "${this.data().name}" ?`;
 	});
 
-	readonly clearModalTitle = computed(() => {
+	protected readonly clearModalTitle = computed(() => {
 		return `Clear Collection "${this.data().name}" ?`;
 	});
 
-	readonly clearModalMessage = computed(() => {
+	protected readonly clearModalMessage = computed(() => {
 		const reqCount = this.appSvc
 			.savedRequests()
 			.filter((x) => x.collectionId === this.data().id).length;
 		return `${reqCount} requests under collection will be deleted.`;
 	});
 
-	readonly deleteModalMessage = computed(() => {
+	protected readonly deleteModalMessage = computed(() => {
 		const reqCount = this.appSvc
 			.savedRequests()
 			.filter((x) => x.collectionId === this.data().id).length;
 		return `Collection along with ${reqCount} requests will be deleted.`;
 	});
 
-	isDeleteModalOpen = signal<boolean>(false);
-	delInProgress = signal<boolean>(false);
+	protected isDeleteModalOpen = signal<boolean>(false);
+	protected delInProgress = signal<boolean>(false);
 
-	mvInProgress = signal<boolean>(false);
-	isRenameModalOpen = signal<boolean>(false);
+	protected mvInProgress = signal<boolean>(false);
+	protected isRenameModalOpen = signal<boolean>(false);
 
-	isClearModalOpen = signal<boolean>(false);
-	clearInProgress = signal<boolean>(false);
+	protected isClearModalOpen = signal<boolean>(false);
+	protected clearInProgress = signal<boolean>(false);
 
-	toggleRenameModal() {
+	protected toggleRenameModal() {
 		this.isRenameModalOpen.update((x) => !x);
+		const activeEl = document.activeElement as HTMLElement;
+		activeEl?.blur();
 	}
 
-	toggleDeleteModal() {
+	protected toggleDeleteModal() {
 		this.isDeleteModalOpen.update((x) => !x);
+		const activeEl = document.activeElement as HTMLElement;
+		activeEl?.blur();
 	}
 
-	toggleClearModal() {
+	protected toggleClearModal() {
 		this.isClearModalOpen.update((x) => !x);
+		const activeEl = document.activeElement as HTMLElement;
+		activeEl?.blur();
 	}
 
-	async handleConfirmClear() {
+	protected async handleConfirmClear() {
 		this.clearInProgress.set(true);
 		console.log(`collection # ${this.data().id} will be cleared`);
 		await this.appSvc.clearCollection(this.data().id);
@@ -202,11 +227,11 @@ export class CollectionList {
 		this.toggleClearModal();
 	}
 
-	handleCancelClear() {
+	protected handleCancelClear() {
 		this.toggleClearModal();
 	}
 
-	async handleConfirmDeletion() {
+	protected async handleConfirmDeletion() {
 		this.delInProgress.set(true);
 		console.log(`collection # ${this.data().id} will be nuked`);
 		await this.appSvc.deleteCollection(this.data().id);
@@ -214,11 +239,11 @@ export class CollectionList {
 		this.toggleDeleteModal();
 	}
 
-	handleCancelDeletion() {
+	protected handleCancelDeletion() {
 		this.toggleDeleteModal();
 	}
 
-	async handleConfirmRename(newName: string) {
+	protected async handleConfirmRename(newName: string) {
 		this.mvInProgress.set(true);
 		console.log(
 			`collection # ${this.data().id} will be  renamed to ${newName}`,
@@ -228,26 +253,19 @@ export class CollectionList {
 		this.toggleRenameModal();
 	}
 
-	handleCancelRename() {
+	protected handleCancelRename() {
 		this.toggleRenameModal();
 	}
 
-	appSvc = inject(AppService);
+	protected isOpen = signal<boolean>(false);
 
-	isOpen = signal<boolean>(false);
-
-	toggleOpen() {
+	protected toggleOpen() {
 		this.isOpen.update((x) => !x);
 	}
 
-	requestItems = computed<models.RequestDTO[]>(() =>
+	protected requestItems = computed<models.RequestDTO[]>(() =>
 		this.appSvc
 			.savedRequests()
 			.filter((x) => x.collectionId === this.data().id),
 	);
-
-	data = input.required<models.CollectionDTO>();
-
-	@HostBinding("class")
-	def = "flex flex-col gap-1";
 }

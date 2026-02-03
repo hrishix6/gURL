@@ -12,7 +12,7 @@ import { AppService } from "@/services";
 import { FormLayout } from "@/types";
 
 @Component({
-	selector: "div[appLayoutSwitcher]",
+	selector: "div[gurl-layout-switcher]",
 	template: `
       <div class="dropdown dropdown-top dropdown-end">
         <div tabindex="0" role="button" class="btn btn-sm btn-square btn-ghost">
@@ -41,20 +41,18 @@ import { FormLayout } from "@/types";
   `,
 	imports: [LucideAngularModule, NgClass],
 })
-export class AppLayoutSwitcher {
-	readonly CheckedIcon = Check;
+export class GurlLayoutSwitcher {
+	protected readonly CheckedIcon = Check;
+	protected readonly layouts = SUPPORTED_LAYOUTS;
+	protected readonly appSvc = inject(AppService);
 
-	readonly layouts = SUPPORTED_LAYOUTS;
-
-	handleLayoutChange(layout: FormLayout) {
+	protected handleLayoutChange(layout: FormLayout) {
 		this.appSvc.setLayout(layout);
 		const target = document.activeElement as HTMLButtonElement;
 		target.blur();
 	}
 
-	layoutSwithcerIcon = computed(() => {
-		console.log(this.appSvc.formLayout());
-
+	protected layoutSwithcerIcon = computed(() => {
 		switch (this.appSvc.formLayout()) {
 			case FormLayout.Horizontal:
 				return Rows2;
@@ -64,6 +62,4 @@ export class AppLayoutSwitcher {
 				return MonitorSmartphone;
 		}
 	});
-
-	appSvc = inject(AppService);
 }

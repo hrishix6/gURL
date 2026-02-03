@@ -1,6 +1,6 @@
 import { NgClass } from "@angular/common";
 import {
-	type AfterViewChecked,
+	type AfterViewInit,
 	Component,
 	type ElementRef,
 	HostBinding,
@@ -11,11 +11,11 @@ import {
 import { AppService } from "@/services";
 
 @Component({
-	selector: `dialog[newCollectionModal]`,
+	selector: `dialog[gurl-new-collection-modal]`,
 	template: `
     <div class="modal-box">
       <div class="flex flex-col gap-2">
-        <h3 class="text-lg font-bold">Create New Collection</h3>
+        <h3 class="text-lg font-bold">Add Empty Collection</h3>
         <div class="flex flex-col gap-4">
           <input
             [ngClass]="{
@@ -42,33 +42,35 @@ import { AppService } from "@/services";
   `,
 	imports: [NgClass],
 })
-export class NewCollectionModal implements AfterViewChecked {
-	firstInputEl = viewChild.required<ElementRef<HTMLInputElement>>("firstInput");
-
-	ngAfterViewChecked(): void {
-		this.firstInputEl()?.nativeElement.focus();
-	}
-
+export class NewCollectionModal implements AfterViewInit {
 	@HostBinding("class")
 	def = "modal";
 
 	@HostBinding("attr.open") get checkOpen() {
-		return this.appSvc.isCollectionModalOpen() ? "" : null;
+		return this.appSvc.isNewCollectionModalOpen() ? "" : null;
 	}
 
-	collectionName = signal<string>("");
-	error = signal<boolean>(false);
+	ngAfterViewInit(): void {
+		this.firstInputEl()?.nativeElement.focus();
+	}
 
-	onInput(text: string) {
+	private readonly appSvc = inject(AppService);
+	private readonly firstInputEl =
+		viewChild.required<ElementRef<HTMLInputElement>>("firstInput");
+
+	protected collectionName = signal<string>("");
+	protected error = signal<boolean>(false);
+
+	protected onInput(text: string) {
 		this.error.set(false);
 		this.collectionName.set(text);
 	}
 
-	onClose() {
-		this.appSvc.toggleCollectionModal();
+	protected onClose() {
+		this.appSvc.toggleNewCollectionModal();
 	}
 
-	onSubmit() {
+	protected onSubmit() {
 		if (this.collectionName() === "" || this.collectionName().trim() === "") {
 			this.error.set(true);
 			return;
@@ -76,6 +78,4 @@ export class NewCollectionModal implements AfterViewChecked {
 
 		this.appSvc.addCollection(this.collectionName());
 	}
-
-	appSvc = inject(AppService);
 }

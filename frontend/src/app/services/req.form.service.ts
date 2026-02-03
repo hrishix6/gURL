@@ -199,6 +199,7 @@ export class FormService {
 
 			this._tabSvc.updateActiveTab("name", name);
 			this._tabSvc.updateModifiedStatus(false);
+			this._appSvc.refreshBreadcrumb$.next();
 		} catch (error) {
 			console.error(error);
 		} finally {
