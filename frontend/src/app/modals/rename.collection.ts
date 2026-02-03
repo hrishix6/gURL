@@ -9,43 +9,50 @@ import {
 	signal,
 	viewChild,
 } from "@angular/core";
+import { LucideAngularModule, X } from "lucide-angular";
 
 @Component({
 	selector: `dialog[gurl-rename-collection-modal]`,
 	template: `
     <div class="modal-box">
-      <div class="flex flex-col gap-2">
-        <h3 class="text-lg font-bold">Rename Collection</h3>
-        <div class="flex flex-col gap-4">
+      <div class="flex flex-col gap-4">
+        <div class="flex justify-between">  
+             <h3 class="text-lg font-bold">Rename Collection</h3>
+             <button class="btn btn-sm btn-square btn-ghost" (click)="onClose()" [disabled]="actionInProgress()">
+                <lucide-angular [img]="CancelIcon" class="size-4" />
+             </button>
+        </div>
+        <div class="flex flex-col">
           <input
             [ngClass]="{
-              'input input-ghost w-full bg-base-300': true,
+              'input w-full bg-base-300': true,
               'input-error': error(),
-              'input-primary': !error()
+              'input-primary': !error(),
+			  'input-ghost': !error()
             }"
             placeholder="Name"
             required
             [value]="collectionName()"
             (input)="onInput($event.target.value)"
+			(blur)="onBlur()"
             #firstInput
           />
         </div>
       </div>
       <div class="modal-action">
-        <button class="btn btn-soft btn-primary" (click)="onSubmit()" [disabled]="actionInProgress()">
+        <button class="btn btn-soft btn-primary" (click)="onSubmit()" [disabled]="actionInProgress() || this.error()">
             @if(actionInProgress()) {
                 <span class="loading loading-spinner"></span>
             }
             Rename
         </button>
-        <button class="btn" (click)="onClose()" [disabled]="actionInProgress()">Cancel</button>
       </div>
     </div>
     <div class="modal-backdrop">
       <button (click)="onClose()" [disabled]="actionInProgress()">close</button>
     </div>
   `,
-	imports: [NgClass],
+	imports: [NgClass, LucideAngularModule],
 })
 export class RenameCollectionModal implements AfterViewInit {
 	@HostBinding("class")
@@ -66,6 +73,7 @@ export class RenameCollectionModal implements AfterViewInit {
 		this.firstInputEl()?.nativeElement.focus();
 	}
 
+	protected readonly CancelIcon = X;
 	protected collectionName = signal<string>("");
 	private readonly firstInputEl =
 		viewChild.required<ElementRef<HTMLInputElement>>("firstInput");
@@ -74,6 +82,13 @@ export class RenameCollectionModal implements AfterViewInit {
 	protected onInput(text: string) {
 		this.error.set(false);
 		this.collectionName.set(text);
+	}
+
+	protected onBlur() {
+		const name = this.collectionName();
+		if (!name || name.trim() === "") {
+			this.error.set(true);
+		}
 	}
 
 	protected onClose() {

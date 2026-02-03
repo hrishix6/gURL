@@ -4,57 +4,75 @@ import {
 	Component,
 	type ElementRef,
 	HostBinding,
-	inject,
+	input,
+	output,
 	signal,
 	viewChild,
 } from "@angular/core";
-import { AppService } from "@/services";
+import { LucideAngularModule, X } from "lucide-angular";
 
 @Component({
 	selector: `dialog[gurl-new-collection-modal]`,
 	template: `
     <div class="modal-box">
-      <div class="flex flex-col gap-2">
-        <h3 class="text-lg font-bold">Add Empty Collection</h3>
-        <div class="flex flex-col gap-4">
+      <div class="flex flex-col gap-4">
+         <div class="flex justify-between">  
+             <h3 class="text-lg font-bold">New Empty Collection</h3>
+             <button class="btn btn-sm btn-square btn-ghost" (click)="onClose()" [disabled]="actionInProgress()">
+                <lucide-angular [img]="CancelIcon" class="size-4" />
+             </button>
+        </div>
+        <div class="flex flex-col">
           <input
             [ngClass]="{
-              'input input-ghost w-full bg-base-300': true,
+              'input w-full bg-base-300': true,
               'input-error': error(),
-              'input-primary': !error()
+              'input-primary': !error(),
+			  'input-ghost': !error()
             }"
             placeholder="Name"
             required
             [value]="collectionName()"
             (input)="onInput($event.target.value)"
+			(blur)="onBlur()"
             #firstInput
           />
         </div>
       </div>
       <div class="modal-action">
-        <button class="btn btn-soft btn-primary" (click)="onSubmit()">Create</button>
-        <button class="btn" (click)="onClose()">Cancel</button>
+        <button class="btn btn-soft btn-primary" (click)="handleSubmit()" [disabled]="error() || actionInProgress()">
+			@if(actionInProgress()) {
+                <span class="loading loading-spinner"></span>
+            }
+			Create
+		</button>
       </div>
     </div>
     <div class="modal-backdrop">
-      <button (click)="onClose()">close</button>
+      <button (click)="onClose()" [disabled]="actionInProgress()">close</button>
     </div>
   `,
-	imports: [NgClass],
+	imports: [NgClass, LucideAngularModule],
 })
 export class NewCollectionModal implements AfterViewInit {
 	@HostBinding("class")
 	def = "modal";
 
 	@HostBinding("attr.open") get checkOpen() {
-		return this.appSvc.isNewCollectionModalOpen() ? "" : null;
+		return this.isOpen() ? "" : null;
 	}
+
+	isOpen = input.required<boolean>();
+	onCancel = output<void>();
+	onSubmit = output<string>();
+	actionInProgress = input.required<boolean>();
 
 	ngAfterViewInit(): void {
 		this.firstInputEl()?.nativeElement.focus();
 	}
 
-	private readonly appSvc = inject(AppService);
+	protected readonly CancelIcon = X;
+
 	private readonly firstInputEl =
 		viewChild.required<ElementRef<HTMLInputElement>>("firstInput");
 
@@ -66,16 +84,24 @@ export class NewCollectionModal implements AfterViewInit {
 		this.collectionName.set(text);
 	}
 
-	protected onClose() {
-		this.appSvc.toggleNewCollectionModal();
+	protected onBlur() {
+		const name = this.collectionName();
+		if (!name || name.trim() === "") {
+			this.error.set(true);
+		}
 	}
 
-	protected onSubmit() {
-		if (this.collectionName() === "" || this.collectionName().trim() === "") {
+	protected onClose() {
+		this.onCancel.emit();
+	}
+
+	protected handleSubmit() {
+		const name = this.collectionName();
+		if (!name || name.trim() === "") {
 			this.error.set(true);
 			return;
 		}
 
-		this.appSvc.addCollection(this.collectionName());
+		this.onSubmit.emit(this.collectionName());
 	}
 }

@@ -1,6 +1,5 @@
-import { Component, HostBinding, inject, signal } from "@angular/core";
+import { Component, HostBinding, input, output, signal } from "@angular/core";
 import { FileDown, LucideAngularModule, Plus, X } from "lucide-angular";
-import { AppService } from "@/services";
 
 @Component({
 	selector: `dialog[gurl-create-collection-modal]`,
@@ -9,16 +8,16 @@ import { AppService } from "@/services";
       <div class="flex flex-col gap-2">
         <div class="flex justify-between">  
              <h3 class="text-lg font-bold">New Collection</h3>
-             <button class="btn btn-sm btn-square btn-ghost" (click)="onClose()">
+             <button class="btn btn-sm btn-square btn-ghost" (click)="handleCancel()">
                 <lucide-angular [img]="CancelIcon" class="size-4" />
              </button>
         </div>
         <div class="flex gap-4 justify-center mt-4">
-          <button class="btn btn-soft btn-primary xl:btn-lg" (click)="onEmptyCreate()">
+          <button class="btn btn-soft btn-primary xl:btn-lg" (click)="handleEmptyCreation()">
             <lucide-angular [img]="CreeateIcon" class="size-6" />
             <span>New</span>
           </button>
-          <button class="btn btn-soft btn-primary xl:btn-lg" (click)="onImport()">
+          <button class="btn btn-soft btn-primary xl:btn-lg" (click)="handleImport()">
             <lucide-angular [img]="ImportIcon" class="size-6" />
             <span>Import</span>
           </button>
@@ -40,7 +39,7 @@ import { AppService } from "@/services";
       </div>
     </div>
     <div class="modal-backdrop">
-      <button (click)="onClose()">close</button>
+      <button (click)="handleCancel()">close</button>
     </div>
   `,
 	imports: [LucideAngularModule],
@@ -50,10 +49,13 @@ export class CreateCollectionModal {
 	def = "modal";
 
 	@HostBinding("attr.open") get checkOpen() {
-		return this.appSvc.isCreateCollectionModalOpen() ? "" : null;
+		return this.isOpen() ? "" : null;
 	}
 
-	private readonly appSvc = inject(AppService);
+	isOpen = input.required<boolean>();
+	onCancel = output<void>();
+	onEmptyCollection = output<void>();
+	onImportCollection = output<void>();
 
 	protected readonly ImportIcon = FileDown;
 	protected readonly CancelIcon = X;
@@ -61,17 +63,15 @@ export class CreateCollectionModal {
 
 	protected error = signal<boolean>(false);
 
-	protected onEmptyCreate() {
-		this.appSvc.toggleCreateCollectionModal();
-		this.appSvc.toggleNewCollectionModal();
+	protected handleEmptyCreation() {
+		this.onEmptyCollection.emit();
 	}
 
-	protected onImport() {
-		this.appSvc.toggleCreateCollectionModal();
-		this.appSvc.importCollection();
+	protected handleImport() {
+		this.onImportCollection.emit();
 	}
 
-	protected onClose() {
-		this.appSvc.toggleCreateCollectionModal();
+	protected handleCancel() {
+		this.onCancel.emit();
 	}
 }

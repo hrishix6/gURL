@@ -1,11 +1,4 @@
-import {
-	Component,
-	computed,
-	HostBinding,
-	inject,
-	input,
-	signal,
-} from "@angular/core";
+import { Component, HostBinding, inject, input } from "@angular/core";
 import type { models } from "@wailsjs/go/models";
 import {
 	Container,
@@ -14,8 +7,8 @@ import {
 	LucideAngularModule,
 	Trash2,
 } from "lucide-angular";
-import { DeleteConfirmationModal } from "@/modals/delete.confirmation";
 import { AppService, TabsService } from "@/services";
+import { GlobalModalsService } from "@/services/modals.service";
 
 @Component({
 	selector: `div[gurl-environment-item]`,
@@ -47,7 +40,7 @@ import { AppService, TabsService } from "@/services";
               </a>
             </li>
 			<li>
-				<button role="link" (click)="appSvc.exportEnvironment(data().id)">
+				<button role="link" (click)="toggleExportEnv()">
 					<lucide-angular [img]="ExportIcon" class="size-4" />
 					Export
 				</button>
@@ -55,18 +48,8 @@ import { AppService, TabsService } from "@/services";
         </ul>
       </div>
     </div>
-    @if(this.isDeleteModalOpen()) {
-      <dialog gurl-rm-confirmation-modal
-        [title]="deleteModalTitle()"
-        [message]="deleteModalMessage"
-        [isOpen]="isDeleteModalOpen()"
-        [actionInProgress]="delInProgress()"
-        (onCancel)="handleCancelDeletion()"
-        (onConfirm)="handleConfirmDeletion()"
-      ></dialog>
-    }
   `,
-	imports: [LucideAngularModule, DeleteConfirmationModal],
+	imports: [LucideAngularModule],
 })
 export class GurlEnvironmentItem {
 	@HostBinding("class")
@@ -81,33 +64,23 @@ export class GurlEnvironmentItem {
 
 	private readonly tabSvc = inject(TabsService);
 	protected readonly appSvc = inject(AppService);
+	protected readonly modalsSvc = inject(GlobalModalsService);
 
 	protected openEnvironmentTab() {
+		const target = document.activeElement as HTMLAnchorElement;
+		target.blur();
 		this.tabSvc.createEnvTabFromSaved(this.data());
 	}
 
-	protected readonly deleteModalTitle = computed(() => {
-		return `Delete Environment "${this.data().name}" ?`;
-	});
-
-	protected readonly deleteModalMessage =
-		"This action is irreversible, environment along with all secrets will be deleted.";
-
-	protected isDeleteModalOpen = signal<boolean>(false);
-	protected delInProgress = signal<boolean>(false);
+	protected toggleExportEnv() {
+		const target = document.activeElement as HTMLAnchorElement;
+		target.blur();
+		this.appSvc.exportEnvironment(this.data().id);
+	}
 
 	protected toggleDeleteModal() {
-		this.isDeleteModalOpen.update((x) => !x);
-	}
-
-	protected async handleConfirmDeletion() {
-		this.delInProgress.set(true);
-		await this.appSvc.DeleteEnv(this.data().id);
-		this.delInProgress.set(false);
-		this.toggleDeleteModal();
-	}
-
-	protected handleCancelDeletion() {
-		this.toggleDeleteModal();
+		const target = document.activeElement as HTMLAnchorElement;
+		target.blur();
+		this.modalsSvc.handleOpenDeleteEnvModal(this.data());
 	}
 }

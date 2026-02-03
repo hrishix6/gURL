@@ -98,13 +98,6 @@ export class AppService {
 		type: AppTabType.Req,
 	});
 
-	private _createReqModalOpen = signal<boolean>(false);
-	public isCreateReqModalOpen = computed(() => this._createReqModalOpen());
-
-	public toggleCreateReqModal() {
-		this._createReqModalOpen.update((x) => !x);
-	}
-
 	//#region environments
 	public extractEnvTokens(v: string): InputToken[] {
 		const tokens: InputToken[] = [];
@@ -138,13 +131,6 @@ export class AppService {
 			});
 		}
 		return tokens;
-	}
-
-	private _createEnvModalOpen = signal<boolean>(false);
-	public isCreateEnvModalOpen = computed(() => this._createEnvModalOpen());
-
-	public toggleCreateEnvModal() {
-		this._createEnvModalOpen.update((x) => !x);
 	}
 
 	public interPolateEnvTokens(v: string): string {
@@ -238,7 +224,7 @@ export class AppService {
 		}
 	}
 
-	public async DeleteEnv(id: string) {
+	public async deleteEnvironment(id: string) {
 		try {
 			await RemoveEnv(id);
 			await DeleteEnvDraftsUnderEnv(id);
@@ -354,8 +340,6 @@ export class AppService {
 			await this.initializeCollections();
 		} catch (error) {
 			console.error(error);
-		} finally {
-			this._newCollectionModalOpen.set(false);
 		}
 	}
 
@@ -414,27 +398,6 @@ export class AppService {
 	}
 
 	//#endregion collections
-
-	//#region Modals
-	private _createCollectionModalOpen = signal<boolean>(false);
-	public isCreateCollectionModalOpen = computed(() =>
-		this._createCollectionModalOpen(),
-	);
-
-	public toggleCreateCollectionModal() {
-		this._createCollectionModalOpen.update((x) => !x);
-	}
-
-	private _newCollectionModalOpen = signal<boolean>(false);
-	public isNewCollectionModalOpen = computed(() =>
-		this._newCollectionModalOpen(),
-	);
-
-	public toggleNewCollectionModal() {
-		this._newCollectionModalOpen.update((x) => !x);
-	}
-
-	//#endregion Modals
 
 	//#region layout
 	private _formLayout = signal<FormLayout>(FormLayout.Responsive);

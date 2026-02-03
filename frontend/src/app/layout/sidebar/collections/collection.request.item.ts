@@ -1,11 +1,4 @@
-import {
-	Component,
-	computed,
-	HostBinding,
-	inject,
-	input,
-	signal,
-} from "@angular/core";
+import { Component, HostBinding, inject, input } from "@angular/core";
 import type { models } from "@wailsjs/go/models";
 import {
 	Copy,
@@ -13,10 +6,9 @@ import {
 	LucideAngularModule,
 	Trash2,
 } from "lucide-angular";
-import { CopyRequestModal } from "@/modals/copy.request";
-import { DeleteConfirmationModal } from "@/modals/delete.confirmation";
 import { ReqMethodTag } from "@/request/method.tag";
-import { AppService, TabsService } from "@/services";
+import { TabsService } from "@/services";
+import { GlobalModalsService } from "@/services/modals.service";
 
 @Component({
 	selector: `div[gurl-request-item]`,
@@ -56,32 +48,8 @@ import { AppService, TabsService } from "@/services";
         {{ data().url }}
       </p>
     </div>
-	@if(this.isDeleteModalOpen()) {
-      <dialog gurl-rm-confirmation-modal
-        [title]="deleteTitle()"
-        [message]="deleteMessage"
-        [isOpen]="isDeleteModalOpen()"
-        [actionInProgress]="isDeletionInProgress()"
-        (onCancel)="handleCancelDeletion()"
-        (onConfirm)="handleConfirmDeletion()"
-      ></dialog>
-    }
-	@if(this.isCopyModalOpen()) {
-      <dialog gurl-cp-request-modal
-        [initialValue]="data().name + '-copy'"
-        [isOpen]="isCopyModalOpen()"
-        [actionInProgress]="isCopyInProgress()"
-        (onCancel)="handleCancelCopy()"
-        (onConfirm)="handleConfirmCopy($event)"
-      ></dialog>
-    }
   `,
-	imports: [
-		ReqMethodTag,
-		LucideAngularModule,
-		DeleteConfirmationModal,
-		CopyRequestModal,
-	],
+	imports: [ReqMethodTag, LucideAngularModule],
 })
 export class GurlRequestItem {
 	@HostBinding("class")
@@ -90,16 +58,11 @@ export class GurlRequestItem {
 	data = input.required<models.RequestDTO>();
 
 	private readonly tabSvc = inject(TabsService);
-	private readonly appSvc = inject(AppService);
+	private readonly modalsSvc = inject(GlobalModalsService);
 
 	protected readonly RequestOptsIcon = EllipsisVertical;
 	protected readonly DeleteIcon = Trash2;
 	protected readonly CopyIcon = Copy;
-
-	protected readonly deleteTitle = computed(
-		() => `Delete Request '${this.data().name}' ?`,
-	);
-	protected readonly deleteMessage = `This action is irreversible`;
 
 	protected handleOpenRequest() {
 		this.tabSvc.createTabFromSaved(this.data());
@@ -107,43 +70,15 @@ export class GurlRequestItem {
 		parentTarget.blur();
 	}
 
-	protected isDeleteModalOpen = signal<boolean>(false);
-	protected isDeletionInProgress = signal<boolean>(false);
-
 	protected toggleDeleteModal() {
-		this.isDeleteModalOpen.update((x) => !x);
 		const target = document.activeElement as HTMLAnchorElement;
 		target.blur();
+		this.modalsSvc.handleOpenDeleteReqModal(this.data());
 	}
-
-	protected isCopyModalOpen = signal<boolean>(false);
-	protected isCopyInProgress = signal<boolean>(false);
 
 	protected toggleCopyModal() {
-		this.isCopyModalOpen.update((x) => !x);
 		const target = document.activeElement as HTMLAnchorElement;
 		target.blur();
-	}
-
-	protected async handleConfirmCopy(name: string) {
-		this.isCopyInProgress.set(true);
-		await this.appSvc.copyRequest(this.data().id, name);
-		this.isCopyInProgress.set(false);
-		this.toggleCopyModal();
-	}
-
-	protected handleCancelCopy() {
-		this.toggleCopyModal();
-	}
-
-	protected async handleConfirmDeletion() {
-		this.isDeletionInProgress.set(true);
-		this.appSvc.deleteRequest(this.data().id);
-		this.isDeletionInProgress.set(false);
-		this.toggleDeleteModal();
-	}
-
-	protected handleCancelDeletion() {
-		this.toggleDeleteModal();
+		this.modalsSvc.handleOpenCopyReqModal(this.data());
 	}
 }

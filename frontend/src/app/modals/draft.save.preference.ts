@@ -6,34 +6,40 @@ import {
 	output,
 	signal,
 } from "@angular/core";
+import { LucideAngularModule, X } from "lucide-angular";
 
 @Component({
 	selector: `dialog[gurl-draft-save-preference-modal]`,
 	template: `
         <div class="modal-box">
             <div class="flex flex-col gap-4">
-                <div class="flex flex-col gap-2">
-                    <h3 class="text-lg font-bold">{{ title() }}</h3>
+                <div class="flex flex-col gap-4">
+                    <div class="flex justify-between">  
+						<h3 class="text-lg font-bold">{{title()}}</h3>
+						<button class="btn btn-sm btn-square btn-ghost" (click)="handleClose()">
+							<lucide-angular [img]="CancelIcon" class="size-4" />
+						</button>
+					</div>
                     <p>
                         {{ message() }}
                     </p>
                 </div>
-                <div>
+                <div class="flex flex-col gap-2">
                     <label class="label">
                         <input type="checkbox" class="checkbox" [checked]="alwaysDiscard()" (change)="alwaysDiscardChanges()" />
-                        Always discard changes
+                        Always discard changes 
                     </label>
+					<span class="text-sm opacity-35">
+						(You can always change this setting in preferences.)
+					</span>
                 </div>
                 <div class="flex justify-between items-center">
-                    <button class="btn btn-soft btn-primary" (click)="handleNoSave()">
+                    <button class="btn btn-soft" (click)="handleNoSave()">
                         Don't Save
                     </button>
                     <div class="flex items-center gap-2">
-                    <button class="btn btn-primary" (click)="handleSave()">
+                    <button class="btn btn-soft btn-primary" (click)="handleSave()">
                         Save
-                    </button>
-                    <button class="btn" (click)="handleClose()">
-                        Cancel
                     </button>
                     </div>
                 </div>
@@ -43,6 +49,7 @@ import {
         <button (click)="handleClose()">Cancel</button>
         </div>
     `,
+	imports: [LucideAngularModule]
 })
 export class DraftSavePreferenceModal implements OnInit {
 	@HostBinding("class")
@@ -63,6 +70,7 @@ export class DraftSavePreferenceModal implements OnInit {
 		this.alwaysDiscard.set(false);
 	}
 
+	protected readonly CancelIcon = X;
 	protected alwaysDiscard = signal<boolean>(false);
 
 	protected alwaysDiscardChanges() {

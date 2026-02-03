@@ -17,10 +17,7 @@ import { GurlFooter } from "./layout/footer/footer";
 import { DesktopSidebar } from "./layout/sidebar/desktop.sidebar";
 import { MobileSidebar } from "./layout/sidebar/mobile.sidebar";
 import { Taskbar } from "./layout/taskbar/task.bar";
-import { CreateCollectionModal } from "./modals/create.collection";
-import { CreateEnvironmentModal } from "./modals/create.env";
-import { CreateRequestModal } from "./modals/create.req";
-import { NewCollectionModal } from "./modals/new.collection";
+import { GlobalModalsHost } from "./modals/global.modals.host";
 import { TabsWrapper } from "./tabs/req.tabs.container";
 
 @Component({
@@ -102,19 +99,8 @@ import { TabsWrapper } from "./tabs/req.tabs.container";
       <label class="drawer-overlay" (click)="appSvc.toggleMobileSidebar()"></label>
       <aside gurl-mobile-sidebar></aside>
     </div>
-    <!-- modals -->
-    @if(appSvc.isCreateCollectionModalOpen()){
-      <dialog gurl-create-collection-modal></dialog>
-    }
-    @if(appSvc.isNewCollectionModalOpen()){
-      <dialog gurl-new-collection-modal></dialog>
-    }
-    @if(appSvc.isCreateEnvModalOpen()){
-      <dialog gurl-create-env-modal></dialog>
-    }
-     @if(appSvc.isCreateReqModalOpen()){
-      <dialog gurl-create-req-modal></dialog>
-    }
+    <!-- Global modals -->
+    <gurl-global-modals-host />
   `,
 	imports: [
 		LucideAngularModule,
@@ -124,14 +110,11 @@ import { TabsWrapper } from "./tabs/req.tabs.container";
 		MobileSidebar,
 		TabsWrapper,
 		AppHome,
-		NewCollectionModal,
 		GurlDropdown,
-		CreateCollectionModal,
-		CreateEnvironmentModal,
-		CreateRequestModal,
 		Taskbar,
 		Breadcrumbs,
 		EntityCreationButton,
+		GlobalModalsHost,
 	],
 })
 export class App implements OnInit {

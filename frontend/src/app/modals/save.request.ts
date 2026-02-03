@@ -10,24 +10,32 @@ import {
 } from "@angular/core";
 import { DEFAULT_COLLECTION_ID } from "@/constants";
 import { AppService, FormService } from "@/services";
+import { LucideAngularModule, X } from "lucide-angular";
 
 @Component({
 	selector: `dialog[gurl-save-request-modal]`,
 	template: `
     <div class="modal-box">
-      <div class="flex flex-col gap-2">
-        <h3 class="text-lg font-bold">Save Request</h3>
+      <div class="flex flex-col gap-4">
+        <div class="flex justify-between">  
+             <h3 class="text-lg font-bold">Save Request</h3>
+             <button class="btn btn-sm btn-square btn-ghost" (click)="onClose()">
+                <lucide-angular [img]="CancelIcon" class="size-4" />
+             </button>
+        </div>
         <div class="flex flex-col gap-4">
           <input
             [ngClass]="{
-              'input input-ghost w-full bg-base-300': true,
+              'input w-full bg-base-300': true,
               'input-error': error(),
-              'input-primary': !error()
+              'input-primary': !error(),
+			  'input-ghost': !error()
             }"
             placeholder="Name"
             required
             [value]="requestName()"
             (input)="onInput($event.target.value)"
+			(blur)="onBlur()"
 			#reqNameInputEl
           />
           <select class="select w-full select-ghost bg-base-300 select-primary" (change)="onCollectionChange($event)">
@@ -40,15 +48,14 @@ import { AppService, FormService } from "@/services";
         </div>
       </div>
       <div class="modal-action">
-        <button class="btn btn-soft btn-primary" (click)="onSubmit()">Save</button>
-        <button class="btn" (click)="onClose()">Cancel</button>
+        <button class="btn btn-soft btn-primary" (click)="onSubmit()" [disabled]="error()">Save</button>
       </div>
     </div>
     <div class="modal-backdrop">
       <button (click)="onClose()">close</button>
     </div>
   `,
-	imports: [NgClass],
+	imports: [NgClass, LucideAngularModule],
 })
 export class SaveRequestModal implements AfterViewInit {
 	@HostBinding("class")
@@ -62,6 +69,7 @@ export class SaveRequestModal implements AfterViewInit {
 		this.reqNameInputEl()?.nativeElement.focus();
 	}
 
+	protected readonly CancelIcon = X;
 	private readonly reqNameInputEl =
 		viewChild.required<ElementRef<HTMLInputElement>>("reqNameInputEl");
 
@@ -80,6 +88,13 @@ export class SaveRequestModal implements AfterViewInit {
 	protected onInput(text: string) {
 		this.error.set(false);
 		this.requestName.set(text);
+	}
+
+	protected onBlur() {
+		const name = this.requestName();
+		if (name === "" || name.trim() === "") {
+			this.error.set(false);
+		}
 	}
 
 	protected onCollectionChange(e: Event) {

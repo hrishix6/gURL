@@ -286,6 +286,9 @@ export class FormService {
 	public setUrl(v: string) {
 		this.urlSvc.setUrl(v);
 		this._tabSvc.updateActiveTab("name", v);
+		if(v){
+			this._tabSvc.updateModifiedStatus(true);
+		}
 	}
 
 	public parseUrl() {

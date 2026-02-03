@@ -8,7 +8,7 @@ import {
 	Plus,
 	RadioTower,
 } from "lucide-angular";
-import { AppService } from "./services";
+import { GlobalModalsService } from "./services/modals.service";
 
 @Component({
 	selector: `div[gurl-entity-creation]`,
@@ -46,8 +46,7 @@ import { AppService } from "./services";
 export class EntityCreationButton {
 	@HostBinding("class")
 	def = "dropdown dropdown-end";
-
-	private readonly appSvc = inject(AppService);
+	private readonly modalsSvc = inject(GlobalModalsService);
 
 	protected readonly DropdownIcon = ChevronsUpDown;
 	protected readonly PlusIcon = Plus;
@@ -57,20 +56,20 @@ export class EntityCreationButton {
 	protected readonly ImportIcon = FileDown;
 
 	protected toggleCollectionModal() {
-		this.appSvc.toggleCreateCollectionModal();
 		const activeElement = document.activeElement as HTMLAnchorElement;
 		activeElement?.blur();
+		this.modalsSvc.handleOpenCreateCollectionModal();
 	}
 
 	protected toggleEnvModal() {
-		this.appSvc.toggleCreateEnvModal();
 		const activeElement = document.activeElement as HTMLAnchorElement;
 		activeElement?.blur();
+		this.modalsSvc.handleOpenCreateEnvModal();
 	}
 
 	protected toggleReqModal() {
-		this.appSvc.toggleCreateReqModal();
 		const activeElement = document.activeElement as HTMLAnchorElement;
 		activeElement?.blur();
+		this.modalsSvc.handleOpenCreateReqModal();
 	}
 }
