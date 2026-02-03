@@ -3,7 +3,7 @@ import { Component, input, output } from "@angular/core";
 import type { TabItem } from "@/types";
 
 @Component({
-	selector: "app-section-tab",
+	selector: "gurl-section-tabs",
 	template: `
     <div role="tablist" class="tabs tabs-sm tabs-border xl:tabs-md">
       @for (tabItem of tabs(); track tabItem.id) {
@@ -32,7 +32,7 @@ export class Tab<T extends string> {
 	onActiveChange = output<T>();
 	tabs = input.required<readonly TabItem<T>[]>();
 
-	handleClick(id: T) {
+	protected handleClick(id: T) {
 		this.onActiveChange.emit(id);
 	}
 }

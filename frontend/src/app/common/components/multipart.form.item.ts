@@ -5,10 +5,10 @@ import { ChooseFile } from "@wailsjs/go/storage/Storage";
 import { Eraser, LucideAngularModule, Paperclip, X } from "lucide-angular";
 import type { MultipartItem } from "@/types";
 import { humanBytes } from "../utils/time";
-import { HighlightedInput } from "./highlighted.input";
+import { GurlHighlightedInput } from "./highlighted.input";
 
 @Component({
-	selector: "app-multipart-item",
+	selector: "gurl-multipart-item",
 	template: `
     @for (item of items(); track item.id) {
     <div class="flex gap-2.5 items-center">
@@ -20,7 +20,7 @@ import { HighlightedInput } from "./highlighted.input";
         (change)="handleEnable(item.id, $event)"
       />
       <div
-        highlightedInp
+        gurl-highlighted-input
         [placeHolder]="'key'"
         [disabled]="false"
         [text]="item.key"
@@ -31,7 +31,7 @@ import { HighlightedInput } from "./highlighted.input";
       <div class="flex-2 relative">
         @if(typeof item.val === 'string'){
         <div
-          highlightedInp
+          gurl-highlighted-input
           [placeHolder]="'value'"
           [disabled]="item.key == '' || item.key.trim() == ''"
           [text]="item.val"
@@ -84,15 +84,12 @@ import { HighlightedInput } from "./highlighted.input";
     </div>
     }
   `,
-	imports: [LucideAngularModule, NgClass, HighlightedInput],
+	imports: [LucideAngularModule, NgClass, GurlHighlightedInput],
 })
 export class MultiPartFormItem {
 	@HostBinding("class")
 	hostClass = "flex flex-col gap-2.5";
 
-	readonly CanceIcon = X;
-	readonly BinaryIcon = Paperclip;
-	readonly ClearFileIcon = Eraser;
 	items = input.required<MultipartItem[]>();
 	placeholderId = input.required<string>();
 	onKeyUpdate = output<{ id: string; v: string }>();
@@ -102,7 +99,11 @@ export class MultiPartFormItem {
 	onBlur = output();
 	onDelete = output<string>();
 
-	async openFileDialogue(id: string) {
+	protected readonly CanceIcon = X;
+	protected readonly BinaryIcon = Paperclip;
+	protected readonly ClearFileIcon = Eraser;
+
+	protected async openFileDialogue(id: string) {
 		try {
 			const file = await ChooseFile();
 
@@ -112,31 +113,31 @@ export class MultiPartFormItem {
 		}
 	}
 
-	handleUpdateKey(id: string, v: string) {
+	protected handleUpdateKey(id: string, v: string) {
 		this.onKeyUpdate.emit({ id, v });
 	}
 
-	fileDisplayName(fileStats: models.FileStats) {
+	protected fileDisplayName(fileStats: models.FileStats) {
 		return `${fileStats.name} (${humanBytes(fileStats.size)})`;
 	}
 
-	handleUpdateVal(id: string, v: string | models.FileStats) {
+	protected handleUpdateVal(id: string, v: string | models.FileStats) {
 		this.onValUpdate.emit({ id, v });
 	}
 
-	handleClearFileField(id: string) {
+	protected handleClearFileField(id: string) {
 		this.onClearFileInput.emit({ id });
 	}
 
-	handleDeleteItem(id: string) {
+	protected handleDeleteItem(id: string) {
 		this.onDelete.emit(id);
 	}
 
-	handleBlur() {
+	protected handleBlur() {
 		this.onBlur.emit();
 	}
 
-	handleEnable(id: string, e: Event) {
+	protected handleEnable(id: string, e: Event) {
 		const target = e.target as HTMLInputElement;
 		this.onEnabledUpdate.emit({ id, v: target.checked ? "on" : "off" });
 	}

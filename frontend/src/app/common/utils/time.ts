@@ -94,7 +94,6 @@ export async function parseTextAsCookies(text: string): Promise<KeyValItem[]> {
 				enabled: x.enabled ? "on" : "off",
 			}));
 
-			console.log(JSON.stringify(parsed));
 			return parsed;
 		}
 		return [];

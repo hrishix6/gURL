@@ -18,7 +18,7 @@ import { AppService } from "@/services";
 import type { InputToken } from "@/types";
 
 @Component({
-	selector: `div[highlightedInp]`,
+	selector: `div[gurl-highlighted-input]`,
 	template: `
 			<input
 				type="text"
@@ -48,60 +48,27 @@ import type { InputToken } from "@/types";
 				@if(_tokens().length) {
 					@for(token of _tokens(); track $index) {
 						@if(token.type === 'env') {
-							<p
+							<span
 									[ngClass]="{
 										'whitespace-pre': true,
 										'text-primary': token.valid,
 										'text-error': !token.valid
 									}"
 									[title]="token.valid && token.interpolated? token.interpolated: 'undefined'"
-									>{{token.value}}
-							</p>
-							
+									>{{token.value}}</span>
 						}@else {
-							<p class="whitespace-pre">{{token.value}}</p>
+							<span class="whitespace-pre">{{token.value}}</span>
 						}
 					}
 				}@else {
-					<p class="opacity-50">{{placeHolder()}}</p>
+					<span class="opacity-50">{{placeHolder()}}</span>
 				}
 				</div>
         	</div>
     `,
 	imports: [NgClass],
 })
-export class HighlightedInput {
-	editMode = signal<boolean>(false);
-	placeHolder = input<string>("value");
-	text = input.required<string>();
-	disabled = input.required<boolean>();
-	onBlur = output<void>();
-	onInput = output<string>();
-	appSvc = inject(AppService);
-
-	private tokenUpdate$ = new Subject<void>();
-	private destroyRef = inject(DestroyRef);
-
-	_tokens = signal<InputToken[]>([]);
-
-	inputEl = viewChild.required<ElementRef<HTMLInputElement>>("inputEl");
-	overlayEl = viewChild.required<ElementRef<HTMLDivElement>>("overlayEl");
-
-	syncScroll() {
-		const input = this.inputEl()?.nativeElement;
-		const overlay = this.overlayEl()?.nativeElement;
-
-		if (input && overlay) {
-			overlay.scrollLeft = input.scrollLeft;
-		}
-	}
-
-	handleBlur() {
-		this.editMode.set(false);
-		this.syncScroll();
-		this.onBlur.emit();
-	}
-
+export class GurlHighlightedInput {
 	@HostBinding("class")
 	def = "flex-1 flex relative";
 
@@ -112,20 +79,17 @@ export class HighlightedInput {
 		return "0";
 	}
 
-	handleUpdateVal(input: string) {
-		this.onInput.emit(input);
-	}
-
 	@HostListener("focus")
 	onHostFocus() {
 		this.editMode.set(true);
 		this.inputEl()?.nativeElement.focus();
 	}
 
-	initializeTokens() {
-		const v = this.text();
-		this._tokens.set(this.appSvc.extractEnvTokens(v));
-	}
+	placeHolder = input<string>("value");
+	text = input.required<string>();
+	disabled = input.required<boolean>();
+	onBlur = output<void>();
+	onInput = output<string>();
 
 	constructor() {
 		effect(() => {
@@ -148,5 +112,38 @@ export class HighlightedInput {
 					this.initializeTokens();
 				},
 			});
+	}
+
+	protected editMode = signal<boolean>(false);
+	private readonly appSvc = inject(AppService);
+	private readonly tokenUpdate$ = new Subject<void>();
+	private readonly destroyRef = inject(DestroyRef);
+	protected _tokens = signal<InputToken[]>([]);
+	private inputEl = viewChild.required<ElementRef<HTMLInputElement>>("inputEl");
+	private overlayEl =
+		viewChild.required<ElementRef<HTMLDivElement>>("overlayEl");
+
+	protected syncScroll() {
+		const input = this.inputEl()?.nativeElement;
+		const overlay = this.overlayEl()?.nativeElement;
+
+		if (input && overlay) {
+			overlay.scrollLeft = input.scrollLeft;
+		}
+	}
+
+	protected handleBlur() {
+		this.editMode.set(false);
+		this.syncScroll();
+		this.onBlur.emit();
+	}
+
+	protected handleUpdateVal(input: string) {
+		this.onInput.emit(input);
+	}
+
+	protected initializeTokens() {
+		const v = this.text();
+		this._tokens.set(this.appSvc.extractEnvTokens(v));
 	}
 }

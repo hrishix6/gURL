@@ -4,7 +4,7 @@ import { Check, ChevronsUpDown, LucideAngularModule } from "lucide-angular";
 import type { DropDownItem } from "@/types";
 
 @Component({
-	selector: `app-dropdown`,
+	selector: `gurl-dropdown`,
 	template: `
         <div class="dropdown dropdown-{{direction()}} dropdown-{{align()}}">
             <div tabindex="0" role="button" [ngClass]="{
@@ -20,9 +20,10 @@ import type { DropDownItem } from "@/types";
                 {{activeItem().displayName}}
                 <lucide-angular [img]="DropdownIcon" class="size-4 ml-0.5" />
             </div>
+          <div class="max-h-96 overflow-y-auto dropdown-content ">
           <ul
             tabindex="-1"
-            class="menu menu-{{size()}} dropdown-content bg-base-100 rounded-box z-50 w-max p-2 shadow-sm"
+            class="menu menu-{{size()}} bg-base-100 rounded-box z-50 w-max p-2 shadow-sm"
           >
            @for (item of items(); track item.id) {
           <li class="my-0.5">
@@ -39,13 +40,12 @@ import type { DropDownItem } from "@/types";
           </li>
         }
         </ul>
+          </div>
       </div>
     `,
 	imports: [LucideAngularModule, NgClass],
 })
-export class AppDropdown<T> {
-	readonly DropdownIcon = ChevronsUpDown;
-	readonly CheckedIcon = Check;
+export class GurlDropdown<T> {
 	items = input.required<readonly DropDownItem<T>[]>();
 	activeItem = input.required<DropDownItem<T>>();
 	direction = input<"down" | "top">("down");
@@ -53,10 +53,12 @@ export class AppDropdown<T> {
 	size = input<"sm" | "md" | "lg" | "xl">("md");
 	varient = input<"soft" | "ghost" | "default">("default");
 	primary = input<boolean>(true);
-
 	onItemSelection = output<T>();
 
-	handleItemSelection(id: T) {
+	protected readonly DropdownIcon = ChevronsUpDown;
+	protected readonly CheckedIcon = Check;
+
+	protected handleItemSelection(id: T) {
 		this.onItemSelection.emit(id);
 		const activeEl = document.activeElement as HTMLAnchorElement;
 		activeEl?.blur();

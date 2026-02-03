@@ -2,10 +2,10 @@ import { NgClass } from "@angular/common";
 import { Component, HostBinding, input, output } from "@angular/core";
 import { LucideAngularModule, X } from "lucide-angular";
 import type { KeyValItem } from "@/types";
-import { HighlightedInput } from "./highlighted.input";
+import { GurlHighlightedInput } from "./highlighted.input";
 
 @Component({
-	selector: "app-keyval-item",
+	selector: "gurl-keyval-item",
 	template: `
     @for (item of items(); track item.id) {
     <div class="flex gap-2.5 items-center">
@@ -17,7 +17,7 @@ import { HighlightedInput } from "./highlighted.input";
         (change)="handleEnable(item.id, $event)"
       />
       <div
-        highlightedInp
+        gurl-highlighted-input
         [placeHolder]="'key'"
         [disabled]="false"
         [text]="item.key"
@@ -27,8 +27,8 @@ import { HighlightedInput } from "./highlighted.input";
       </div>
       <div class="flex-2">
           <div
+          gurl-highlighted-input
           [placeHolder]="'value'"
-          highlightedInp
           [disabled]="item.key == '' || item.key.trim() == ''"
           [text]="item.val"
           (onInput)="handleUpdateVal(item.id, $event)"
@@ -48,13 +48,12 @@ import { HighlightedInput } from "./highlighted.input";
     </div>
     }
   `,
-	imports: [LucideAngularModule, NgClass, HighlightedInput],
+	imports: [LucideAngularModule, NgClass, GurlHighlightedInput],
 })
 export class KeyValFormItem {
 	@HostBinding("class")
 	hostClass = "flex flex-col gap-2.5";
 
-	readonly CanceIcon = X;
 	items = input.required<KeyValItem[]>();
 	placeholderId = input.required<string>();
 	onKeyUpdate = output<{ id: string; v: string }>();
@@ -63,25 +62,26 @@ export class KeyValFormItem {
 	onBlur = output();
 	onDelete = output<string>();
 
-	handleUpdateKey(id: string, v: string) {
+	protected readonly CanceIcon = X;
+
+	protected handleUpdateKey(id: string, v: string) {
 		this.onKeyUpdate.emit({ id, v });
 	}
 
-	handleUpdateVal(id: string, v: string) {
+	protected handleUpdateVal(id: string, v: string) {
 		this.onValUpdate.emit({ id, v });
 	}
 
-	handleDeleteItem(id: string) {
+	protected handleDeleteItem(id: string) {
 		this.onDelete.emit(id);
 	}
 
-	handleBlur() {
+	protected handleBlur() {
 		this.onBlur.emit();
 	}
 
-	handleEnable(id: string, e: Event) {
+	protected handleEnable(id: string, e: Event) {
 		const target = e.target as HTMLInputElement;
-		console.log(target.checked);
 		this.onEnabledUpdate.emit({ id, v: target.checked ? "on" : "off" });
 	}
 }
