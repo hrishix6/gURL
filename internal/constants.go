@@ -4,4 +4,5 @@ const (
 	APP_NAME                 = "gURL"
 	SAVED_RESPONSES_PREFIX   = "/__gurl__/"
 	MAX_RESPONSE_LIMIT_BYTES = 300_000_000
+	SCHEMA_VERSION           = "1.0"
 )

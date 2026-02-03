@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"fmt"
+	"gurl/internal/models"
 	"os"
 	"path/filepath"
 )
@@ -53,4 +55,22 @@ func InitDataDir(appDataDir string) (string, error) {
 	}
 
 	return dataDir, nil
+}
+
+func GetFileStats(filePath string) (*models.FileStats, error) {
+	info, err := os.Stat(filePath)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if info.IsDir() {
+		return nil, fmt.Errorf("chosen item is not a file")
+	}
+
+	return &models.FileStats{
+		Name: info.Name(),
+		Size: info.Size(),
+		Path: filePath,
+	}, nil
 }
