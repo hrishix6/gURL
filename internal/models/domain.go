@@ -1,5 +1,11 @@
 package models
 
+import (
+	"encoding/json"
+	"slices"
+	"strings"
+)
+
 type GurlKeyValItem struct {
 	Key     string `json:"key"`
 	Value   string `json:"value"`
@@ -116,4 +122,178 @@ type GurlResCookie struct {
 	HttpOnly bool   `json:"httpOnly"`
 	SameSite int    `json:"sameSite"`
 	Raw      string `json:"raw"`
+}
+
+type GurlBodyType string
+
+const (
+	NoBodyType             GurlBodyType = "none"
+	JsonBodyType           GurlBodyType = "json"
+	TextBodyType           GurlBodyType = "plaintext"
+	XmlBodyType            GurlBodyType = "xml"
+	BinaryBodyType         GurlBodyType = "binary"
+	UrlEncodedFormBodyType GurlBodyType = "urlencoded"
+	MultipartFormBodyType  GurlBodyType = "multipart"
+)
+
+func ValidateOrDefaultBodyType(arg string, def GurlBodyType) GurlBodyType {
+
+	if arg == "" {
+		return def
+	}
+
+	validItems := []GurlBodyType{
+		NoBodyType,
+		JsonBodyType,
+		TextBodyType,
+		XmlBodyType,
+		BinaryBodyType,
+		UrlEncodedFormBodyType,
+		MultipartFormBodyType,
+	}
+
+	i := slices.Index(validItems, GurlBodyType(arg))
+
+	if i == -1 {
+		return def
+	}
+
+	return validItems[i]
+}
+
+type GurlAuthType string
+
+const (
+	NoAuthType     GurlAuthType = "no_auth"
+	BasicAuthType  GurlAuthType = "basic"
+	ApiKeyAuthType GurlAuthType = "api_key"
+	TokenAuthType  GurlAuthType = "token"
+)
+
+func ValidateOrDefaultAuthType(arg string, def GurlAuthType) GurlAuthType {
+	switch arg {
+	case string(NoAuthType):
+		return NoAuthType
+	case string(BasicAuthType):
+		return BasicAuthType
+	case string(ApiKeyAuthType):
+		return ApiKeyAuthType
+	case string(TokenAuthType):
+		return TokenAuthType
+	default:
+		return def
+	}
+}
+
+type ExportedKeyValItem struct {
+	K string `json:"key"`
+	V string `json:"value"`
+}
+
+type ExportedMultipartItem struct {
+	K      string `json:"key"`
+	V      string `json:"value"`
+	IsFile bool   `json:"is_file"`
+}
+
+type ExportedGurlCollection struct {
+	Version  string            `json:"version"`
+	Name     string            `json:"name"`
+	Requests []ExportedGurlReq `json:"requests"`
+}
+
+type ExportedGurlReq struct {
+	Version        string                  `json:"version"`
+	Name           string                  `json:"name"`
+	Url            string                  `json:"url"`
+	Method         string                  `json:"method"`
+	Cookies        []ExportedKeyValItem    `json:"cookies"`
+	Headers        []ExportedKeyValItem    `json:"headers"`
+	QueryParams    []ExportedKeyValItem    `json:"query"`
+	BodyType       GurlBodyType            `json:"body_type"`
+	TextBody       string                  `json:"text"`
+	UrlEncodedBody []ExportedKeyValItem    `json:"urlencoded"`
+	MultipartBody  []ExportedMultipartItem `json:"multipart"`
+	BinaryBody     string                  `json:"binary"`
+	AuthType       GurlAuthType            `json:"auth_type"`
+	BasicAuth      BasicAuth               `json:"basic"`
+	ApiKeyAuth     ApiKeyAuth              `json:"api_key"`
+	TokenAuth      TokenAuth               `json:"token"`
+}
+
+type GurlReqMethod string
+
+const (
+	GET     GurlReqMethod = "GET"
+	POST    GurlReqMethod = "POST"
+	PUT     GurlReqMethod = "PUT"
+	PATCH   GurlReqMethod = "PATCH"
+	DELETE  GurlReqMethod = "DELETE"
+	HEAD    GurlReqMethod = "HEAD"
+	OPTIONS GurlReqMethod = "OPTIONS"
+)
+
+func ValidOrDefaultMethod(method string) GurlReqMethod {
+	switch strings.ToUpper(method) {
+	case "GET":
+		return GET
+	case "POST":
+		return POST
+	case "PUT":
+		return PUT
+	case "PATCH":
+		return PATCH
+	case "DELETE":
+		return DELETE
+	case "HEAD":
+		return HEAD
+	case "OPTIONS":
+		return OPTIONS
+	default:
+		return GET
+	}
+}
+
+type ImportedCollection struct {
+	Version  *string         `json:"version"`
+	Name     *string         `json:"name"`
+	Requests json.RawMessage `json:"requests"`
+}
+
+type ImportedGurlReq struct {
+	Version        *string         `json:"version"`
+	Name           *string         `json:"name"`
+	Url            *string         `json:"url"`
+	Method         *string         `json:"method"`
+	Cookies        json.RawMessage `json:"cookies"`
+	Headers        json.RawMessage `json:"headers"`
+	QueryParams    json.RawMessage `json:"query"`
+	BodyType       *string         `json:"body_type"`
+	TextBody       *string         `json:"text"`
+	UrlEncodedBody json.RawMessage `json:"urlencoded"`
+	MultipartBody  json.RawMessage `json:"multipart"`
+	BinaryBody     *string         `json:"binary"`
+	AuthType       *string         `json:"auth_type"`
+	BasicAuth      json.RawMessage `json:"basic"`
+	ApiKeyAuth     json.RawMessage `json:"api_key"`
+	TokenAuth      json.RawMessage `json:"token"`
+}
+
+type ExportedEnvironmentItem struct {
+	K           string `json:"key"`
+	V           string `json:"value"`
+	IsSecret    bool   `json:"is_secret"`
+	Description string `json:"description"`
+}
+
+type ExportedEnvironment struct {
+	Version string                    `json:"version"`
+	Name    string                    `json:"name"`
+	Vars    []ExportedEnvironmentItem `json:"vars"`
+}
+
+type ImportedEnvironment struct {
+	Version *string         `json:"version"`
+	Name    *string         `json:"name"`
+	Vars    json.RawMessage `json:"vars"`
 }
