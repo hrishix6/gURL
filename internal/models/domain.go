@@ -87,7 +87,7 @@ type GurlRenderMeta struct {
 	CanRender        bool   `json:"canRender"`
 	Filepath         string `json:"filepath"`
 	DetectedMimeType string `json:"detectedMimeType"`
-	ReportedMimeType string `json:"reportedMileType"`
+	ReportedMimeType string `json:"reportedMimeType"`
 	Extension        string `json:"extension"`
 }
 
@@ -100,7 +100,6 @@ type GurlRes struct {
 	ResHeaders        []GurlKeyValItem `json:"resHeaders"`
 	Body              *GurlRenderMeta  `json:"body"`
 	Cookies           []GurlResCookie  `json:"cookies"`
-	IsFile            bool             `json:"isFile"`
 	SizeBytes         int64            `json:"size"`
 	UploadBytes       int64            `json:"uploadSize"`
 	TimeMs            int64            `json:"time"`
@@ -296,4 +295,12 @@ type ImportedEnvironment struct {
 	Version *string         `json:"version"`
 	Name    *string         `json:"name"`
 	Vars    json.RawMessage `json:"vars"`
+}
+
+type SavedResponseRenderMeta struct {
+	Html5Element string `json:"html5Element"`
+	Src          string `json:"src"`
+	CanRender    bool   `json:"canRender"`
+	Filepath     string `json:"filepath"`
+	Extension    string `json:"extension"`
 }

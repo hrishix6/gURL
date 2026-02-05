@@ -12,6 +12,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -27,12 +28,13 @@ type Executor struct {
 	httpTransformer *transform.HttpTransformer
 	httpAgent       string
 	tmpDir          string
+	savedResDir     string
 	previewSrv      *http.Server
 	previewSrvAddr  string
 	cleanupWG       *sync.WaitGroup
 }
 
-func NewExecutor(db *gorm.DB, appName string, tmpDir string) Executor {
+func NewExecutor(db *gorm.DB, appName string, tmpDir string, savedResponsesDir string) Executor {
 	contextStore := NewGurlReqContextStore()
 	return Executor{
 		db:          db,
@@ -43,9 +45,10 @@ func NewExecutor(db *gorm.DB, appName string, tmpDir string) Executor {
 			},
 			Timeout: 5 * time.Minute,
 		},
-		httpAgent: appName,
-		tmpDir:    tmpDir,
-		cleanupWG: &sync.WaitGroup{},
+		httpAgent:   appName,
+		tmpDir:      tmpDir,
+		savedResDir: savedResponsesDir,
+		cleanupWG:   &sync.WaitGroup{},
 	}
 }
 
@@ -103,7 +106,7 @@ func Startup(e *Executor, ctx context.Context, mimeDbJson []byte) error {
 		return err
 	}
 
-	e.previewSrv = NewPreviewServer(e.tmpDir)
+	e.previewSrv = NewPreviewServer(e.tmpDir, e.savedResDir)
 	e.previewSrvAddr = fmt.Sprintf("http://%s", listner.Addr().String())
 
 	e.cleanupWG.Add(1)
@@ -173,7 +176,7 @@ func (e *Executor) SendHttpReq(r models.GurlReq) (*models.GurlRes, error) {
 		return nil, err
 	}
 
-	responsePreviewBaseAddr := fmt.Sprintf("%s%s", e.previewSrvAddr, internal.SAVED_RESPONSES_PREFIX)
+	responsePreviewBaseAddr := fmt.Sprintf("%s%s", e.previewSrvAddr, internal.TEMP_RESPONSE_PREFIX)
 
 	gurlRes := e.httpTransformer.TransformHttpResponse(r.Id, req, res, ttfbMs, tempData, responsePreviewBaseAddr)
 
@@ -208,4 +211,9 @@ func (e *Executor) ParseCookieRaw(text string) ([]models.GurlKeyValItem, error) 
 	}
 
 	return results, nil
+}
+
+func (e *Executor) GetSavedResponsesSrc(savedResPath string) string {
+	filename := filepath.Base(savedResPath)
+	return fmt.Sprintf("%s%s%s", e.previewSrvAddr, internal.SAVED_RESPONSES_PREFIX, filename)
 }

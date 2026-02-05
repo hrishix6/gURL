@@ -47,8 +47,68 @@ type RequestDTO struct {
 	CollectionId       string `json:"collectionId"`
 }
 
+type RequestLightDTO struct {
+	Id           string `json:"id"`
+	Name         string `json:"name"`
+	Method       string `json:"method"`
+	Url          string `json:"url"`
+	CollectionId string `json:"collectionId"`
+}
+
+type ReqExampleDTO struct {
+	Id           string `json:"id"`
+	RequestId    string `json:"requestId"`
+	CollectionId string `json:"collectionId"`
+	Name         string `json:"name"`
+
+	// Request Data
+	Url            string `json:"url"`
+	Method         string `json:"method"`
+	Query          string `json:"query"`
+	Headers        string `json:"headers"`
+	Cookies        string `json:"cookies"`
+	MultipartForm  string `json:"multipart"`
+	UrlEncodedForm string `json:"urlencoded"`
+	TextBody       string `json:"text"`
+	BinaryBody     string `json:"binary"`
+	BodyType       string `json:"bodyType"`
+	UploadSize     int64  `json:"uploadSize"`
+
+	// Response Data
+	ResponseSuccess    bool   `json:"responseSuccess"`
+	ResponseStatus     int64  `json:"responseStatus"`
+	ResponseStatusText string `json:"responseStatusText"`
+	ResponseTime       int64  `json:"responseTimeMS"`
+	SentHeaders        string `json:"sentHeaders"`
+	ResponseHeaders    string `json:"responseHeaders"`
+	ResponseCookies    string `json:"responseCookies"`
+	ResponseBody       string `json:"responseBody"`
+
+	ResponseSize   int64 `json:"responseSize"`
+	LimitExceeded  bool  `json:"limitExceeded"`
+	ResponseTffbMs int64 `json:"responseTffbMs"`
+	ResponseDlMs   int64 `json:"responseDlMs"`
+
+	// Auth Data
+	AuthType   string `json:"authType"`
+	BasicAuth  string `json:"basicAuth"`
+	ApiKeyAuth string `json:"apiKeyAuth"`
+	TokenAuth  string `json:"tokenAuth"`
+}
+
+type ReqExampleLightDTO struct {
+	Id        string `json:"id"`
+	RequestId string `json:"requestId"`
+	Name      string `json:"name"`
+}
+
 type AddFreshDraftDTO struct {
 	Id string `json:"id"`
+}
+
+type AddDraftFromRequestDTO struct {
+	Id        string `json:"id"`
+	RequestId string `json:"requestId"`
 }
 
 type UpdateDraftUrlDTO struct {

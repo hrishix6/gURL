@@ -57,6 +57,17 @@ func InitDataDir(appDataDir string) (string, error) {
 	return dataDir, nil
 }
 
+func InitSavedResponsesDir(appDataDir string, savedResponsesDir string) (string, error) {
+
+	responsesDir := filepath.Join(appDataDir, savedResponsesDir)
+
+	if err := os.MkdirAll(responsesDir, 0o755); err != nil {
+		return "", err
+	}
+
+	return responsesDir, nil
+}
+
 func GetFileStats(filePath string) (*models.FileStats, error) {
 	info, err := os.Stat(filePath)
 

@@ -2,7 +2,10 @@ package internal
 
 const (
 	APP_NAME                 = "gURL"
-	SAVED_RESPONSES_PREFIX   = "/__gurl__/"
+	VERSION                  = "v0.6.0"
+	SAVED_RESPONSES_PREFIX   = "/__gurl_saved__/"
+	TEMP_RESPONSE_PREFIX     = "/__gurl_temp__/"
 	MAX_RESPONSE_LIMIT_BYTES = 300_000_000
 	SCHEMA_VERSION           = "1.0"
+	SAVED_RESPONSES_LOCATION = "saved_responses"
 )

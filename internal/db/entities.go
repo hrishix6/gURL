@@ -132,6 +132,36 @@ func (r *RequestDraft) ToRequestDraftDTO() *models.RequestDraftDTO {
 	}
 }
 
+func (r *RequestDraft) FromRequest(id string, req *Request) {
+
+	if r == nil {
+		r = &RequestDraft{}
+	}
+
+	r.Id = id
+	r.Url = req.Url
+	r.Method = req.Method
+	r.Query = req.Query
+	r.Headers = req.Headers
+	r.Cookies = req.Cookies
+	r.BodyType = req.BodyType
+	r.TextBody = req.TextBody
+	r.UrlEncodedForm = req.UrlEncodedForm
+	r.MultipartForm = req.MultipartForm
+	r.BinaryBody = req.BinaryBody
+
+	//auth
+	r.ApiKeyAuth = req.ApiKeyAuth
+	r.BasicAuth = req.BasicAuth
+	r.TokenAuth = req.TokenAuth
+	r.AuthType = req.AuthType
+	r.AuthEnabled = req.AuthEnabled
+
+	r.ParentRequestId = req.Id
+	r.ParentCollectionId = req.CollectionId
+	r.ParentRequestName = req.Name
+}
+
 type Request struct {
 	Id             string         `gorm:"primaryKey;column:id"`
 	Url            string         `gorm:"column:url"`
@@ -154,6 +184,87 @@ type Request struct {
 	Collection     Collection     `gorm:"constraint:OnDelete:CASCADE;"`
 	Created        int            `gorm:"autoCreateTime;column:created"`
 	UpdatedAt      int            `gorm:"autoUpdateTime;column:updated"`
+}
+
+type RequestExample struct {
+	Id           string `gorm:"primaryKey;column:id"`
+	RequestId    string `gorm:"not null"`
+	CollectionId string `gorm:"not null"`
+	Name         string `gorm:"column:name;not null"`
+
+	// Request Data
+	Url            string         `gorm:"column:url"`
+	Method         string         `gorm:"column:method;default:GET"`
+	Query          datatypes.JSON `gorm:"column:query;default:'[]'"`
+	Headers        datatypes.JSON `gorm:"column:headers;default:'[]'"`
+	Cookies        datatypes.JSON `gorm:"column:cookies;default:'[]'"`
+	MultipartForm  datatypes.JSON `gorm:"column:multipart;default:'[]'"`
+	UrlEncodedForm datatypes.JSON `gorm:"column:urlencoded;default:'[]'"`
+	TextBody       string         `gorm:"column:textbody"`
+	BinaryBody     datatypes.JSON `gorm:"column:binarybody"`
+	BodyType       string         `gorm:"column:bodyType;default:none"`
+	UploadSize     int64          `gorm:"column:uploadSize;"`
+
+	// Response Data
+	ResponseSuccess    bool   `gorm:"column:responseSuccess"`
+	ResponseStatus     int64  `gorm:"column:responseStatus"`
+	ResponseStatusText string `gorm:"column:responseStatusText"`
+	ResponseTime       int64  `gorm:"column:responseTime"`
+	ResponseSize       int64  `gorm:"column:responseSize"`
+	LimitExceeded      bool   `gorm:"column:limitExceeded"`
+	ResponseTffbMs     int64  `gorm:"column:responseTffbMs"`
+	ResponseDlMs       int64  `gorm:"column:responseDlMs"`
+
+	SentHeaders     datatypes.JSON `gorm:"column:sentHeaders;default:'[]'"`
+	ResponseHeaders datatypes.JSON `gorm:"column:responseHeaders;default:'[]'"`
+	ResponseCookies datatypes.JSON `gorm:"column:responseCookies;default:'[]'"`
+	ResponseBody    datatypes.JSON `gorm:"column:responseBody"`
+
+	// Auth Data
+	AuthType   string         `gorm:"column:authType;default:no_auth"`
+	BasicAuth  datatypes.JSON `gorm:"column:basicAuth"`
+	ApiKeyAuth datatypes.JSON `gorm:"column:apiKeyAuth"`
+	TokenAuth  datatypes.JSON `gorm:"column:tokenAuth"`
+
+	// Metadata
+	Created   int `gorm:"autoCreateTime;column:created"`
+	UpdatedAt int `gorm:"autoUpdateTime;column:updated"`
+}
+
+func (r *RequestExample) ToReqExampleDTO() *models.ReqExampleDTO {
+	return &models.ReqExampleDTO{
+		Id:                 r.Id,
+		RequestId:          r.RequestId,
+		CollectionId:       r.CollectionId,
+		Name:               r.Name,
+		Url:                r.Url,
+		Method:             r.Method,
+		Query:              string(r.Query),
+		Headers:            string(r.Headers),
+		Cookies:            string(r.Cookies),
+		MultipartForm:      string(r.MultipartForm),
+		UrlEncodedForm:     string(r.UrlEncodedForm),
+		TextBody:           r.TextBody,
+		UploadSize:         r.UploadSize,
+		BinaryBody:         string(r.BinaryBody),
+		BodyType:           r.BodyType,
+		ResponseSuccess:    r.ResponseSuccess,
+		ResponseStatus:     r.ResponseStatus,
+		ResponseStatusText: r.ResponseStatusText,
+		ResponseTime:       r.ResponseTime,
+		ResponseSize:       r.ResponseSize,
+		LimitExceeded:      r.LimitExceeded,
+		ResponseTffbMs:     r.ResponseTffbMs,
+		ResponseDlMs:       r.ResponseDlMs,
+		SentHeaders:        string(r.SentHeaders),
+		ResponseHeaders:    string(r.ResponseHeaders),
+		ResponseCookies:    string(r.ResponseCookies),
+		AuthType:           r.AuthType,
+		ResponseBody:       string(r.ResponseBody),
+		BasicAuth:          string(r.BasicAuth),
+		ApiKeyAuth:         string(r.ApiKeyAuth),
+		TokenAuth:          string(r.TokenAuth),
+	}
 }
 
 func (r *Request) ToRequestDTO() *models.RequestDTO {

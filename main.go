@@ -34,13 +34,7 @@ func main() {
 		env = "PROD"
 	}
 
-	var appName string
-	version, ok := os.LookupEnv("VERSION")
-	if !ok {
-		appName = internal.APP_NAME
-	} else {
-		appName = fmt.Sprintf("%s_%s", internal.APP_NAME, version)
-	}
+	appName := fmt.Sprintf("%s_%s", internal.APP_NAME, internal.VERSION)
 
 	var dsn string
 
@@ -54,15 +48,24 @@ func main() {
 
 	log.Printf("[Gurl] tmp location: %s \n", tmpDir)
 
+	dataDir, err := utils.InitDataDir(appName)
+
+	if err != nil {
+		log.Fatalf("unable to initialize data directory : %v", err)
+	}
+
+	log.Printf("[Gurl] data location: %s \n", dataDir)
+
+	savedResponsesDir, err := utils.InitSavedResponsesDir(dataDir, internal.SAVED_RESPONSES_LOCATION)
+
+	if err != nil {
+		log.Fatalf("unable to initialize saved responses directory : %v", err)
+	}
+
+	log.Printf("[Gurl] saved responses location: %s \n", savedResponsesDir)
+
 	if env == "PROD" {
-		dataDir, err := utils.InitDataDir(appName)
-
-		if err != nil {
-			log.Fatalf("unable to initialize user data directory %v", err)
-		}
-
 		dsn = filepath.Join(dataDir, db.DB_NAME)
-
 	} else {
 		dsn = db.DB_NAME
 	}
@@ -79,13 +82,13 @@ func main() {
 	log.Println("[Gurl] Db connection established")
 
 	//bounded structs
-	storageInstance := storage.NewStorage(dbConn)
-	executorInstance := executor.NewExecutor(dbConn, appName, tmpDir)
+	storageInstance := storage.NewStorage(dbConn, savedResponsesDir)
+	executorInstance := executor.NewExecutor(dbConn, appName, tmpDir, savedResponsesDir)
 	exporterInstance := exporter.NewExporter(dbConn, tmpDir)
 
 	// Create application with options
 	err = wails.Run(&options.App{
-		Title: "gURL v0.6.0",
+		Title: fmt.Sprintf("%s %s", internal.APP_NAME, internal.VERSION),
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},
