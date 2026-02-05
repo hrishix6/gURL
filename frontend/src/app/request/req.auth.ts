@@ -30,6 +30,7 @@ import { FormService } from "@/services";
                         <div gurl-highlighted-input
                         [placeHolder]="'name'"
                         [disabled]="false"
+                        [readonly]="f.tabType() === 'req_example'"
                         [text]="f.auth.basicAuth().username"
                         (onInput)="f.updateBasicAuth('username', $event)"
                         >
@@ -40,6 +41,7 @@ import { FormService } from "@/services";
                         <div gurl-highlighted-input
                         [placeHolder]="'password'"
                         [disabled]="false"
+                        [readonly]="f.tabType() === 'req_example'"
                         [text]="f.auth.basicAuth().password"
                         (onInput)="f.updateBasicAuth('password', $event)"
                         >
@@ -54,6 +56,7 @@ import { FormService } from "@/services";
                             <div gurl-highlighted-input
                                 [placeHolder]="'token'"
                                 [disabled]="false"
+                                [readonly]="f.tabType() === 'req_example'"
                                 [text]="f.auth.tokenAuth().token"
                                 (onInput)="f.updateTokenAuth('token', $event)">
                             </div>
@@ -66,6 +69,7 @@ import { FormService } from "@/services";
                             <div gurl-highlighted-input
                                 [placeHolder]="'key'"
                                 [disabled]="false"
+                                [readonly]="f.tabType() === 'req_example'"
                                 [text]="f.auth.apiKey().key"
                                 (onInput)="f.updateApiKey('key', $event)"
                                 >
@@ -76,6 +80,7 @@ import { FormService } from "@/services";
                             <div gurl-highlighted-input
                             [placeHolder]="'value'"
                             [disabled]="f.auth.apiKey().key == ''"
+                            [readonly]="f.tabType() === 'req_example'"
                             [text]="f.auth.apiKey().value"
                             (onInput)="f.updateApiKey('value', $event)"
                             >

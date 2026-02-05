@@ -49,6 +49,27 @@ export class AuthService {
 		}
 	}
 
+	public initExample(data: models.ReqExampleDTO) {
+		const { id, authType, basicAuth, apiKeyAuth, tokenAuth } = data;
+		this.draftId = id;
+		this._authEnabled.set(true);
+		this._auth.set(
+			REQ_AUTH_TYPES.find((x) => x.id === authType) || REQ_AUTH_TYPES[0],
+		);
+
+		if (basicAuth) {
+			this._basicAuth.set(JSON.parse(basicAuth));
+		}
+
+		if (apiKeyAuth) {
+			this._apiKeyAuth.set(JSON.parse(apiKeyAuth));
+		}
+
+		if (tokenAuth) {
+			this._tokenAuth.set(JSON.parse(tokenAuth));
+		}
+	}
+
 	public requestAuthData(): models.GurlAuth {
 		return {
 			authEnabled: this._authEnabled(),

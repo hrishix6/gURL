@@ -1,5 +1,5 @@
 import { Component, HostBinding, inject, signal } from "@angular/core";
-import { LucideAngularModule } from "lucide-angular";
+import { Ban, LucideAngularModule } from "lucide-angular";
 import { KeyValFormItem } from "@/common/components";
 import { parseTextAsKeyVal } from "@/common/utils/time";
 import { BULK_EDIT_INSTRUCTION, QID_PLACEHOLDER } from "@/constants";
@@ -9,7 +9,7 @@ import { BulkKeyValEditor } from "../common/components/bulk.editor";
 @Component({
 	selector: "gurl-req-query",
 	template: `
-  <div class="flex-1 overflow-y-auto p-1">
+  <div class="flex-1 overflow-y-auto p-1 relative">
      @if(f.urlSvc.bulkEditModeQuery()){
          <gurl-bulk-editor
           [editInstructions]="bulkQueryEditInstruction"
@@ -19,16 +19,23 @@ import { BulkKeyValEditor } from "../common/components/bulk.editor";
           />
       }
       @else {
-        <gurl-keyval-item
-        [placeholderId]="placeHolderQueryId"
-        [items]="f.urlSvc.queryParams()"
-        (onDelete)="f.deleteQueryParam($event)"
-        (onKeyUpdate)="f.updateQueryParam($event.id, 'key', $event.v)"
-        (onValUpdate)="f.updateQueryParam($event.id, 'val', $event.v)"
-        (onEnabledUpdate)="f.updateQueryParam($event.id, 'enabled', $event.v)"
-        (onBlur)="f.urlSvc.addQueryParam()"
-        >
-        </gurl-keyval-item>
+         @if(f.urlSvc.queryParams().length === 0 && f.tabType() === 'req_example'){
+            <div class="absolute top-0 left-0 w-full h-full flex items-center justify-center opacity-10">
+               <lucide-angular [img]="NoneIcon" class="size-16 -z-10" />
+            </div>
+         }@else {
+          <gurl-keyval-item
+          [placeholderId]="placeHolderQueryId"
+          [items]="f.urlSvc.queryParams()"
+          [tabType]="f.tabType()"
+          (onDelete)="f.deleteQueryParam($event)"
+          (onKeyUpdate)="f.updateQueryParam($event.id, 'key', $event.v)"
+          (onValUpdate)="f.updateQueryParam($event.id, 'val', $event.v)"
+          (onEnabledUpdate)="f.updateQueryParam($event.id, 'enabled', $event.v)"
+          (onBlur)="f.urlSvc.addQueryParam()"
+          >
+          </gurl-keyval-item>
+         }
       }
   </div>
   `,
@@ -46,6 +53,7 @@ export class ReqQuery {
 		"Each entry must be on new line\nKey and value are delimited by ' : '\nTo keep item disabled start the row with ' # '";
 
 	protected bulkEditText = signal<string>("");
+	protected readonly NoneIcon = Ban;
 
 	protected handleInput(e: Event) {
 		const target = e.target as HTMLInputElement;

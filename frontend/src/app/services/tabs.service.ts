@@ -9,6 +9,7 @@ import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import type { models } from "@wailsjs/go/models";
 import {
 	AddDraft,
+	AddDraftFromRequest,
 	AddEnvironmentDraft,
 	AddFreshDraft,
 	AddFreshEnvDraft,
@@ -111,6 +112,38 @@ export class TabsService {
 		} catch (_error) {}
 	}
 
+	public async openReqExampleTab(item: models.ReqExampleLightDTO) {
+		try {
+			const exists = this._openTabs().find(
+				(x) => x.entityType === AppTabType.ReqExample && x.entityId === item.id,
+			);
+
+			if (exists) {
+				this.setActiveTab(exists.id);
+				return;
+			}
+
+			const newTab: ApplicationTab = {
+				id: nanoid(),
+				name: item.name,
+				tag: "REQ_EXAMPLE",
+				entityId: item.id,
+				entityType: AppTabType.ReqExample,
+				isModified: false,
+			};
+
+			this._openTabs.update((prev) => {
+				const copy = [...prev, newTab];
+				this.tabChanges$.next(copy);
+				return copy;
+			});
+
+			this.setActiveTab(newTab.id);
+		} catch (error) {
+			console.error(error);
+		}
+	}
+
 	public async createEnvTabFromSaved(item: models.EnvironmentDTO) {
 		try {
 			const newTab: ApplicationTab = {
@@ -139,33 +172,15 @@ export class TabsService {
 		}
 	}
 
-	public async createTabFromSaved(item: models.RequestDTO) {
+	public async createTabFromSaved(item: models.RequestLightDTO) {
 		try {
-			const newDraft: models.RequestDraftDTO = {
+			const newDraft: models.AddDraftFromRequestDTO = {
 				id: nanoid(),
-				url: item.url,
-				method: item.method,
-				parentRequestId: item.id,
-				parentRequestName: item.name,
-				parentCollectionId: item.collectionId,
-				query: item.query,
-				bodyType: item.bodyType,
-				headers: item.headers,
-				cookies: item.cookies,
-				binary: item.binary,
-				multipart: item.multipart,
-				text: item.text,
-				urlencoded: item.urlencoded,
-				authEnabled: item.authEnabled,
-				authType: item.authType,
-				basicAuth: item.basicAuth,
-				apiKeyAuth: item.apiKeyAuth,
-				tokenAuth: item.tokenAuth,
+				requestId: item.id,
 			};
-
 			console.dir(newDraft);
 
-			await AddDraft(newDraft);
+			await AddDraftFromRequest(newDraft);
 
 			const newTab: ApplicationTab = {
 				id: nanoid(),
@@ -306,6 +321,21 @@ export class TabsService {
 
 		if (tab.entityType === AppTabType.Req) {
 			this.closeReqTabEvent$.next(tab);
+		}
+
+		if (tab.entityType === AppTabType.ReqExample) {
+			this.deleteTab(tab.id, AppTabType.ReqExample);
+		}
+	}
+
+	public async closeExampleTab(id: string) {
+		const tab = this._openTabs().find((x) => x.entityId === id);
+		const tabCount = this.tabCount();
+		if(tabCount === 1) {
+			await this.createFreshTab();
+		}
+		if (tab) {
+			this.deleteTab(tab.id, AppTabType.ReqExample);
 		}
 	}
 

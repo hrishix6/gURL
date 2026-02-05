@@ -25,6 +25,14 @@ export class CookieService {
 			},
 		]);
 	}
+
+	public initExample(data: models.ReqExampleDTO) {
+		const { id, cookies } = data;
+		this.draftId = id;
+
+		this._cookies.set([...JSON.parse(cookies)]);
+	}
+
 	private cookiesDbSync$ = new Subject<KeyValItem[]>();
 	private _cookies = signal<ReqCookies>([
 		{
@@ -126,6 +134,10 @@ export class CookieService {
 			this.cookiesDbSync$.next(copy);
 			return copy;
 		});
+	}
+
+	public cookiesForExample(): KeyValItem[] {
+		return this._cookies().filter((x) => x.id !== COOKIE_PLACEHOLDER);
 	}
 
 	public requestCookies() {

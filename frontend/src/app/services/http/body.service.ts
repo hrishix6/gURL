@@ -60,6 +60,21 @@ export class BodyService {
 		this._binaryBody.set(binary ? JSON.parse(binary) : null);
 	}
 
+	public initExample(data: models.ReqExampleDTO) {
+		const { bodyType, multipart, urlencoded, binary, text } = data;
+		this.draftId = data.id;
+
+		this._bodyType.set(
+			REQ_BODY_TYPES.find((x) => x.id === bodyType) || REQ_BODY_TYPES[0],
+		);
+
+		this._textBody.set(text);
+
+		this._urlEncodedParams.set([...JSON.parse(urlencoded)]);
+		this._multiPartForm.set([...JSON.parse(multipart)]);
+		this._binaryBody.set(binary ? JSON.parse(binary) : null);
+	}
+
 	//#region Body
 	private _bodyType = signal<DropDownItem<ReqBodyType>>(REQ_BODY_TYPES[0]);
 	public bodyType = computed(() => this._bodyType());
@@ -167,6 +182,12 @@ export class BodyService {
 			this.multipartDbSync$.next(copy);
 			return copy;
 		});
+	}
+
+	public multipartFormForExample() {
+		return this._multiPartForm().filter(
+			(x) => x.id !== MULTIPART_ID_PLACEHOLDER,
+		);
 	}
 
 	public requestMultipartData() {
@@ -297,6 +318,12 @@ export class BodyService {
 			this.urlEncodedDbSync$.next(copy);
 			return copy;
 		});
+	}
+
+	public urlEncodedParamsForExample() {
+		return this._urlEncodedParams().filter(
+			(x) => x.id !== URLENCODED_ID_PLACEHOLDER,
+		);
 	}
 
 	public requestUrlEncodedData() {

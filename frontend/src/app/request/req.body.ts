@@ -23,6 +23,7 @@ import { FileInput } from "./file.input";
       </div>
       } @case("multipart"){
         <gurl-multipart-item
+            [tabType]="f.tabType()"
             [placeholderId]="placeHolderMultipartId"
             [items]="f.bodySvc.multipartForm()"
             (onDelete)="f.deleteMultipartItem($event)"
@@ -42,6 +43,7 @@ import { FileInput } from "./file.input";
             />
         }@else {
            <gurl-keyval-item
+            [tabType]="f.tabType()"
             [placeholderId]="placeHolderUrlEncodedId"
             [items]="f.bodySvc.urlEncodedParams()"
             (onDelete)="f.deleteUrlEncodedField($event)"
@@ -54,16 +56,19 @@ import { FileInput } from "./file.input";
       } @case("json"){
       <gurl-text-editor 
       [value]="f.bodySvc.textBody()"
+      [readonly]="f.tabType()==='req_example'"
       (onInput)="handleTextBodyUpdate($event)"
       />
       } @case("xml") {
       <gurl-text-editor 
       [value]="f.bodySvc.textBody()"
+      [readonly]="f.tabType()==='req_example'"
       (onInput)="handleTextBodyUpdate($event)"
       />
       } @case ("plaintext") {
       <gurl-text-editor 
       [value]="f.bodySvc.textBody()"
+      [readonly]="f.tabType()==='req_example'"
       (onInput)="handleTextBodyUpdate($event)"
       />
       } @case ("binary") {

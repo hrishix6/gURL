@@ -22,40 +22,49 @@ import type {
         @switch (f.activeReqTab()) {
             @case ("req_headers")
             {
+                @if(f.tabType() === 'req'){
                 <div class="flex-1 flex items-center">
                  <label class="label ml-auto">
                             <input type="checkbox" [checked]="f.headerSvc.bulkEditModeHeaders()" (change)="handleEditModeSwitch('req_headers')" class="toggle toggle-primary" />
                              Raw
                     </label>
                 </div>
+                }
             }
             @case ('req_query'){
+                @if(f.tabType() === 'req'){
                    <div class="flex-1 flex items-center">
                     <label class="label ml-auto">
                             <input type="checkbox" [checked]="f.urlSvc.bulkEditModeQuery()" (change)="handleEditModeSwitch('req_query')" class="toggle toggle-primary" />
                              Raw
                     </label>
                      </div>
+                }
             }
             @case('req_cookies'){
+                @if(f.tabType() === 'req'){
                 <div class="flex-1 flex items-center">
                     <label class="label ml-auto">
                             <input type="checkbox" [checked]="f.cookieSvc.bulkEditModeCookies()" (change)="handleEditModeSwitch('req_cookies')" class="toggle toggle-primary" />
                              Raw
                     </label>
                 </div>
+                }
             }
             @case('req_auth'){
                  <div class="flex-1 flex gap-4 items-center">
+                    @if(f.tabType() === 'req'){
                     @if(f.auth.activeAuth().id !== 'no_auth'){
                         <label class="label">
                             <input type="checkbox"  [checked]="f.auth.authEnabled()" (change)="f.toggleAuthEnabled()" class="checkbox checkbox-xs checkbox-primary xl:checkbox-sm" />
                              Enabled
                         </label>
                     }
+                }
                     <gurl-dropdown
                                 [items]="reqAuthTypes"
                                 [activeItem]="f.auth.activeAuth()"
+                                [disabled]="f.tabType() === 'req_example'"
                                 [direction]="'top'"
                                 [align]="'start'" 
                                 [size]="'sm'"
@@ -68,6 +77,7 @@ import type {
                         <gurl-dropdown
                                 [items]="apiKeyLocations"
                                 [activeItem]="apiKeyLocationItem()!"
+                                [disabled]="f.tabType() === 'req_example'"
                                 [direction]="'top'"
                                 [align]="'start'" 
                                 [size]="'sm'"
@@ -82,6 +92,7 @@ import type {
                         <gurl-dropdown
                                     [items]="tokenAuthTypes"
                                     [activeItem]="tokenAuthTypeItem()!"
+                                    [disabled]="f.tabType() === 'req_example'"
                                     [direction]="'top'"
                                     [align]="'start'" 
                                     [size]="'sm'"
@@ -91,13 +102,14 @@ import type {
                                     >
                         </gurl-dropdown>
                     }
-                
+                @if(f.tabType() === 'req'){
                     @if(["basic"].includes(f.auth.activeAuth().id)){
                         <label class="label ml-auto">
                             <input type="checkbox" [checked]="f.auth.basicAuthRawMode()" (change)="f.auth.toggleBasicAuthRawMode()" class="toggle toggle-primary" />
                              Raw
                         </label>
                     }
+                }
                 </div>
             }
             @case('req_body'){
@@ -109,15 +121,18 @@ import type {
                             [align]="'start'" 
                             [size]="'sm'"
                             [varient]="'soft'"
+                            [disabled]="f.tabType() === 'req_example'"
                             [primary]="false"
                             (onItemSelection)="handleActiveItemSelection($event)"
                             >
                 </gurl-dropdown>
+                @if(f.tabType() === 'req'){
                 @if(["urlencoded"].includes(f.bodySvc.bodyType().id)){
                     <label class="label ml-auto">
                             <input type="checkbox" [checked]="f.bodySvc.bulkEditModeUrlEncodedForm()" (change)="handleEditModeSwitch('req_body')" class="toggle toggle-primary" />
                              Raw
                     </label>
+                    }
                 }
             </div>
         }

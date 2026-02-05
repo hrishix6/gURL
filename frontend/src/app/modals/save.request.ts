@@ -8,9 +8,9 @@ import {
 	signal,
 	viewChild,
 } from "@angular/core";
+import { LucideAngularModule, X } from "lucide-angular";
 import { DEFAULT_COLLECTION_ID } from "@/constants";
 import { AppService, FormService } from "@/services";
-import { LucideAngularModule, X } from "lucide-angular";
 
 @Component({
 	selector: `dialog[gurl-save-request-modal]`,

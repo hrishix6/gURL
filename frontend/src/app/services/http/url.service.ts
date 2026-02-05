@@ -40,6 +40,15 @@ export class UrlService {
 		]);
 	}
 
+	public initExample(data: models.ReqExampleDTO) {
+		this.draftId = data.id;
+		this._url.set(data.url);
+		this._method.set(
+			REQ_METHODS.find((x) => x.id === data.method) || REQ_METHODS[0],
+		);
+		this._queryParams.set([...JSON.parse(data.query)]);
+	}
+
 	private _queryParams = signal<RequestQuery>([
 		{
 			id: QID_PLACEHOLDER,
@@ -55,8 +64,14 @@ export class UrlService {
 	public isValidUrl = computed(() => this._isUrlValid());
 
 	public setUrl(v: string) {
-		this._url.set(v);
-		this.urlDbSync$.next(v);
+		this._url.update((prev) => {
+			if (prev === v) {
+				return prev;
+			}
+
+			this.urlDbSync$.next(v);
+			return v;
+		});
 	}
 
 	public _parseUrl() {
@@ -204,6 +219,10 @@ export class UrlService {
 			this.queryDbSync$.next(copy);
 			return copy;
 		});
+	}
+
+	public queryParamsForExample() {
+		return this._queryParams().filter((x) => x.id !== QID_PLACEHOLDER);
 	}
 
 	public requestQueryParams() {

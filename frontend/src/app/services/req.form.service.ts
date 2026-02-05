@@ -6,10 +6,16 @@ import {
 	signal,
 } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import { CancelReq, SendHttpReq } from "@wailsjs/go/executor/Executor";
+import {
+	CancelReq,
+	GetSavedResponsesSrc,
+	SendHttpReq,
+} from "@wailsjs/go/executor/Executor";
 import type { models } from "@wailsjs/go/models";
 import {
+	AddReqExample,
 	FindDraftById,
+	GetReqExampleById,
 	SaveDraftAsRequest,
 	SaveFile,
 } from "@wailsjs/go/storage/Storage";
@@ -48,6 +54,8 @@ import { UrlService } from "./http/url.service";
 @Injectable()
 export class FormService {
 	private _requestId: string = "";
+	private _tabType = signal<AppTabType>(AppTabType.Req);
+	public tabType = computed(() => this._tabType());
 	private destroyRef = inject(DestroyRef);
 
 	private _parentMeta = signal<DraftParentMetadata>({
@@ -286,9 +294,6 @@ export class FormService {
 	public setUrl(v: string) {
 		this.urlSvc.setUrl(v);
 		this._tabSvc.updateActiveTab("name", v);
-		if(v){
-			this._tabSvc.updateModifiedStatus(true);
-		}
 	}
 
 	public parseUrl() {
@@ -489,23 +494,104 @@ export class FormService {
 		}
 	}
 
-	public async initializeReqForm(id: string) {
+	private async populateRequestExampleState(data: models.ReqExampleDTO) {
 		try {
-			console.log(`Initializing draft ${id}`);
-			const dbRequest = await FindDraftById(id);
-			if (!dbRequest) {
-				//TODO: Warn using Toast message and close tab
-				console.warn(`Draft with id ${id} not found`);
-				return;
-			}
-			this._requestId = dbRequest.id;
-			this._parentMeta.set({
-				parentCollectionId: dbRequest.parentCollectionId,
-				parentRequestId: dbRequest.parentRequestId,
-				parentRequestName: dbRequest.parentRequestName,
-			});
+			this.urlSvc.initExample(data);
+			this.headerSvc.initExample(data);
+			this.cookieSvc.initExample(data);
+			this.bodySvc.initExample(data);
+			this.auth.initExample(data);
 
-			this.populateInitialState(dbRequest);
+			const renderMeta = data.responseBody
+				? (JSON.parse(data.responseBody) as models.SavedResponseRenderMeta)
+				: null;
+
+			if (renderMeta) {
+				const { canRender, html5Element, extension, filepath } = renderMeta;
+
+				const res = {
+					id: data.id,
+					dlMs: data.responseDlMs,
+					limitExceeded: data.limitExceeded,
+					ttfbMs: data.responseTffbMs,
+					uploadSize: data.uploadSize,
+					reportedSize: data.responseSize,
+					sizeNotReported: false,
+					status: data.responseStatus,
+					statusText: data.responseStatusText,
+					size: data.responseSize,
+					time: data.responseTimeMS,
+					success: data.responseSuccess,
+					cookies: data.responseCookies ? JSON.parse(data.responseCookies) : [],
+					resHeaders: data.responseHeaders
+						? JSON.parse(data.responseHeaders)
+						: [],
+					reqHeaders: data.sentHeaders ? JSON.parse(data.sentHeaders) : [],
+					body: {
+						canRender: canRender,
+						html5Element: html5Element,
+						extension: extension,
+						filepath: filepath,
+						detectedMimeType: "",
+						reportedMimeType: "",
+						src: await GetSavedResponsesSrc(filepath),
+					},
+				} as models.GurlRes;
+
+				console.dir(res);
+
+				if (res.body?.html5Element === "text") {
+					this._previewMode.set(true);
+				}
+
+				this._res.set(res);
+			}
+
+			this._reqStatus.set("success");
+		} catch (_error) {
+			console.error(_error);
+		}
+	}
+
+	public async initializeReqForm(
+		id: string,
+		reqTabType: AppTabType = AppTabType.Req,
+	) {
+		try {
+			this._tabType.set(reqTabType);
+			if (reqTabType === AppTabType.ReqExample) {
+				console.log(`Initializing req example ${id}`);
+				//TODO: Fetch data from backend for request example
+				const dbExample = await GetReqExampleById(id);
+				if (!dbExample) {
+					//TODO: Warn using Toast message and close tab
+					console.warn(`example with id ${id} not found`);
+					return;
+				}
+				this._requestId = dbExample.id;
+				this._parentMeta.set({
+					parentCollectionId: dbExample.collectionId,
+					parentRequestId: dbExample.requestId,
+					parentRequestName: dbExample.name,
+				});
+				await this.populateRequestExampleState(dbExample);
+			} else {
+				console.log(`Initializing req draft ${id}`);
+				const dbRequest = await FindDraftById(id);
+				if (!dbRequest) {
+					//TODO: Warn using Toast message and close tab
+					console.warn(`Draft with id ${id} not found`);
+					return;
+				}
+				this._requestId = dbRequest.id;
+				this._parentMeta.set({
+					parentCollectionId: dbRequest.parentCollectionId,
+					parentRequestId: dbRequest.parentRequestId,
+					parentRequestName: dbRequest.parentRequestName,
+				});
+
+				this.populateInitialState(dbRequest);
+			}
 		} catch (error) {
 			console.error(error);
 		} finally {
@@ -699,5 +785,176 @@ export class FormService {
 		}
 	}
 
+	private _isSaveExampleModalOpen = signal<boolean>(false);
+	private _saveExampleInProgress = signal<boolean>(false);
+	public saveExampleInProgress = computed(() => this._saveExampleInProgress());
+
+	public isSaveExampleModalOpen = computed(() =>
+		this._isSaveExampleModalOpen(),
+	);
+
+	handleOpenSaveExampleModal() {
+		this._isSaveExampleModalOpen.set(true);
+	}
+
+	handleCloseSaveExampleModal() {
+		this._isSaveExampleModalOpen.set(false);
+	}
+
+	async saveResponseExample(name: string) {
+		try {
+			this._saveExampleInProgress.set(true);
+			console.log(`saving request example with name ${name}`);
+			const { parentRequestId, parentCollectionId } = this.draftParentData();
+
+			if (!parentRequestId || !parentCollectionId) {
+				console.error(
+					`Cannot save request example as parent request or collection id is missing`,
+				);
+				return;
+			}
+
+			const res = this.res();
+
+			if (!res) {
+				return;
+			}
+
+			console.dir(res);
+
+			const {
+				status,
+				statusText,
+				success,
+				time,
+				uploadSize,
+				cookies,
+				reqHeaders,
+				resHeaders,
+				body,
+				dlMs,
+				size,
+				ttfbMs,
+				limitExceeded,
+			} = res;
+
+			const dto: models.ReqExampleDTO = {
+				id: nanoid(),
+				url: this._appSvc.interPolateEnvTokens(this.urlSvc.url()),
+				query: JSON.stringify(
+					this.urlSvc.queryParamsForExample().map((q) => {
+						return {
+							...q,
+							key: this._appSvc.interPolateEnvTokens(q.key),
+							val: this._appSvc.interPolateEnvTokens(q.val),
+						};
+					}),
+				),
+				headers: JSON.stringify(
+					this.headerSvc.headersForExample().map((h) => {
+						return {
+							...h,
+							key: this._appSvc.interPolateEnvTokens(h.key),
+							val: this._appSvc.interPolateEnvTokens(h.val),
+						};
+					}),
+				),
+				cookies: JSON.stringify(
+					this.cookieSvc.cookiesForExample().map((c) => {
+						return {
+							...c,
+							key: this._appSvc.interPolateEnvTokens(c.key),
+							val: this._appSvc.interPolateEnvTokens(c.val),
+						};
+					}),
+				),
+
+				bodyType: this.bodySvc.bodyType().id,
+				uploadSize,
+				urlencoded: JSON.stringify(
+					this.bodySvc.urlEncodedParamsForExample().map((u) => {
+						return {
+							...u,
+							key: this._appSvc.interPolateEnvTokens(u.key),
+							val: this._appSvc.interPolateEnvTokens(u.val),
+						};
+					}),
+				),
+
+				multipart: JSON.stringify(
+					this.bodySvc.multipartFormForExample().map((m) => {
+						return {
+							...m,
+							key: this._appSvc.interPolateEnvTokens(m.key),
+							val:
+								typeof m.val === "string"
+									? this._appSvc.interPolateEnvTokens(m.val)
+									: m.val,
+						};
+					}),
+				),
+
+				binary: this.bodySvc.binaryBody()
+					? JSON.stringify(this.bodySvc.binaryBody())
+					: "",
+
+				text: this.bodySvc.textBody(),
+
+				authType: this.auth.activeAuth().id,
+				apiKeyAuth: JSON.stringify({
+					...this.auth.apiKey(),
+					key: this._appSvc.interPolateEnvTokens(this.auth.apiKey().key),
+					value: this._appSvc.interPolateEnvTokens(this.auth.apiKey().value),
+				}),
+				basicAuth: JSON.stringify({
+					...this.auth.basicAuth(),
+					username: this._appSvc.interPolateEnvTokens(
+						this.auth.basicAuth().username,
+					),
+					password: this._appSvc.interPolateEnvTokens(
+						this.auth.basicAuth().password,
+					),
+				}),
+				tokenAuth: JSON.stringify({
+					...this.auth.tokenAuth(),
+					token: this._appSvc.interPolateEnvTokens(this.auth.tokenAuth().token),
+				}),
+				method: this.urlSvc.method().id,
+				name,
+				requestId: parentRequestId,
+				collectionId: parentCollectionId,
+				responseStatus: status,
+				responseStatusText: statusText,
+				responseSuccess: success,
+				responseTimeMS: time,
+				responseDlMs: dlMs,
+				responseSize: size,
+				responseTffbMs: ttfbMs,
+				limitExceeded: limitExceeded,
+				responseCookies: cookies?.length ? JSON.stringify(cookies) : "[]",
+				sentHeaders: reqHeaders?.length ? JSON.stringify(reqHeaders) : "[]",
+				responseHeaders: resHeaders?.length ? JSON.stringify(resHeaders) : "[]",
+				responseBody: "",
+			};
+
+			console.dir(dto);
+			const meta: models.SavedResponseRenderMeta = {
+				canRender: body?.canRender || false,
+				html5Element: body?.html5Element || "",
+				filepath: body?.filepath || "",
+				extension: body?.extension || "",
+				src: "",
+			};
+			console.dir(meta);
+			await AddReqExample(dto, meta);
+
+			this._appSvc.refreshSavedExamples$.next();
+		} catch (error) {
+			console.error(error);
+		} finally {
+			this._saveExampleInProgress.set(false);
+			this.handleCloseSaveExampleModal();
+		}
+	}
 	//#endregion Request-Response
 }

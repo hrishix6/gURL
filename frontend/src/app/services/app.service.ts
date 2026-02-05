@@ -20,10 +20,12 @@ import {
 	DeleteCollection,
 	DeleteDraftsUnderCollection,
 	DeleteEnvDraftsUnderEnv,
+	DeleteReqExample,
 	DeleteRequestDrafts,
 	DeleteSavedReq,
 	GetAllCollections,
 	GetEnvironments,
+	GetReqExamples,
 	GetSavedRequests,
 	GetUIState,
 	RemoveEnv,
@@ -283,7 +285,7 @@ export class AppService {
 
 	//#region requests
 	public refreshSavedRequests$ = new Subject<void>();
-	private _savedRequests = signal<models.RequestDTO[]>([]);
+	private _savedRequests = signal<models.RequestLightDTO[]>([]);
 	public savedRequests = computed(() => {
 		const key = this._collectionSearchKey();
 
@@ -323,6 +325,21 @@ export class AppService {
 	}
 
 	//#endregion requests
+
+	//#region request examples
+	private _savedExamples = signal<models.ReqExampleLightDTO[]>([]);
+	public savedExamples = computed(() => this._savedExamples());
+	public refreshSavedExamples$ = new Subject<void>();
+
+	public async deleteReqExample(id: string) {
+		try {
+			await DeleteReqExample(id);
+			//refresh from db
+			await this.initializeSavedExamples();
+		} catch (error) {
+			console.error(error);
+		}
+	}
 
 	//#region collections
 	public collectionSearchKeyChange$ = new Subject<string>();
@@ -585,6 +602,15 @@ export class AppService {
 				},
 			});
 
+		this.refreshSavedExamples$
+			.pipe(takeUntilDestroyed(this.destoyRef))
+			.subscribe({
+				next: () => {
+					console.log(`refreshing saved examples from db`);
+					this.initializeSavedExamples();
+				},
+			});
+
 		this.refreshEnvs$.pipe(takeUntilDestroyed(this.destoyRef)).subscribe({
 			next: () => {
 				console.log(`refreshing envs from db`);
@@ -681,6 +707,19 @@ export class AppService {
 		}
 	}
 
+	async initializeSavedExamples() {
+		try {
+			const savedExamples = await GetReqExamples();
+			if (Array.isArray(savedExamples) && savedExamples.length) {
+				this._savedExamples.set(savedExamples);
+			} else {
+				this._savedExamples.set([]);
+			}
+		} catch (_error) {
+			this._appState.set("error");
+		}
+	}
+
 	async initializeUIState() {
 		try {
 			const uiState = await GetUIState();
@@ -701,6 +740,7 @@ export class AppService {
 			//initialize collections + saved requests
 			await this.initializeCollections();
 			await this.initializeSavedRequests();
+			await this.initializeSavedExamples();
 			await this.initializeEnvironments();
 			await this.initializeUIState();
 			this._appState.set("loaded");

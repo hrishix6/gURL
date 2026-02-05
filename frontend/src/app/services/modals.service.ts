@@ -266,7 +266,7 @@ export class GlobalModalsService {
 
 	//#region delete-req
 
-	private _deleteReqInfo = signal<models.RequestDTO | null>(null);
+	private _deleteReqInfo = signal<models.RequestLightDTO | null>(null);
 
 	public deleteReqModalTitle = computed(() => {
 		const data = this._deleteReqInfo();
@@ -287,7 +287,7 @@ export class GlobalModalsService {
 	private _deleteReqInProgress = signal<boolean>(false);
 	public deleteReqInProgress = computed(() => this._deleteReqInProgress());
 
-	public handleOpenDeleteReqModal(data: models.RequestDTO) {
+	public handleOpenDeleteReqModal(data: models.RequestLightDTO) {
 		this._deleteReqInfo.set(data);
 		this._isDeleteReqModalOpen.set(true);
 	}
@@ -316,7 +316,7 @@ export class GlobalModalsService {
 
 	//#region copy-req
 
-	private _copyReqInfo = signal<models.RequestDTO | null>(null);
+	private _copyReqInfo = signal<models.RequestLightDTO | null>(null);
 
 	public copyReqInitialName = computed(() => {
 		const data = this._copyReqInfo();
@@ -332,7 +332,7 @@ export class GlobalModalsService {
 	private _copyReqInProgress = signal<boolean>(false);
 	public copyReqInProgress = computed(() => this._copyReqInProgress());
 
-	public handleOpenCopyReqModal(data: models.RequestDTO) {
+	public handleOpenCopyReqModal(data: models.RequestLightDTO) {
 		this._copyReqInfo.set(data);
 		this._iscopyReqModalOpen.set(true);
 	}
@@ -434,4 +434,59 @@ export class GlobalModalsService {
 	//#endregion delete-env
 
 	//#endregion env
+
+	//#region request-example
+	private _deleteReqExampleInfo = signal<models.ReqExampleLightDTO | null>(
+		null,
+	);
+
+	public deleteReqExampleModalTitle = computed(() => {
+		const data = this._deleteReqExampleInfo();
+		if (data) {
+			return `Delete Example '${data.name}' ?`;
+		}
+
+		return "";
+	});
+
+	public deleteReqExampleModalMessage = computed(() => {
+		return `This action is irreversible, request example will be deleted.`;
+	});
+
+	private _isdeleteReqExampleModalOpen = signal<boolean>(false);
+	public isdeleteReqExampleModalOpen = computed(() =>
+		this._isdeleteReqExampleModalOpen(),
+	);
+
+	private _deleteReqExampleInProgress = signal<boolean>(false);
+	public deleteReqExampleInProgress = computed(() =>
+		this._deleteReqExampleInProgress(),
+	);
+
+	public handleOpendeleteReqExampleModal(data: models.ReqExampleLightDTO) {
+		this._deleteReqExampleInfo.set(data);
+		this._isdeleteReqExampleModalOpen.set(true);
+	}
+
+	public handleClosedeleteReqExampleModal() {
+		this._isdeleteReqExampleModalOpen.set(false);
+		this._deleteReqExampleInfo.set(null);
+	}
+
+	public async handledeleteReqExample() {
+		try {
+			this._deleteReqExampleInProgress.set(true);
+			const data = this._deleteReqExampleInfo();
+			if (data) {
+				await this.appSvc.deleteReqExample(data.id);
+				this.tabSvc.closeExampleTab(data.id);
+			}
+		} catch (error) {
+			console.error(error);
+		} finally {
+			this._deleteReqExampleInProgress.set(false);
+			this.handleClosedeleteReqExampleModal();
+		}
+	}
+	//#endregion request-example
 }

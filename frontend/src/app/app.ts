@@ -61,7 +61,7 @@ import { TabsWrapper } from "./tabs/req.tabs.container";
                   <!-- Main view -->
                   <main class="flex flex-1 flex-col bg-base-200 overflow-hidden">
                     <!-- Main header -->
-                    <header class="flex grow-0 shrink-0 items-center p-2">
+                    <header class="flex basis-14 grow-0 shrink-0 items-center px-2">
                         <div class="flex-1 overflow-hidden px-2">
                           <div gurl-breadcrumbs></div>
                         </div>
@@ -74,6 +74,7 @@ import { TabsWrapper } from "./tabs/req.tabs.container";
                               [align]="'end'"
                               [direction]="'down'"
                               [varient]="'soft'"
+                              [icon]="'env'"
                               >
                           </gurl-dropdown>
                         </div>

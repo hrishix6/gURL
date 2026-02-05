@@ -26,6 +26,13 @@ export class HeadersService {
 		]);
 	}
 
+	public initExample(data: models.ReqExampleDTO) {
+		const { id, headers } = data;
+		this.draftId = id;
+
+		this._headers.set([...JSON.parse(headers)]);
+	}
+
 	private headersDbSync$ = new Subject<RequestHeaders>();
 
 	private _headers = signal<RequestHeaders>([
@@ -141,6 +148,12 @@ export class HeadersService {
 			}
 			return prev;
 		}, [] as models.GurlKeyValItem[]);
+	}
+
+	public headersForExample(): KeyValItem[] {
+		return this._headers().filter(
+			(curr) => curr.key && curr.key !== HID_PLACEHOLDER,
+		);
 	}
 
 	constructor(destroyRef: DestroyRef) {

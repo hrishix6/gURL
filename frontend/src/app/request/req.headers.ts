@@ -1,5 +1,5 @@
 import { Component, HostBinding, inject } from "@angular/core";
-import { LucideAngularModule } from "lucide-angular";
+import { Ban, LucideAngularModule } from "lucide-angular";
 import { KeyValFormItem } from "@/common/components";
 import { parseTextAsKeyVal } from "@/common/utils/time";
 import { BULK_EDIT_INSTRUCTION, HID_PLACEHOLDER } from "@/constants";
@@ -9,7 +9,7 @@ import { BulkKeyValEditor } from "../common/components/bulk.editor";
 @Component({
 	selector: "gurl-req-headers",
 	template: `
-   <div class="flex-1 p-1 overflow-y-auto">
+   <div class="flex-1 p-1 overflow-y-auto relative">
          @if(f.headerSvc.bulkEditModeHeaders()){
          <gurl-bulk-editor
           [editInstructions]="bulkHeadersEditInstruction"
@@ -19,15 +19,22 @@ import { BulkKeyValEditor } from "../common/components/bulk.editor";
           /> 
       }
       @else {
-         <gurl-keyval-item
-          [placeholderId]="placeHolderHeaderId"
-          [items]="f.headerSvc.headers()"
-          (onDelete)="f.deleteHeader($event)"
-          (onKeyUpdate)="f.updateHeader($event.id, 'key', $event.v)"
-          (onValUpdate)="f.updateHeader($event.id, 'val', $event.v)"
-          (onBlur)="f.headerSvc.addHeader()"
-          (onEnabledUpdate)="f.updateHeader($event.id, 'enabled', $event.v)">
-    </gurl-keyval-item>
+         @if(f.headerSvc.headers().length === 0 && f.tabType() === 'req_example'){
+            <div class="absolute top-0 left-0 w-full h-full flex items-center justify-center opacity-10">
+               <lucide-angular [img]="NoneIcon" class="size-16 -z-10" />
+            </div>
+         }@else {
+            <gurl-keyval-item
+            [placeholderId]="placeHolderHeaderId"
+            [items]="f.headerSvc.headers()"
+            [tabType]="f.tabType()"
+            (onDelete)="f.deleteHeader($event)"
+            (onKeyUpdate)="f.updateHeader($event.id, 'key', $event.v)"
+            (onValUpdate)="f.updateHeader($event.id, 'val', $event.v)"
+            (onBlur)="f.headerSvc.addHeader()"
+            (onEnabledUpdate)="f.updateHeader($event.id, 'enabled', $event.v)">
+            </gurl-keyval-item>
+         }
       }
    </div>
   `,
@@ -41,5 +48,6 @@ export class ReqHeaders {
 	protected readonly parseTextAsKeyValFn = parseTextAsKeyVal;
 
 	protected readonly placeHolderHeaderId = HID_PLACEHOLDER;
+	protected readonly NoneIcon = Ban;
 	protected readonly f = inject(FormService);
 }

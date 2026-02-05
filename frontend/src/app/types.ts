@@ -128,15 +128,11 @@ export type HeaderEventPayload =
 	| HeaderUpdateEventPayload
 	| HeaderDeleteEventPayload;
 
-export type CollectionRequestItem = Pick<
-	models.RequestDTO,
-	"id" | "method" | "url" | "name" | "collectionId"
->;
-
 export enum AppTabType {
 	Req = "req",
 	Env = "env",
 	Pref = "pref",
+	ReqExample = "req_example",
 }
 
 export interface DraftParentMetadata {

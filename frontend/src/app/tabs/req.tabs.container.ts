@@ -8,7 +8,7 @@ import {
 import { LucideAngularModule, Plus } from "lucide-angular";
 import { EnvironmentTab } from "@/environments/environment.tab";
 import { AppService, TabsService } from "@/services";
-import { RequestTab } from "./req.tab";
+import { RequestTab } from "../request/req.tab";
 import { TabHeader } from "./req.tab.header";
 
 @Component({
@@ -38,10 +38,9 @@ import { TabHeader } from "./req.tab.header";
     </div>
     <!-- Tab content view -->
     @for (tab of tabsSvc.openTabs(); track tab.id) {
-      @if(tab.entityType === 'req') {
+      @if(['req', 'req_example'].includes(tab.entityType)) {
         <gurl-req-tab
-                [tabId]="tab.id"
-                [draftId]="tab.entityId"
+                [tab]="tab"
                 [activeId]="tabsSvc.activeTab()"
         />
       }

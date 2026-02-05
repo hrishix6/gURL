@@ -10,17 +10,19 @@ import { FormService } from "@/services";
     <div class="flex">
       @if(f.bodySvc.binaryBody()){
       <div class="flex gap-2 items-center">
-        <button class="btn btn-soft btn-primary xl:btn-lg" (click)="openFileDialogue()">
+        <button class="btn btn-soft btn-primary xl:btn-lg" (click)="openFileDialogue()" [disabled]="f.tabType() === 'req_example'">
           <lucide-angular [img]="BinaryIcon" size="24" />
           {{ f.bodySvc.binaryBody()!.name }}{{ ' ' }} ({{ f.bodySvc.binaryBody()!.size | bytes }})
         </button>
+        @if(f.tabType() === 'req'){
         <button class="btn btn-sm btn-ghost xl:btn-md" (click)="clearFileInput()">
           <lucide-angular [img]="CancelIcon" [size]="16"></lucide-angular>
         </button>
+        }
       </div>
 
       } @else{
-      <button class="btn btn-soft btn-primary xl:btn-lg" (click)="openFileDialogue()">
+      <button class="btn btn-soft btn-primary xl:btn-lg" (click)="openFileDialogue()" [disabled]="f.tabType() === 'req_example'">
         <lucide-angular [img]="BinaryIcon" size="24" />
         Choose a File
       </button>

@@ -166,7 +166,7 @@ export class GurlCollectionItem {
 		this.isOpen.update((x) => !x);
 	}
 
-	protected requestItems = computed<models.RequestDTO[]>(() =>
+	protected requestItems = computed<models.RequestLightDTO[]>(() =>
 		this.appSvc
 			.savedRequests()
 			.filter((x) => x.collectionId === this.data().id),

@@ -119,7 +119,18 @@ import { RenameCollectionModal } from "./rename.collection";
         (onConfirm)="modalsSvc.handleDeleteEnv()"
       ></dialog>
     }
-    
+
+    <!-- Request example modals -->
+  @if(modalsSvc.isdeleteReqExampleModalOpen()) {
+        <dialog gurl-rm-confirmation-modal
+          [title]="modalsSvc.deleteReqExampleModalTitle()"
+          [message]="modalsSvc.deleteReqExampleModalMessage()"
+          [isOpen]="modalsSvc.isdeleteReqExampleModalOpen()"
+          [actionInProgress]="modalsSvc.deleteReqExampleInProgress()"
+          (onCancel)="modalsSvc.handleClosedeleteReqExampleModal()"
+          (onConfirm)="modalsSvc.handledeleteReqExample()"
+        ></dialog>
+      }
     </ng-content>`,
 	imports: [
 		CreateEnvironmentModal,

@@ -20,6 +20,19 @@ import type { InputToken } from "@/types";
 @Component({
 	selector: `div[gurl-highlighted-input]`,
 	template: `
+		@if(readonly()) {
+			<input
+				type="text"
+				[placeholder]="placeHolder()"
+				[ngClass]="{
+					'input input-sm flex-1 input-ghost bg-base-300 input-primary xl:input-md': true,
+				}"
+				[value]="text()"
+				[disabled]="disabled()"
+				[readOnly]="readonly()"
+        	/>
+		}
+		@else {
 			<input
 				type="text"
 				[placeholder]="placeHolder()"
@@ -65,6 +78,7 @@ import type { InputToken } from "@/types";
 				}
 				</div>
         	</div>
+		}
     `,
 	imports: [NgClass],
 })
@@ -88,6 +102,7 @@ export class GurlHighlightedInput {
 	placeHolder = input<string>("value");
 	text = input.required<string>();
 	disabled = input.required<boolean>();
+	readonly = input<boolean>(false);
 	onBlur = output<void>();
 	onInput = output<string>();
 

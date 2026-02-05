@@ -8,16 +8,18 @@ import {
 	type OnInit,
 } from "@angular/core";
 import { DraftSavePreferenceModal } from "@/modals/draft.save.preference";
+import { SaveReqExampleModal } from "@/modals/save.req.example";
 import { RequestFormDetails } from "@/request/req.form.details";
 import { ReqFormHeader } from "@/request/req.form.header";
 import { ResponseDetails } from "@/response/res.details";
 import { AppService, FormService, TabsService } from "@/services";
-import { AppTabType, FormLayout } from "@/types";
+import { type ApplicationTab, AppTabType, FormLayout } from "@/types";
 
 @Component({
 	selector: `gurl-req-tab`,
 	template: `
-    <gurl-req-form-header />
+    <gurl-req-form-header
+	/>
     <div [ngClass]="layoutClass()">
       <gurl-req-form-details />
       <div class="p-px bg-base-100"></div>
@@ -35,6 +37,15 @@ import { AppTabType, FormLayout } from "@/types";
         (onNoSave)="handleNoSaveDraft($event)"
       ></dialog>
     }
+	
+	@if(formSvc.isSaveExampleModalOpen()) {
+	<dialog gurl-req-example-modal
+	[actionInProgress]="formSvc.saveExampleInProgress()"
+	[isOpen]="formSvc.isSaveExampleModalOpen()"
+	(onCancel)="formSvc.handleCloseSaveExampleModal()"
+	(onSubmit)="formSvc.saveResponseExample($event)"
+	></dialog>		
+	}
   `,
 	imports: [
 		ReqFormHeader,
@@ -42,12 +53,13 @@ import { AppTabType, FormLayout } from "@/types";
 		ResponseDetails,
 		NgClass,
 		DraftSavePreferenceModal,
+		SaveReqExampleModal,
 	],
 	providers: [FormService],
 })
 export class RequestTab implements OnInit {
 	@HostBinding("class") get defaultClass() {
-		if (this.activeId() === this.tabId()) {
+		if (this.activeId() === this.tab().id) {
 			return "flex-1 flex flex-col overflow-hidden";
 		}
 
@@ -55,13 +67,11 @@ export class RequestTab implements OnInit {
 	}
 
 	ngOnInit(): void {
-		console.log(`called`);
-		this.formSvc.initializeReqForm(this.draftId());
+		this.formSvc.initializeReqForm(this.tab().entityId, this.tab().entityType);
 	}
 
 	activeId = input.required<string | null>();
-	tabId = input.required<string>();
-	draftId = input.required<string>();
+	tab = input.required<ApplicationTab>();
 
 	private readonly tabSvc = inject(TabsService);
 	protected readonly formSvc = inject(FormService);
@@ -98,7 +108,7 @@ export class RequestTab implements OnInit {
 
 	protected handleNoSaveDraft(alwaysDiscard: boolean) {
 		this.appSvc.setAlwaysDiscardDrafts(alwaysDiscard);
-		this.tabSvc.deleteTab(this.tabId(), AppTabType.Req);
+		this.tabSvc.deleteTab(this.tab().id, AppTabType.Req);
 		this.formSvc.toggleDraftSavePreferenceModal();
 	}
 }

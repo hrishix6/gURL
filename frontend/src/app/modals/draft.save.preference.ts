@@ -49,7 +49,7 @@ import { LucideAngularModule, X } from "lucide-angular";
         <button (click)="handleClose()">Cancel</button>
         </div>
     `,
-	imports: [LucideAngularModule]
+	imports: [LucideAngularModule],
 })
 export class DraftSavePreferenceModal implements OnInit {
 	@HostBinding("class")

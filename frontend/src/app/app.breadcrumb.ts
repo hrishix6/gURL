@@ -6,12 +6,17 @@ import {
 	signal,
 } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import { FindDraftById, FindEnvDraft } from "@wailsjs/go/storage/Storage";
+import {
+	FindDraftById,
+	FindEnvDraft,
+	GetReqExampleById,
+} from "@wailsjs/go/storage/Storage";
 import {
 	Container,
 	Layers,
 	LucideAngularModule,
 	RadioTower,
+	ScrollText,
 } from "lucide-angular";
 import { AppService, TabsService } from "./services";
 import { AppTabType } from "./types";
@@ -20,6 +25,7 @@ enum CrumbType {
 	Req = "Request",
 	Collections = "Collection",
 	Env = "Environment",
+	ReqExample = "Request_Example",
 }
 
 @Component({
@@ -40,6 +46,9 @@ enum CrumbType {
                                 @case ("Request") {
                                     <lucide-angular [img]="RequestsIcon" class="size-4" />
                                 }
+								@case ("Request_Example") {
+									<lucide-angular [img]="ExampleIcon" class="size-4" />
+								}
                             }
                             {{crumb.name}}
                         </a>
@@ -99,6 +108,7 @@ export class Breadcrumbs {
 	protected readonly CollectionsIcon = Layers;
 	protected readonly EnvironmentIcon = Container;
 	protected readonly RequestsIcon = RadioTower;
+	protected readonly ExampleIcon = ScrollText;
 
 	protected loadCrumbs(tabId: string) {
 		this.tabid.set(tabId);
@@ -151,8 +161,43 @@ export class Breadcrumbs {
 						});
 					break;
 				}
-				default: {
+
+				case AppTabType.ReqExample: {
+					GetReqExampleById(tab.entityId)
+						.then((example) => {
+							if (example) {
+								const exName = this.appSvc
+									.savedExamples()
+									.find((e) => e.id === example.id)?.name;
+
+								const reqName = this.appSvc
+									.savedRequests()
+									.find((r) => r.id === example.requestId)?.name;
+								const collectionName = this.appSvc
+									.collections()
+									.find((c) => c.id === example.collectionId)?.name;
+
+								if (exName && reqName && collectionName) {
+									this.crumbs.set([
+										{ type: CrumbType.Collections, name: collectionName },
+										{ type: CrumbType.Req, name: reqName },
+										{ type: CrumbType.ReqExample, name: exName },
+									]);
+								} else {
+									this.crumbs.set([
+										{ type: CrumbType.ReqExample, name: tab.name },
+									]);
+								}
+							}
+						})
+						.catch((err) => {
+							console.error(err);
+						});
 					break;
+				}
+
+				default: {
+					this.crumbs.set([]);
 				}
 			}
 		}

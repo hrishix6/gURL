@@ -1,4 +1,4 @@
-import { Component, computed, HostBinding, inject, input } from "@angular/core";
+import { Component, HostBinding, inject, input } from "@angular/core";
 import type { models } from "@wailsjs/go/models";
 import {
 	ArrowDownFromLine,
@@ -7,6 +7,7 @@ import {
 	Eye,
 	EyeOff,
 	LucideAngularModule,
+	Save,
 	Timer,
 	TriangleAlert,
 } from "lucide-angular";
@@ -63,10 +64,20 @@ import { FormService } from "@/services";
                       <lucide-angular [img]="TimerIcon"  class="size-4"/>
                       TFFB : {{data().ttfbMs}}ms
                 </div>
-                <button class="btn btn-sm btn-soft" (click)="formSvc.clearResponse()">
-                  <lucide-angular [img]="ClearIcon"  class="size-4"/>
-                  Clear
-                </button>
+                @if(formSvc.tabType() === "req"){
+                <div class="join">
+                      @if(formSvc.draftParentData().parentRequestId){
+                    <button class="btn btn-sm btn-soft join-item" (click)="formSvc.handleOpenSaveExampleModal()">
+                        <lucide-angular [img]="SaveIcon" class="size-4" />
+                        Save
+                    </button>
+                  }
+                  <button class="btn btn-sm btn-soft join-item" (click)="formSvc.clearResponse()">
+                    <lucide-angular [img]="ClearIcon"  class="size-4"/>
+                    Clear
+                  </button>
+                </div>
+              }
               </section>
            </div>
     `,
@@ -79,17 +90,8 @@ export class ResFooter {
 	data = input.required<models.GurlRes>();
 
 	protected readonly formSvc = inject(FormService);
-	protected ctypeMismatch = computed(() => {
-		const body = this.data().body;
-
-		if (body) {
-			return body.detectedMimeType !== body.reportedMileType;
-		}
-
-		return false;
-	});
-
 	protected readonly UploadIcon = ArrowUpFromLine;
+	protected readonly SaveIcon = Save;
 	protected readonly ClearIcon = Eraser;
 	protected readonly DownloadSizeIcon = ArrowDownFromLine;
 	protected readonly AlertIcon = TriangleAlert;

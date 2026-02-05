@@ -21,6 +21,7 @@ import type { RequestMethod } from "@/types";
       <gurl-dropdown
         [items]="reqMethods"
         [activeItem]="this.f.urlSvc.method()"
+        [disabled]="f.tabType() === 'req_example'"
         [size]="'md'"
         [varient]="'ghost'"
         (onItemSelection)="handleActiveItemSelection($event)"
@@ -33,9 +34,11 @@ import type { RequestMethod } from "@/types";
           [text]="f.urlSvc.url()"
           (onInput)="f.setUrl($event)"
           (blur)="f.parseUrl()"
+          [readonly]="f.tabType() === 'req_example'"
         >
         </div>
       </div>
+      @if(f.tabType() === "req"){
       <div class="flex gap-2.5">
         <button
           class="btn btn-soft btn-primary"
@@ -67,6 +70,7 @@ import type { RequestMethod } from "@/types";
           </ul>
       </div>
       </div>
+      }
     </div>
     @if(this.f.isSaveRequestModalOpen()) {
     <dialog gurl-save-request-modal></dialog>

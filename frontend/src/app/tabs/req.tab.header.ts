@@ -6,7 +6,7 @@ import {
 	input,
 	output,
 } from "@angular/core";
-import { Container, LucideAngularModule, X } from "lucide-angular";
+import { Container, LucideAngularModule, ScrollText, X } from "lucide-angular";
 import { ReqMethodTag } from "@/request/method.tag";
 import { TabsService } from "@/services";
 import type { ApplicationTab } from "@/types";
@@ -21,6 +21,9 @@ import type { ApplicationTab } from "@/types";
 			}
 			@case("env") {
 				<lucide-angular [img]="EnvironmentIcon" class="size-4" />
+			}
+			@case("req_example") {
+				<lucide-angular [img]="ReqExampleIcon" class="size-4" />
 			}
 	    }
 	  	@if(data().isModified) {
@@ -90,6 +93,7 @@ export class TabHeader {
 
 	protected readonly tabSvc = inject(TabsService);
 	protected readonly CancelIcon = X;
+	protected readonly ReqExampleIcon = ScrollText;
 	protected readonly EnvironmentIcon = Container;
 
 	protected handleClose(e: Event) {

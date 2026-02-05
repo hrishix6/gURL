@@ -3,7 +3,7 @@ import { Component, HostBinding, input, output } from "@angular/core";
 import type { models } from "@wailsjs/go/models";
 import { ChooseFile } from "@wailsjs/go/storage/Storage";
 import { Eraser, LucideAngularModule, Paperclip, X } from "lucide-angular";
-import type { MultipartItem } from "@/types";
+import type { AppTabType, MultipartItem } from "@/types";
 import { humanBytes } from "../utils/time";
 import { GurlHighlightedInput } from "./highlighted.input";
 
@@ -12,17 +12,20 @@ import { GurlHighlightedInput } from "./highlighted.input";
 	template: `
     @for (item of items(); track item.id) {
     <div class="flex gap-2.5 items-center">
-      <input
+      @if(tabType() === "req"){
+        <input
         type="checkbox"
         class="checkbox checkbox-xs checkbox-primary xl:checkbox-sm"
         [disabled]="item.key == '' || item.key.trim() == ''"
         [checked]="item.enabled === 'on'"
         (change)="handleEnable(item.id, $event)"
       />
+      }
       <div
         gurl-highlighted-input
         [placeHolder]="'key'"
         [disabled]="false"
+        [readonly]="tabType() === 'req_example'"
         [text]="item.key"
         (onInput)="handleUpdateKey(item.id, $event)"
         (onBlur)="handleBlur()"
@@ -34,6 +37,7 @@ import { GurlHighlightedInput } from "./highlighted.input";
           gurl-highlighted-input
           [placeHolder]="'value'"
           [disabled]="item.key == '' || item.key.trim() == ''"
+          [readonly]="tabType() === 'req_example'"
           [text]="item.val"
           (onInput)="handleUpdateVal(item.id, $event)"
           (onBlur)="handleBlur()"
@@ -43,12 +47,14 @@ import { GurlHighlightedInput } from "./highlighted.input";
           type="text"
           class="input input-sm w-full input-ghost bg-base-300 input-primary xl:input-md"
           [disabled]="item.key == '' || item.key.trim() == ''"
+          [readonly]="tabType() === 'req_example'"
           [readOnly]="true"
           [value]="fileDisplayName(item.val)"
           (input)="handleUpdateVal(item.id, $event.target.value)"
           (blur)="handleBlur()"
         />
         }
+        @if(tabType() === 'req') {
         <div class="absolute flex items-center justify-center z-10 top-0 right-1 h-full">
           <button
             [ngClass]="{
@@ -71,7 +77,9 @@ import { GurlHighlightedInput } from "./highlighted.input";
             <lucide-angular [img]="ClearFileIcon" class="size-4" />
           </button>
         </div>
+        }
       </div>
+      @if(tabType() === "req"){
       <button
         [ngClass]="{
           'btn btn-xs btn-ghost btn-square xl:btn-sm': true,
@@ -81,6 +89,7 @@ import { GurlHighlightedInput } from "./highlighted.input";
       >
         <lucide-angular [img]="CanceIcon" class="size-4"></lucide-angular>
       </button>
+    }
     </div>
     }
   `,
@@ -90,6 +99,7 @@ export class MultiPartFormItem {
 	@HostBinding("class")
 	hostClass = "flex flex-col gap-2.5";
 
+	tabType = input.required<AppTabType>();
 	items = input.required<MultipartItem[]>();
 	placeholderId = input.required<string>();
 	onKeyUpdate = output<{ id: string; v: string }>();
@@ -134,6 +144,9 @@ export class MultiPartFormItem {
 	}
 
 	protected handleBlur() {
+		if (this.tabType() === "req_example") {
+			return;
+		}
 		this.onBlur.emit();
 	}
 
