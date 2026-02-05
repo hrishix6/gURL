@@ -6,6 +6,8 @@ export function AddCollection(arg1:models.AddCollectionDTO):Promise<void>;
 
 export function AddDraft(arg1:models.RequestDraftDTO):Promise<void>;
 
+export function AddDraftFromRequest(arg1:models.AddDraftFromRequestDTO):Promise<void>;
+
 export function AddEnvironment(arg1:models.AddEnvironmentDTO):Promise<void>;
 
 export function AddEnvironmentDraft(arg1:models.AddEnvironmentDraftDTO):Promise<void>;
@@ -13,6 +15,8 @@ export function AddEnvironmentDraft(arg1:models.AddEnvironmentDraftDTO):Promise<
 export function AddFreshDraft(arg1:models.AddFreshDraftDTO):Promise<void>;
 
 export function AddFreshEnvDraft(arg1:string):Promise<void>;
+
+export function AddReqExample(arg1:models.ReqExampleDTO,arg2:models.SavedResponseRenderMeta):Promise<void>;
 
 export function ChooseFile():Promise<models.FileStats>;
 
@@ -23,6 +27,8 @@ export function DeleteCollection(arg1:string):Promise<void>;
 export function DeleteDraftsUnderCollection(arg1:string):Promise<void>;
 
 export function DeleteEnvDraftsUnderEnv(arg1:string):Promise<void>;
+
+export function DeleteReqExample(arg1:string):Promise<void>;
 
 export function DeleteRequestDrafts(arg1:string):Promise<void>;
 
@@ -38,7 +44,11 @@ export function GetAllCollections():Promise<Array<models.CollectionDTO>>;
 
 export function GetEnvironments():Promise<Array<models.EnvironmentDTO>>;
 
-export function GetSavedRequests():Promise<Array<models.RequestDTO>>;
+export function GetReqExampleById(arg1:string):Promise<models.ReqExampleDTO>;
+
+export function GetReqExamples():Promise<Array<models.ReqExampleLightDTO>>;
+
+export function GetSavedRequests():Promise<Array<models.RequestLightDTO>>;
 
 export function GetUIState():Promise<models.UIStateDTO>;
 

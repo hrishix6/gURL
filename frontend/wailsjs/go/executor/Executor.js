@@ -6,6 +6,10 @@ export function CancelReq(arg1) {
   return window['go']['executor']['Executor']['CancelReq'](arg1);
 }
 
+export function GetSavedResponsesSrc(arg1) {
+  return window['go']['executor']['Executor']['GetSavedResponsesSrc'](arg1);
+}
+
 export function ParseCookieRaw(arg1) {
   return window['go']['executor']['Executor']['ParseCookieRaw'](arg1);
 }

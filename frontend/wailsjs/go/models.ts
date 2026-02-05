@@ -14,6 +14,20 @@ export namespace models {
 	        this.name = source["name"];
 	    }
 	}
+	export class AddDraftFromRequestDTO {
+	    id: string;
+	    requestId: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new AddDraftFromRequestDTO(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.requestId = source["requestId"];
+	    }
+	}
 	export class AddEnvironmentDTO {
 	    id: string;
 	    name: string;
@@ -242,7 +256,7 @@ export namespace models {
 	    canRender: boolean;
 	    filepath: string;
 	    detectedMimeType: string;
-	    reportedMileType: string;
+	    reportedMimeType: string;
 	    extension: string;
 	
 	    static createFrom(source: any = {}) {
@@ -256,7 +270,7 @@ export namespace models {
 	        this.canRender = source["canRender"];
 	        this.filepath = source["filepath"];
 	        this.detectedMimeType = source["detectedMimeType"];
-	        this.reportedMileType = source["reportedMileType"];
+	        this.reportedMimeType = source["reportedMimeType"];
 	        this.extension = source["extension"];
 	    }
 	}
@@ -351,7 +365,6 @@ export namespace models {
 	    resHeaders: GurlKeyValItem[];
 	    body?: GurlRenderMeta;
 	    cookies: GurlResCookie[];
-	    isFile: boolean;
 	    size: number;
 	    uploadSize: number;
 	    time: number;
@@ -375,7 +388,6 @@ export namespace models {
 	        this.resHeaders = this.convertValues(source["resHeaders"], GurlKeyValItem);
 	        this.body = this.convertValues(source["body"], GurlRenderMeta);
 	        this.cookies = this.convertValues(source["cookies"], GurlResCookie);
-	        this.isFile = source["isFile"];
 	        this.size = source["size"];
 	        this.uploadSize = source["uploadSize"];
 	        this.time = source["time"];
@@ -405,50 +417,92 @@ export namespace models {
 		}
 	}
 	
-	export class RequestDTO {
+	export class ReqExampleDTO {
 	    id: string;
-	    url: string;
+	    requestId: string;
+	    collectionId: string;
 	    name: string;
+	    url: string;
 	    method: string;
 	    query: string;
 	    headers: string;
 	    cookies: string;
-	    bodyType: string;
 	    multipart: string;
 	    urlencoded: string;
 	    text: string;
 	    binary: string;
-	    authEnabled: boolean;
+	    bodyType: string;
+	    uploadSize: number;
+	    responseSuccess: boolean;
+	    responseStatus: number;
+	    responseStatusText: string;
+	    responseTimeMS: number;
+	    sentHeaders: string;
+	    responseHeaders: string;
+	    responseCookies: string;
+	    responseBody: string;
+	    responseSize: number;
+	    limitExceeded: boolean;
+	    responseTffbMs: number;
+	    responseDlMs: number;
 	    authType: string;
 	    basicAuth: string;
 	    apiKeyAuth: string;
 	    tokenAuth: string;
-	    collectionId: string;
 	
 	    static createFrom(source: any = {}) {
-	        return new RequestDTO(source);
+	        return new ReqExampleDTO(source);
 	    }
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
-	        this.url = source["url"];
+	        this.requestId = source["requestId"];
+	        this.collectionId = source["collectionId"];
 	        this.name = source["name"];
+	        this.url = source["url"];
 	        this.method = source["method"];
 	        this.query = source["query"];
 	        this.headers = source["headers"];
 	        this.cookies = source["cookies"];
-	        this.bodyType = source["bodyType"];
 	        this.multipart = source["multipart"];
 	        this.urlencoded = source["urlencoded"];
 	        this.text = source["text"];
 	        this.binary = source["binary"];
-	        this.authEnabled = source["authEnabled"];
+	        this.bodyType = source["bodyType"];
+	        this.uploadSize = source["uploadSize"];
+	        this.responseSuccess = source["responseSuccess"];
+	        this.responseStatus = source["responseStatus"];
+	        this.responseStatusText = source["responseStatusText"];
+	        this.responseTimeMS = source["responseTimeMS"];
+	        this.sentHeaders = source["sentHeaders"];
+	        this.responseHeaders = source["responseHeaders"];
+	        this.responseCookies = source["responseCookies"];
+	        this.responseBody = source["responseBody"];
+	        this.responseSize = source["responseSize"];
+	        this.limitExceeded = source["limitExceeded"];
+	        this.responseTffbMs = source["responseTffbMs"];
+	        this.responseDlMs = source["responseDlMs"];
 	        this.authType = source["authType"];
 	        this.basicAuth = source["basicAuth"];
 	        this.apiKeyAuth = source["apiKeyAuth"];
 	        this.tokenAuth = source["tokenAuth"];
-	        this.collectionId = source["collectionId"];
+	    }
+	}
+	export class ReqExampleLightDTO {
+	    id: string;
+	    requestId: string;
+	    name: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ReqExampleLightDTO(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.requestId = source["requestId"];
+	        this.name = source["name"];
 	    }
 	}
 	export class RequestDraftDTO {
@@ -499,6 +553,26 @@ export namespace models {
 	        this.parentCollectionId = source["parentCollectionId"];
 	    }
 	}
+	export class RequestLightDTO {
+	    id: string;
+	    name: string;
+	    method: string;
+	    url: string;
+	    collectionId: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new RequestLightDTO(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.name = source["name"];
+	        this.method = source["method"];
+	        this.url = source["url"];
+	        this.collectionId = source["collectionId"];
+	    }
+	}
 	export class SaveDraftAsReqDTO {
 	    draftId: string;
 	    requestId: string;
@@ -547,6 +621,26 @@ export namespace models {
 	        this.sourceId = source["sourceId"];
 	        this.id = source["id"];
 	        this.name = source["name"];
+	    }
+	}
+	export class SavedResponseRenderMeta {
+	    html5Element: string;
+	    src: string;
+	    canRender: boolean;
+	    filepath: string;
+	    extension: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new SavedResponseRenderMeta(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.html5Element = source["html5Element"];
+	        this.src = source["src"];
+	        this.canRender = source["canRender"];
+	        this.filepath = source["filepath"];
+	        this.extension = source["extension"];
 	    }
 	}
 	

@@ -10,6 +10,10 @@ export function AddDraft(arg1) {
   return window['go']['storage']['Storage']['AddDraft'](arg1);
 }
 
+export function AddDraftFromRequest(arg1) {
+  return window['go']['storage']['Storage']['AddDraftFromRequest'](arg1);
+}
+
 export function AddEnvironment(arg1) {
   return window['go']['storage']['Storage']['AddEnvironment'](arg1);
 }
@@ -24,6 +28,10 @@ export function AddFreshDraft(arg1) {
 
 export function AddFreshEnvDraft(arg1) {
   return window['go']['storage']['Storage']['AddFreshEnvDraft'](arg1);
+}
+
+export function AddReqExample(arg1, arg2) {
+  return window['go']['storage']['Storage']['AddReqExample'](arg1, arg2);
 }
 
 export function ChooseFile() {
@@ -44,6 +52,10 @@ export function DeleteDraftsUnderCollection(arg1) {
 
 export function DeleteEnvDraftsUnderEnv(arg1) {
   return window['go']['storage']['Storage']['DeleteEnvDraftsUnderEnv'](arg1);
+}
+
+export function DeleteReqExample(arg1) {
+  return window['go']['storage']['Storage']['DeleteReqExample'](arg1);
 }
 
 export function DeleteRequestDrafts(arg1) {
@@ -72,6 +84,14 @@ export function GetAllCollections() {
 
 export function GetEnvironments() {
   return window['go']['storage']['Storage']['GetEnvironments']();
+}
+
+export function GetReqExampleById(arg1) {
+  return window['go']['storage']['Storage']['GetReqExampleById'](arg1);
+}
+
+export function GetReqExamples() {
+  return window['go']['storage']['Storage']['GetReqExamples']();
 }
 
 export function GetSavedRequests() {
