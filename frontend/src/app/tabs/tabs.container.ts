@@ -9,10 +9,10 @@ import { LucideAngularModule, Plus } from "lucide-angular";
 import { EnvironmentTab } from "@/environments/environment.tab";
 import { AppService, TabsService } from "@/services";
 import { RequestTab } from "../request/req.tab";
-import { TabHeader } from "./req.tab.header";
+import { TabHeader } from "./tab.header";
 
 @Component({
-	selector: "section[appReqTabs]",
+	selector: "section[gurl-tabs-container]",
 	template: `
     <div class="flex items-center py-1 px-2 border-b-2 border-base-100">
       <!-- Button to add  new tab -->
@@ -55,7 +55,7 @@ import { TabHeader } from "./req.tab.header";
   `,
 	imports: [LucideAngularModule, TabHeader, RequestTab, EnvironmentTab],
 })
-export class TabsWrapper {
+export class TabsContainer {
 	@HostBinding("class")
 	def = "flex-1 flex flex-col overflow-hidden";
 

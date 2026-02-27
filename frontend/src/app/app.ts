@@ -18,7 +18,7 @@ import { DesktopSidebar } from "./layout/sidebar/desktop.sidebar";
 import { MobileSidebar } from "./layout/sidebar/mobile.sidebar";
 import { Taskbar } from "./layout/taskbar/task.bar";
 import { GlobalModalsHost } from "./modals/global.modals.host";
-import { TabsWrapper } from "./tabs/req.tabs.container";
+import { TabsContainer } from "./tabs/tabs.container";
 
 @Component({
 	selector: "app",
@@ -40,7 +40,7 @@ import { TabsWrapper } from "./tabs/req.tabs.container";
             <div class="flex-1 flex items-center gap-2">
             </div>
              <div class="flex items-center gap-2">
-              <gurl-dropdown
+              <!-- <gurl-dropdown
                 [items]="appSvc.workspaces()"
                 [activeItem]="appSvc.activeWorkSpace()"
                 [align]="'end'"
@@ -49,7 +49,7 @@ import { TabsWrapper } from "./tabs/req.tabs.container";
                 [varient]="'soft'"
                 (onItemSelection)="handleActiveItemSelection($event)"
                 >
-                </gurl-dropdown>
+                </gurl-dropdown> -->
                 <div gurl-entity-creation></div>
              </div>
           </nav>
@@ -81,7 +81,7 @@ import { TabsWrapper } from "./tabs/req.tabs.container";
                     </header>
                     <!-- Main content -->
                     @if(tabsSvc.tabCount()){
-                    <section appReqTabs></section>
+                    <section gurl-tabs-container></section>
                     }@else {
                     <section appHome></section>
                     }
@@ -109,7 +109,7 @@ import { TabsWrapper } from "./tabs/req.tabs.container";
 		GurlFooter,
 		DesktopSidebar,
 		MobileSidebar,
-		TabsWrapper,
+		TabsContainer,
 		AppHome,
 		GurlDropdown,
 		Taskbar,
