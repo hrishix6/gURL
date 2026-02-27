@@ -8,7 +8,7 @@ import {
 	Plus,
 	RadioTower,
 } from "lucide-angular";
-import { GlobalModalsService } from "./services/modals.service";
+import { GlobalModalsService } from "@/services";
 
 @Component({
 	selector: `div[gurl-entity-creation]`,

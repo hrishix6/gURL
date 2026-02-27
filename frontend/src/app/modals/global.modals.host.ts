@@ -1,6 +1,5 @@
 import { Component, inject } from "@angular/core";
-import { AppService } from "@/services";
-import { GlobalModalsService } from "@/services/modals.service";
+import { AppService, GlobalModalsService } from "@/services";
 import { CopyRequestModal } from "./copy.request";
 import { CreateCollectionModal } from "./create.collection";
 import { CreateEnvironmentModal } from "./create.env";

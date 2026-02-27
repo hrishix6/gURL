@@ -17,8 +17,7 @@ import {
 	Trash2,
 } from "lucide-angular";
 import { ReqMethodTag } from "@/request/method.tag";
-import { AppService, TabsService } from "@/services";
-import { GlobalModalsService } from "@/services/modals.service";
+import { AppService, GlobalModalsService, TabsService } from "@/services";
 
 @Component({
 	selector: `div[gurl-request-item]`,

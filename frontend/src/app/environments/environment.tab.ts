@@ -11,8 +11,7 @@ import {
 } from "@angular/core";
 import { LucideAngularModule, Pencil, Save, Trash2 } from "lucide-angular";
 import { DraftSavePreferenceModal } from "@/modals/draft.save.preference";
-import { AppService, TabsService } from "@/services";
-import { EnvFormService } from "@/services/env.form.service";
+import { AppService, EnvFormService, TabsService } from "@/services";
 import { type ApplicationTab, AppTabType } from "@/types";
 import { EnvironmentFormItem } from "./environment.form.item";
 

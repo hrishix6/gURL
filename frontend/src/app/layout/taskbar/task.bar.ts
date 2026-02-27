@@ -9,9 +9,10 @@ import { GurlSidebarToggle } from "./sidebar.toggle";
       <div gurl-sidebar-toggle></div>
     </header>
     <footer class="mt-auto flex justify-center flex-col gap-4">
-      <button class="btn btn-sm btn-ghost">
+      <!-- todo user settings -->
+      <!-- <button class="btn btn-sm btn-ghost">
         <lucide-angular [img]="SettingsIcon" class="size-5" />
-      </button>
+      </button> -->
     </footer>
   `,
 	imports: [LucideAngularModule, GurlSidebarToggle],

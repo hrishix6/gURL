@@ -21,8 +21,7 @@ import {
 	Trash2,
 } from "lucide-angular";
 import { DEFAULT_COLLECTION_ID } from "@/constants";
-import { AppService } from "@/services";
-import { GlobalModalsService } from "@/services/modals.service";
+import { AppService, GlobalModalsService } from "@/services";
 import { GurlRequestItem } from "./collection.request.item";
 
 @Component({

@@ -7,18 +7,13 @@ import {
 } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import {
-	FindDraftById,
-	FindEnvDraft,
-	GetReqExampleById,
-} from "@wailsjs/go/storage/Storage";
-import {
 	Container,
 	Layers,
 	LucideAngularModule,
 	RadioTower,
 	ScrollText,
 } from "lucide-angular";
-import { AppService, TabsService } from "./services";
+import { AppService, getReqRepository, TabsService } from "@/services";
 import { AppTabType } from "./types";
 
 enum CrumbType {
@@ -99,6 +94,7 @@ export class Breadcrumbs {
 		}
 	}
 
+	private reqRepo = getReqRepository();
 	private destroyRef = inject(DestroyRef);
 	private readonly tabSvc = inject(TabsService);
 	private readonly appSvc = inject(AppService);
@@ -116,7 +112,8 @@ export class Breadcrumbs {
 		if (tab) {
 			switch (tab.entityType) {
 				case AppTabType.Req: {
-					FindDraftById(tab.entityId)
+					this.reqRepo
+						.findDraftById(tab.entityId)
 						.then((draft) => {
 							if (draft) {
 								const { parentCollectionId, parentRequestId } = draft;
@@ -145,7 +142,8 @@ export class Breadcrumbs {
 					break;
 				}
 				case AppTabType.Env: {
-					FindEnvDraft(tab.entityId)
+					this.reqRepo
+						.findEnvDraft(tab.entityId)
 						.then((draft) => {
 							if (draft) {
 								const env = this.appSvc
@@ -163,7 +161,8 @@ export class Breadcrumbs {
 				}
 
 				case AppTabType.ReqExample: {
-					GetReqExampleById(tab.entityId)
+					this.reqRepo
+						.getReqExampleById(tab.entityId)
 						.then((example) => {
 							if (example) {
 								const exName = this.appSvc

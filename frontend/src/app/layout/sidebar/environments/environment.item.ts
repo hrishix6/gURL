@@ -2,13 +2,13 @@ import { Component, HostBinding, inject, input } from "@angular/core";
 import type { models } from "@wailsjs/go/models";
 import {
 	Container,
+	Copy,
 	EllipsisVertical,
 	FileDown,
 	LucideAngularModule,
 	Trash2,
 } from "lucide-angular";
-import { AppService, TabsService } from "@/services";
-import { GlobalModalsService } from "@/services/modals.service";
+import { AppService, GlobalModalsService, TabsService } from "@/services";
 
 @Component({
 	selector: `div[gurl-environment-item]`,
@@ -33,6 +33,12 @@ import { GlobalModalsService } from "@/services/modals.service";
           tabindex="-1"
           class="dropdown-content menu bg-base-100 rounded-box z-50 w-max shadow-sm"
         >
+			<li>
+              <a href="#" role="link" (click)="copyEnvironment()">
+				    <lucide-angular [img]="CopyIcon" class="size-4" />	
+			  	    Copy
+              </a>
+            </li>
             <li>
               <a href="#" role="link" (click)="toggleDeleteModal()">
 				      <lucide-angular [img]="DeleteIcon" class="size-4" />	
@@ -61,6 +67,7 @@ export class GurlEnvironmentItem {
 	protected readonly EnvironmentOptionsIcon = EllipsisVertical;
 	protected readonly ExportIcon = FileDown;
 	protected readonly DeleteIcon = Trash2;
+	protected readonly CopyIcon = Copy;
 
 	private readonly tabSvc = inject(TabsService);
 	protected readonly appSvc = inject(AppService);
@@ -70,6 +77,12 @@ export class GurlEnvironmentItem {
 		const target = document.activeElement as HTMLAnchorElement;
 		target.blur();
 		this.tabSvc.createEnvTabFromSaved(this.data());
+	}
+
+	protected copyEnvironment() {
+		const target = document.activeElement as HTMLAnchorElement;
+		target.blur();
+		this.appSvc.copyEnvironment(this.data());
 	}
 
 	protected toggleExportEnv() {
