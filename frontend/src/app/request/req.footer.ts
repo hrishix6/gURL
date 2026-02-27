@@ -113,7 +113,7 @@ import type {
                 </div>
             }
             @case('req_body'){
-                <div class="flex-1 flex gap-4 items-center">
+                <div class="flex-1 flex">
                 <gurl-dropdown
                             [items]="reqBodyTypes"
                             [activeItem]="f.bodySvc.bodyType()"
@@ -128,7 +128,7 @@ import type {
                 </gurl-dropdown>
                 @if(f.tabType() === 'req'){
                 @if(["urlencoded"].includes(f.bodySvc.bodyType().id)){
-                    <label class="label ml-auto">
+                    <label class="label ml-auto self-end">
                             <input type="checkbox" [checked]="f.bodySvc.bulkEditModeUrlEncodedForm()" (change)="handleEditModeSwitch('req_body')" class="toggle toggle-primary" />
                              Raw
                     </label>
@@ -142,7 +142,7 @@ import type {
 })
 export class ReqFooter {
 	@HostBinding("class")
-	def = "flex text-xs p-2";
+	def = "flex text-xs px-2 py-1";
 
 	protected readonly PreviewOpenIcon = Eye;
 	protected readonly PreviewCloseIcon = EyeOff;

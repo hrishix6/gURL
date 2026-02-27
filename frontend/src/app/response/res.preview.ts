@@ -8,6 +8,7 @@ import {
 import { PdfViewerModule } from "ng2-pdf-viewer";
 import { BytesPipe } from "@/common/pipes/bytes.pipe";
 import { SafePipe } from "@/common/pipes/safe.html.pipe";
+import { DL_LIMIT_BYTES } from "@/constants";
 import { FormService } from "@/services";
 import { ResponseTextPreview } from "./text.preview";
 
@@ -20,9 +21,9 @@ import { ResponseTextPreview } from "./text.preview";
                     <lucide-angular [img]="ErroredReqIcon" class="size-16" />
                     <span class="text-lg">
                         @if(formSvc.res()?.sizeNotReported){
-                            Server did not report Content-Length, download stopped after reaching limit 1kb. 
+                            Server did not report Content-Length, download stopped after reaching limit {{ MAX_DL_LIMIT | bytes}}
                        } @else {
-                        Server reported Content-length as {{formSvc.res()?.reportedSize | bytes}}, dowload stopped after reaching limit 100 Mb.
+                        Server reported Content-length as {{formSvc.res()?.reportedSize | bytes}}, dowload stopped after reaching limit {{ MAX_DL_LIMIT | bytes}}
                        }
                     </span>
                 </div>
@@ -33,7 +34,6 @@ import { ResponseTextPreview } from "./text.preview";
             <div class="flex-1 flex relative overflow-auto shadow-md border-2 border-base-100 rounded-box">
                  <div [ngClass]="{
                     'flex-1 flex': true,
-                    'hidden': !formSvc.previewMode(),
                  }">
                     @switch (formSvc.res()?.body?.html5Element) {
                         <!-- PDF -->
@@ -84,20 +84,6 @@ import { ResponseTextPreview } from "./text.preview";
                         }
                     }
                  </div>
-
-                <div [ngClass]="{
-                    'flex-1 flex items-center justify-center': true,
-                    'hidden': formSvc.previewMode(),
-                }">
-                @if(formSvc.res()?.size){
-                    <button class="btn xl:btn-lg btn-soft btn-primary" (click)="formSvc.saveToFile()">
-                        <lucide-angular [img]="DownloadIcon"  class="size-5 xl:size-6"/>
-                        Download {{formSvc.res()?.body?.extension}}
-                    </button>
-                }@else {
-                    <span>No Body</span>
-                }
-                </div>
             </div>
         }
         @else {
@@ -130,4 +116,5 @@ export class ResPreview {
 	protected readonly DownloadIcon = HardDriveDownload;
 	protected readonly ErroredReqIcon = CircleAlert;
 	protected readonly formSvc = inject(FormService);
+	protected readonly MAX_DL_LIMIT = DL_LIMIT_BYTES;
 }

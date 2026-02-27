@@ -9,6 +9,7 @@ import { ReqBody } from "./req.body";
 import { ReqCookies } from "./req.cookies";
 import { ReqFooter } from "./req.footer";
 import { ReqHeaders } from "./req.headers";
+import { ReqPath } from "./req.path";
 import { ReqQuery } from "./req.query";
 
 @Component({
@@ -29,7 +30,11 @@ import { ReqQuery } from "./req.query";
       <gurl-req-query />
       } @case ("req_body") {
       <gurl-req-body />
-      } @case ("req_auth") {
+      } 
+      @case ("req_path") {
+        <gurl-req-path />
+      }
+      @case ("req_auth") {
       <gurl-req-auth />
       }
       @case("req_cookies"){
@@ -48,6 +53,7 @@ import { ReqQuery } from "./req.query";
 		ReqCookies,
 		ReqFooter,
 		RequestAuth,
+		ReqPath,
 	],
 })
 export class RequestFormDetails {

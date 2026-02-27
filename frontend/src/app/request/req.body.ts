@@ -2,7 +2,7 @@ import { Component, HostBinding, inject } from "@angular/core";
 import { Ban, LucideAngularModule } from "lucide-angular";
 import { KeyValFormItem, MultiPartFormItem } from "@/common/components";
 import { TextEditor } from "@/common/components/text.editor";
-import { parseTextAsKeyVal } from "@/common/utils/time";
+import { parseTextAsKeyVal } from "@/common/utils/text";
 import {
 	BULK_EDIT_INSTRUCTION,
 	MULTIPART_ID_PLACEHOLDER,

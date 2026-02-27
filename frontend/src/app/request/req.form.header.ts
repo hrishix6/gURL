@@ -33,7 +33,7 @@ import type { RequestMethod } from "@/types";
           [placeHolder]="'https://example.com'"
           [text]="f.urlSvc.url()"
           (onInput)="f.setUrl($event)"
-          (blur)="f.parseUrl()"
+          (onBlur)="f.parseUrl()"
           [readonly]="f.tabType() === 'req_example'"
         >
         </div>

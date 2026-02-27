@@ -1,7 +1,7 @@
 import { Component, HostBinding, inject, signal } from "@angular/core";
 import { Ban, LucideAngularModule } from "lucide-angular";
 import { KeyValFormItem } from "@/common/components";
-import { parseTextAsKeyVal } from "@/common/utils/time";
+import { parseTextAsKeyVal } from "@/common/utils/text";
 import { BULK_EDIT_INSTRUCTION, QID_PLACEHOLDER } from "@/constants";
 import { FormService } from "@/services";
 import { BulkKeyValEditor } from "../common/components/bulk.editor";

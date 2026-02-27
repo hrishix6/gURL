@@ -1,8 +1,7 @@
 import { Component, inject } from "@angular/core";
-import { ChooseFile } from "@wailsjs/go/storage/Storage";
 import { LucideAngularModule, Paperclip, X } from "lucide-angular";
 import { BytesPipe } from "@/common/pipes/bytes.pipe";
-import { FormService } from "@/services";
+import { FormService, getFileRepository } from "@/services";
 
 @Component({
 	selector: "gurl-file-input",
@@ -36,10 +35,11 @@ export class FileInput {
 	protected readonly CancelIcon = X;
 
 	protected readonly f = inject(FormService);
+	private fileRepo = getFileRepository();
 
 	protected async openFileDialogue() {
 		try {
-			const fileStats = await ChooseFile();
+			const fileStats = await this.fileRepo.chooseFile();
 			this.f.setBinaryBody(fileStats);
 		} catch (error) {
 			console.error(error);

@@ -6,15 +6,15 @@ import { FormService } from "@/services";
 	selector: `gurl-res-cookies`,
 	template: `
         @if(formSvc.res()?.cookies?.length){
-            <div class="flex-1 flex overflow-auto shadow-md border-2 border-base-100">
+            <div class="flex-1 flex">
             @if(formSvc.cookiesPreviewMode()){
                 <div class="flex-1 flex flex-col gap-2 p-2">
                 @for(item of formSvc.res()?.cookies; track item.name){
-                 <div class="collapse collapse-arrow shadow-md border-2 border-base-100 w-full">
+                 <div class="collapse collapse-arrow shadow-md border-2 border-base-100 overflow-auto">
                     <input type="checkbox"  />
-                    <div class="collapse-title font-semibold">Name: {{item.name}} , Value: {{item.value}}</div>
+                    <div class="collapse-title font-semibold truncate">Name: {{item.name}} , Value: {{item.value}}</div>
                     <div class="collapse-content text-xs">
-                             <table class="table table-fixed w-full">
+                             <table class="table table-fixed">
                                 <thead>
                                     <tr>
                                     <th class="w-2/5">Attribute</th>
