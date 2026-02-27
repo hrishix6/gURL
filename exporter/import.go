@@ -149,7 +149,9 @@ func toImportedKeyValItems(raw json.RawMessage) (datatypes.JSON, error) {
 func toDbRequestFromImported(importedReq models.ImportedGurlReq, collectionId string) (*db.Request, error) {
 
 	newReq := &db.Request{
-		Id:           nanoid.Must(),
+		BaseEntity: db.BaseEntity{
+			Id: nanoid.Must(),
+		},
 		CollectionId: collectionId,
 	}
 
@@ -174,6 +176,11 @@ func toDbRequestFromImported(importedReq models.ImportedGurlReq, collectionId st
 	queryItems, err := toImportedKeyValItems(importedReq.QueryParams)
 	if err == nil {
 		newReq.Query = queryItems
+	}
+
+	pathParams, err := toImportedKeyValItems(importedReq.PathParams)
+	if err == nil {
+		newReq.Path = pathParams
 	}
 
 	headerItems, err := toImportedKeyValItems(importedReq.Headers)
@@ -328,7 +335,9 @@ func (ex *Exporter) handleImportEmptyCollection(collection models.ImportedCollec
 	}
 
 	return gorm.G[db.Collection](ex.db).Create(ex.appCtx, &db.Collection{
-		Id:   nanoid.Must(),
+		BaseEntity: db.BaseEntity{
+			Id: nanoid.Must(),
+		},
 		Name: name,
 	})
 }
@@ -348,7 +357,9 @@ func (ex *Exporter) handleImportWithRequests(collection models.ImportedCollectio
 	}
 
 	newCollection := &db.Collection{
-		Id:   nanoid.Must(),
+		BaseEntity: db.BaseEntity{
+			Id: nanoid.Must(),
+		},
 		Name: name,
 	}
 
@@ -458,7 +469,9 @@ func (ex *Exporter) ImportEnvironment() error {
 	}
 
 	var dbEnv = &db.Environment{
-		Id:   nanoid.Must(),
+		BaseEntity: db.BaseEntity{
+			Id: nanoid.Must(),
+		},
 		Name: name,
 		Data: datatypes.JSON(bs),
 	}

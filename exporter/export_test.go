@@ -217,20 +217,25 @@ func TestToExportedReq(t *testing.T) {
 	}
 
 	req := db.Request{
-		Id:             "test-export",
-		Url:            "test-url",
-		Name:           "test-export-req",
-		Method:         "GET",
-		Query:          datatypes.JSON(rawKeyValItem),
-		Headers:        datatypes.JSON(rawKeyValItem),
-		Cookies:        datatypes.JSON(rawKeyValItem),
-		TextBody:       "hello world",
-		UrlEncodedForm: datatypes.JSON(rawKeyValItem),
-		BinaryBody:     datatypes.JSON(rawBinaryB),
-		MultipartForm:  datatypes.JSON(rawMultipartItem),
-		BodyType:       "none",
-		AuthEnabled:    false,
-		AuthType:       "no_auth",
+		BaseEntity: db.BaseEntity{
+			Id: "test-export",
+		},
+		Name: "test-export-req",
+		RequestCore: db.RequestCore{
+			Url: "test-url",
+
+			Method:         "GET",
+			Query:          datatypes.JSON(rawKeyValItem),
+			Headers:        datatypes.JSON(rawKeyValItem),
+			Cookies:        datatypes.JSON(rawKeyValItem),
+			TextBody:       "hello world",
+			UrlEncodedForm: datatypes.JSON(rawKeyValItem),
+			BinaryBody:     datatypes.JSON(rawBinaryB),
+			MultipartForm:  datatypes.JSON(rawMultipartItem),
+			BodyType:       "none",
+			AuthEnabled:    false,
+			AuthType:       "no_auth",
+		},
 	}
 
 	gotReq := toExportedRequest(req)

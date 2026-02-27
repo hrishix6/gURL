@@ -144,6 +144,7 @@ func toExportedRequest(input db.Request) models.ExportedGurlReq {
 		Method:         input.Method,
 		Headers:        toExportedKeyValItem(input.Headers),
 		QueryParams:    toExportedKeyValItem(input.Query),
+		PathParams:     toExportedKeyValItem(input.Path),
 		Cookies:        toExportedKeyValItem(input.Cookies),
 		BodyType:       models.ValidateOrDefaultBodyType(input.BodyType, models.NoBodyType),
 		UrlEncodedBody: toExportedKeyValItem(input.UrlEncodedForm),
