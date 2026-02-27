@@ -1,19 +1,5 @@
 export namespace models {
 	
-	export class AddCollectionDTO {
-	    id: string;
-	    name: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new AddCollectionDTO(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.id = source["id"];
-	        this.name = source["name"];
-	    }
-	}
 	export class AddDraftFromRequestDTO {
 	    id: string;
 	    requestId: string;
@@ -110,6 +96,20 @@ export namespace models {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
 	        this.name = source["name"];
+	    }
+	}
+	export class CopyEnvironmentDTO {
+	    id: string;
+	    envId: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new CopyEnvironmentDTO(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.envId = source["envId"];
 	    }
 	}
 	export class EnvironmentDTO {
@@ -217,9 +217,10 @@ export namespace models {
 		}
 	}
 	export class GurlKeyValItem {
+	    id: string;
 	    key: string;
-	    value: string;
-	    enabled: boolean;
+	    val: string;
+	    enabled: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new GurlKeyValItem(source);
@@ -227,15 +228,17 @@ export namespace models {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
 	        this.key = source["key"];
-	        this.value = source["value"];
+	        this.val = source["val"];
 	        this.enabled = source["enabled"];
 	    }
 	}
 	export class GurlKeyValMultiPartItem {
+	    id: string;
 	    key: string;
 	    value: string;
-	    enabled: boolean;
+	    enabled: string;
 	    isFile: boolean;
 	
 	    static createFrom(source: any = {}) {
@@ -244,6 +247,7 @@ export namespace models {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
 	        this.key = source["key"];
 	        this.value = source["value"];
 	        this.enabled = source["enabled"];
@@ -418,20 +422,26 @@ export namespace models {
 	}
 	
 	export class ReqExampleDTO {
-	    id: string;
-	    requestId: string;
-	    collectionId: string;
-	    name: string;
 	    url: string;
 	    method: string;
 	    query: string;
+	    path: string;
 	    headers: string;
 	    cookies: string;
+	    bodyType: string;
 	    multipart: string;
 	    urlencoded: string;
 	    text: string;
 	    binary: string;
-	    bodyType: string;
+	    authEnabled: boolean;
+	    authType: string;
+	    basicAuth: string;
+	    apiKeyAuth: string;
+	    tokenAuth: string;
+	    id: string;
+	    requestId: string;
+	    collectionId: string;
+	    name: string;
 	    uploadSize: number;
 	    responseSuccess: boolean;
 	    responseStatus: number;
@@ -445,10 +455,6 @@ export namespace models {
 	    limitExceeded: boolean;
 	    responseTffbMs: number;
 	    responseDlMs: number;
-	    authType: string;
-	    basicAuth: string;
-	    apiKeyAuth: string;
-	    tokenAuth: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new ReqExampleDTO(source);
@@ -456,20 +462,26 @@ export namespace models {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.id = source["id"];
-	        this.requestId = source["requestId"];
-	        this.collectionId = source["collectionId"];
-	        this.name = source["name"];
 	        this.url = source["url"];
 	        this.method = source["method"];
 	        this.query = source["query"];
+	        this.path = source["path"];
 	        this.headers = source["headers"];
 	        this.cookies = source["cookies"];
+	        this.bodyType = source["bodyType"];
 	        this.multipart = source["multipart"];
 	        this.urlencoded = source["urlencoded"];
 	        this.text = source["text"];
 	        this.binary = source["binary"];
-	        this.bodyType = source["bodyType"];
+	        this.authEnabled = source["authEnabled"];
+	        this.authType = source["authType"];
+	        this.basicAuth = source["basicAuth"];
+	        this.apiKeyAuth = source["apiKeyAuth"];
+	        this.tokenAuth = source["tokenAuth"];
+	        this.id = source["id"];
+	        this.requestId = source["requestId"];
+	        this.collectionId = source["collectionId"];
+	        this.name = source["name"];
 	        this.uploadSize = source["uploadSize"];
 	        this.responseSuccess = source["responseSuccess"];
 	        this.responseStatus = source["responseStatus"];
@@ -483,10 +495,6 @@ export namespace models {
 	        this.limitExceeded = source["limitExceeded"];
 	        this.responseTffbMs = source["responseTffbMs"];
 	        this.responseDlMs = source["responseDlMs"];
-	        this.authType = source["authType"];
-	        this.basicAuth = source["basicAuth"];
-	        this.apiKeyAuth = source["apiKeyAuth"];
-	        this.tokenAuth = source["tokenAuth"];
 	    }
 	}
 	export class ReqExampleLightDTO {
@@ -506,10 +514,10 @@ export namespace models {
 	    }
 	}
 	export class RequestDraftDTO {
-	    id: string;
 	    url: string;
 	    method: string;
 	    query: string;
+	    path: string;
 	    headers: string;
 	    cookies: string;
 	    bodyType: string;
@@ -522,6 +530,7 @@ export namespace models {
 	    basicAuth: string;
 	    apiKeyAuth: string;
 	    tokenAuth: string;
+	    id: string;
 	    parentRequestId: string;
 	    parentRequestName: string;
 	    parentCollectionId: string;
@@ -532,10 +541,10 @@ export namespace models {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.id = source["id"];
 	        this.url = source["url"];
 	        this.method = source["method"];
 	        this.query = source["query"];
+	        this.path = source["path"];
 	        this.headers = source["headers"];
 	        this.cookies = source["cookies"];
 	        this.bodyType = source["bodyType"];
@@ -548,6 +557,7 @@ export namespace models {
 	        this.basicAuth = source["basicAuth"];
 	        this.apiKeyAuth = source["apiKeyAuth"];
 	        this.tokenAuth = source["tokenAuth"];
+	        this.id = source["id"];
 	        this.parentRequestId = source["parentRequestId"];
 	        this.parentRequestName = source["parentRequestName"];
 	        this.parentCollectionId = source["parentCollectionId"];
@@ -666,214 +676,48 @@ export namespace models {
 	        this.alwaysDiscardEnvDrafts = source["alwaysDiscardEnvDrafts"];
 	    }
 	}
-	export class UpdateDraftApiKeyAuthDTO {
-	    requestId: string;
-	    apiKeyAuthJSON: string;
+	export class UpdateDraftFieldsDTO {
+	    draftId: string;
+	    url?: string;
+	    method?: string;
+	    queryJson?: string;
+	    pathJson?: string;
+	    headersJson?: string;
+	    cookiesJson?: string;
+	    bodyType?: string;
+	    text?: string;
+	    binaryJson?: string;
+	    multipartJson?: string;
+	    urlencodedJson?: string;
+	    authType?: string;
+	    authEnabled?: boolean;
+	    basicAuthJson?: string;
+	    apiKeyAuthJson?: string;
+	    tokenAuthJson?: string;
 	
 	    static createFrom(source: any = {}) {
-	        return new UpdateDraftApiKeyAuthDTO(source);
+	        return new UpdateDraftFieldsDTO(source);
 	    }
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.requestId = source["requestId"];
-	        this.apiKeyAuthJSON = source["apiKeyAuthJSON"];
-	    }
-	}
-	export class UpdateDraftAuthEnabledDTO {
-	    requestId: string;
-	    authEnabled: boolean;
-	
-	    static createFrom(source: any = {}) {
-	        return new UpdateDraftAuthEnabledDTO(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.requestId = source["requestId"];
-	        this.authEnabled = source["authEnabled"];
-	    }
-	}
-	export class UpdateDraftAuthTypeDTO {
-	    requestId: string;
-	    authType: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new UpdateDraftAuthTypeDTO(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.requestId = source["requestId"];
-	        this.authType = source["authType"];
-	    }
-	}
-	export class UpdateDraftBasicAuthDTO {
-	    requestId: string;
-	    basicAuthJSON: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new UpdateDraftBasicAuthDTO(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.requestId = source["requestId"];
-	        this.basicAuthJSON = source["basicAuthJSON"];
-	    }
-	}
-	export class UpdateDraftBinaryBodyDTO {
-	    requestId: string;
-	    binaryJson: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new UpdateDraftBinaryBodyDTO(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.requestId = source["requestId"];
-	        this.binaryJson = source["binaryJson"];
-	    }
-	}
-	export class UpdateDraftBodyTypeDTO {
-	    requestId: string;
-	    bodyType: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new UpdateDraftBodyTypeDTO(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.requestId = source["requestId"];
-	        this.bodyType = source["bodyType"];
-	    }
-	}
-	export class UpdateDraftCookiesDTO {
-	    requestId: string;
-	    cookiesJSON: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new UpdateDraftCookiesDTO(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.requestId = source["requestId"];
-	        this.cookiesJSON = source["cookiesJSON"];
-	    }
-	}
-	export class UpdateDraftHeadersDTO {
-	    requestId: string;
-	    headersJson: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new UpdateDraftHeadersDTO(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.requestId = source["requestId"];
-	        this.headersJson = source["headersJson"];
-	    }
-	}
-	export class UpdateDraftMethodDTO {
-	    requestId: string;
-	    method: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new UpdateDraftMethodDTO(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.requestId = source["requestId"];
-	        this.method = source["method"];
-	    }
-	}
-	export class UpdateDraftMultipartFormDTO {
-	    requestId: string;
-	    multipartJson: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new UpdateDraftMultipartFormDTO(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.requestId = source["requestId"];
-	        this.multipartJson = source["multipartJson"];
-	    }
-	}
-	export class UpdateDraftQueryDTO {
-	    requestId: string;
-	    queryJson: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new UpdateDraftQueryDTO(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.requestId = source["requestId"];
-	        this.queryJson = source["queryJson"];
-	    }
-	}
-	export class UpdateDraftTextBodyDTO {
-	    requestId: string;
-	    textBody: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new UpdateDraftTextBodyDTO(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.requestId = source["requestId"];
-	        this.textBody = source["textBody"];
-	    }
-	}
-	export class UpdateDraftTokenAuthDTO {
-	    requestId: string;
-	    tokenAuthJSON: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new UpdateDraftTokenAuthDTO(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.requestId = source["requestId"];
-	        this.tokenAuthJSON = source["tokenAuthJSON"];
-	    }
-	}
-	export class UpdateDraftUrlDTO {
-	    requestId: string;
-	    url: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new UpdateDraftUrlDTO(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.requestId = source["requestId"];
+	        this.draftId = source["draftId"];
 	        this.url = source["url"];
-	    }
-	}
-	export class UpdateDraftUrlEncodedFormDTO {
-	    requestId: string;
-	    urlencodedJson: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new UpdateDraftUrlEncodedFormDTO(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.requestId = source["requestId"];
+	        this.method = source["method"];
+	        this.queryJson = source["queryJson"];
+	        this.pathJson = source["pathJson"];
+	        this.headersJson = source["headersJson"];
+	        this.cookiesJson = source["cookiesJson"];
+	        this.bodyType = source["bodyType"];
+	        this.text = source["text"];
+	        this.binaryJson = source["binaryJson"];
+	        this.multipartJson = source["multipartJson"];
 	        this.urlencodedJson = source["urlencodedJson"];
+	        this.authType = source["authType"];
+	        this.authEnabled = source["authEnabled"];
+	        this.basicAuthJson = source["basicAuthJson"];
+	        this.apiKeyAuthJson = source["apiKeyAuthJson"];
+	        this.tokenAuthJson = source["tokenAuthJson"];
 	    }
 	}
 	export class UpdateEnvDraftDataDTO {
@@ -890,16 +734,26 @@ export namespace models {
 	        this.dataJSON = source["dataJSON"];
 	    }
 	}
-	export class UpdateOpenTabsDTO {
-	    openTabsJson: string;
+	export class UpdateUIStateDTO {
+	    layout?: string;
+	    openTabsJson?: string;
+	    isSidebarOpen?: boolean;
+	    activeTabId?: string;
+	    alwaysDiscardReqDrafts?: boolean;
+	    alwaysDiscardEnvDrafts?: boolean;
 	
 	    static createFrom(source: any = {}) {
-	        return new UpdateOpenTabsDTO(source);
+	        return new UpdateUIStateDTO(source);
 	    }
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.layout = source["layout"];
 	        this.openTabsJson = source["openTabsJson"];
+	        this.isSidebarOpen = source["isSidebarOpen"];
+	        this.activeTabId = source["activeTabId"];
+	        this.alwaysDiscardReqDrafts = source["alwaysDiscardReqDrafts"];
+	        this.alwaysDiscardEnvDrafts = source["alwaysDiscardEnvDrafts"];
 	    }
 	}
 
