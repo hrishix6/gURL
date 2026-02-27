@@ -1,7 +1,3 @@
-import { ParseCookieRaw } from "@wailsjs/go/executor/Executor";
-import { nanoid } from "nanoid";
-import type { KeyValItem } from "@/types";
-
 export function humanTime(date: number | null | undefined): string {
 	if (date == null || Number.isNaN(date)) return "";
 
@@ -10,7 +6,6 @@ export function humanTime(date: number | null | undefined): string {
 	const now = new Date();
 	const elapsedMilliseconds = now.getTime() - date;
 
-	// Define time intervals in milliseconds
 	const second = 1000;
 	const minute = 60 * 1000;
 	const hour = 60 * minute;
@@ -58,46 +53,4 @@ export function humanBytes(value?: number | null, decimals: number = 2) {
 	const converted = (value / k ** i).toFixed(decimals);
 
 	return `${converted} ${sizes[i]}`;
-}
-
-export function parseTextAsKeyVal(text: string) {
-	const items: KeyValItem[] = [];
-	for (const line of text.split("\n")) {
-		if (line.length && line.includes(":")) {
-			let [key, val] = line.split(":");
-			if (key) {
-				let enabled = "on";
-				if (key.startsWith("#")) {
-					enabled = "off";
-					key = key.slice(1);
-				}
-				items.push({
-					id: nanoid(),
-					key: key,
-					enabled,
-					val,
-				});
-			}
-		}
-	}
-	return Promise.resolve(items);
-}
-
-export async function parseTextAsCookies(text: string): Promise<KeyValItem[]> {
-	try {
-		const results = await ParseCookieRaw(text);
-		if (Array.isArray(results)) {
-			const parsed = results.map((x) => ({
-				id: nanoid(),
-				key: x.key,
-				val: x.value,
-				enabled: x.enabled ? "on" : "off",
-			}));
-
-			return parsed;
-		}
-		return [];
-	} catch (_error) {
-		return [];
-	}
 }

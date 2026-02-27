@@ -14,7 +14,7 @@ import {
 } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { debounceTime, Subject } from "rxjs";
-import { AppService } from "@/services";
+import { AppService, FormService } from "@/services";
 import type { InputToken } from "@/types";
 
 @Component({
@@ -60,7 +60,7 @@ import type { InputToken } from "@/types";
 			>
 				@if(_tokens().length) {
 					@for(token of _tokens(); track $index) {
-						@if(token.type === 'env') {
+						@if(token.type === "env") {
 							<span
 									[ngClass]="{
 										'whitespace-pre': true,
@@ -113,7 +113,7 @@ export class GurlHighlightedInput {
 		});
 
 		this.tokenUpdate$
-			.pipe(takeUntilDestroyed(this.destroyRef), debounceTime(300))
+			.pipe(takeUntilDestroyed(this.destroyRef), debounceTime(100))
 			.subscribe({
 				next: () => {
 					this.initializeTokens();
@@ -131,6 +131,7 @@ export class GurlHighlightedInput {
 
 	protected editMode = signal<boolean>(false);
 	private readonly appSvc = inject(AppService);
+	private readonly formSvc = inject(FormService);
 	private readonly tokenUpdate$ = new Subject<void>();
 	private readonly destroyRef = inject(DestroyRef);
 	protected _tokens = signal<InputToken[]>([]);
@@ -159,6 +160,6 @@ export class GurlHighlightedInput {
 
 	protected initializeTokens() {
 		const v = this.text();
-		this._tokens.set(this.appSvc.extractEnvTokens(v));
+		this._tokens.set(this.formSvc.extractTokens(v));
 	}
 }

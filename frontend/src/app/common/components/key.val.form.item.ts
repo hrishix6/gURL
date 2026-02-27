@@ -1,7 +1,8 @@
 import { NgClass } from "@angular/common";
 import { Component, HostBinding, input, output } from "@angular/core";
+import type { models } from "@wailsjs/go/models";
 import { LucideAngularModule, X } from "lucide-angular";
-import type { AppTabType, KeyValItem } from "@/types";
+import type { AppTabType } from "@/types";
 import { GurlHighlightedInput } from "./highlighted.input";
 
 @Component({
@@ -60,7 +61,7 @@ export class KeyValFormItem {
 	@HostBinding("class")
 	hostClass = "flex flex-col gap-2.5";
 
-	items = input.required<KeyValItem[]>();
+	items = input.required<models.GurlKeyValItem[]>();
 	placeholderId = input.required<string>();
 	tabType = input.required<AppTabType>();
 	onKeyUpdate = output<{ id: string; v: string }>();

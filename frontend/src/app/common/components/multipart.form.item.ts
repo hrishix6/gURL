@@ -1,8 +1,8 @@
 import { NgClass } from "@angular/common";
 import { Component, HostBinding, input, output } from "@angular/core";
 import type { models } from "@wailsjs/go/models";
-import { ChooseFile } from "@wailsjs/go/storage/Storage";
 import { Eraser, LucideAngularModule, Paperclip, X } from "lucide-angular";
+import { getFileRepository } from "@/services";
 import type { AppTabType, MultipartItem } from "@/types";
 import { humanBytes } from "../utils/time";
 import { GurlHighlightedInput } from "./highlighted.input";
@@ -109,13 +109,14 @@ export class MultiPartFormItem {
 	onBlur = output();
 	onDelete = output<string>();
 
+	private readonly fileRepo = getFileRepository();
 	protected readonly CanceIcon = X;
 	protected readonly BinaryIcon = Paperclip;
 	protected readonly ClearFileIcon = Eraser;
 
 	protected async openFileDialogue(id: string) {
 		try {
-			const file = await ChooseFile();
+			const file = await this.fileRepo.chooseFile();
 
 			this.onValUpdate.emit({ id, v: file });
 		} catch (error) {

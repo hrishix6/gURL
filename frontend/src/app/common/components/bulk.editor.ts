@@ -8,8 +8,8 @@ import {
 	signal,
 } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import type { models } from "@wailsjs/go/models";
 import { debounceTime, Subject } from "rxjs";
-import type { KeyValItem } from "@/types";
 
 @Component({
 	selector: `gurl-bulk-editor`,
@@ -25,12 +25,12 @@ import type { KeyValItem } from "@/types";
 })
 export class BulkKeyValEditor implements OnInit {
 	initialValue = input<string>("");
-	onChange = output<KeyValItem[]>();
+	onChange = output<models.GurlKeyValItem[]>();
 	text = signal<string>("");
 	notifier$ = new Subject<string>();
 	destroyRef = inject(DestroyRef);
 	editInstructions = input.required<string>();
-	parseFn = input.required<(t: string) => Promise<KeyValItem[]>>();
+	parseFn = input.required<(t: string) => Promise<models.GurlKeyValItem[]>>();
 
 	ngOnInit(): void {
 		this.text.set(this.initialValue());
