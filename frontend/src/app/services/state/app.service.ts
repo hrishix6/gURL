@@ -14,39 +14,20 @@ import {
 	ImportEnvironment,
 } from "@wailsjs/go/exporter/Exporter";
 import type { models } from "@wailsjs/go/models";
-import {
-	AddCollection,
-	ClearCollection,
-	DeleteCollection,
-	DeleteDraftsUnderCollection,
-	DeleteEnvDraftsUnderEnv,
-	DeleteReqExample,
-	DeleteRequestDrafts,
-	DeleteSavedReq,
-	GetAllCollections,
-	GetEnvironments,
-	GetReqExamples,
-	GetSavedRequests,
-	GetUIState,
-	RemoveEnv,
-	RenameCollection,
-	SaveRequestCopy,
-	UpdateAlwaysDiscardDraftsPreference,
-	UpdateAlwaysDiscardEnvDraftsPreference,
-	UpdateLayoutPreference,
-	UpdateSideBarPreference,
-} from "@wailsjs/go/storage/Storage";
-
 import { nanoid } from "nanoid";
 import { debounceTime, Subject } from "rxjs";
 import {
 	DEFAULT_THEME,
-	ENV_TOKEN_REGEX,
-	ENV_VAR_REGEX,
 	NO_ENV_ID,
 	SUPPORTED_THEMES,
 	THEME_LOCALSTORAGE_KEY,
 } from "@/constants";
+import {
+	getCollectionRepository,
+	getEnvRepository,
+	getReqRepository,
+	getUIStateRepository,
+} from "@/services";
 import {
 	type ActiveItemInfo,
 	AppSidebarContent,
@@ -66,6 +47,11 @@ import { TabsService } from "./tabs.service";
 	providedIn: "root",
 })
 export class AppService {
+	private reqRepo = getReqRepository();
+	private collectionRepo = getCollectionRepository();
+	private envRepo = getEnvRepository();
+	private uiStateRepo = getUIStateRepository();
+
 	private _appState = signal<AppState>("initializing");
 	public appState = computed(() => this._appState());
 	private tabSvc = inject(TabsService);
@@ -101,62 +87,6 @@ export class AppService {
 	});
 
 	//#region environments
-	public extractEnvTokens(v: string): InputToken[] {
-		const tokens: InputToken[] = [];
-		if (v && v.trim() !== "") {
-			v.split(ENV_TOKEN_REGEX).forEach((word) => {
-				if (word.match(ENV_TOKEN_REGEX) !== null) {
-					const innerVar = word.match(ENV_VAR_REGEX);
-					const varKey = innerVar ? innerVar[1] : "";
-					const envToken: InputToken = {
-						type: "env",
-						value: word,
-						valid: false,
-						key: varKey,
-						interpolated: "",
-					};
-
-					[envToken.valid, envToken.interpolated] =
-						this.validateInterpolatedToken(envToken);
-					tokens.push(envToken);
-				} else {
-					if (word !== "") {
-						tokens.push({
-							type: "text",
-							value: word,
-							valid: true,
-							key: "",
-							interpolated: "",
-						});
-					}
-				}
-			});
-		}
-		return tokens;
-	}
-
-	public interPolateEnvTokens(v: string): string {
-		let o = "";
-
-		const tokens = this.extractEnvTokens(v);
-
-		if (!tokens.length) {
-			return o;
-		}
-
-		for (const token of tokens) {
-			if (token.type === "env") {
-				o += token.valid ? token.interpolated : "";
-			}
-
-			if (token.type === "text") {
-				o += token.value;
-			}
-		}
-
-		return o;
-	}
-
 	public validateInterpolatedToken(token: InputToken): [boolean, string] {
 		const currentEnv = this.activeEnvironment();
 		if (!currentEnv) {
@@ -228,10 +158,31 @@ export class AppService {
 
 	public async deleteEnvironment(id: string) {
 		try {
-			await RemoveEnv(id);
-			await DeleteEnvDraftsUnderEnv(id);
+			await this.envRepo.removeEnv(id);
+			await this.envRepo.deleteEnvDraftsUnderEnv(id);
 			await this.initializeEnvironments();
 			this.tabSvc.refreshNotifier.next(AppTabType.Env);
+		} catch (error) {
+			console.error(error);
+		}
+	}
+
+	public async copyEnvironment(dto: models.EnvironmentDTO) {
+		try {
+			const copiedEnvId = nanoid();
+
+			await this.envRepo.copyEnvironment({
+				id: copiedEnvId,
+				envId: dto.id,
+			});
+
+			await this.initializeEnvironments();
+
+			this.tabSvc.createEnvTabFromSaved({
+				dataJSON: "",
+				id: copiedEnvId,
+				name: `${dto.name}-copy`,
+			});
 		} catch (error) {
 			console.error(error);
 		}
@@ -304,8 +255,8 @@ export class AppService {
 
 	public async deleteRequest(requestId: string) {
 		try {
-			await DeleteSavedReq(requestId);
-			await DeleteRequestDrafts(requestId);
+			await this.reqRepo.deleteSavedReq(requestId);
+			await this.reqRepo.deleteRequestDrafts(requestId);
 			//refresh from db
 			await this.initializeSavedRequests();
 			this.tabSvc.refreshNotifier.next(AppTabType.Req);
@@ -316,7 +267,7 @@ export class AppService {
 
 	public async copyRequest(sourceId: string, name: string) {
 		try {
-			await SaveRequestCopy({ id: nanoid(), name, sourceId });
+			await this.reqRepo.saveRequestCopy({ id: nanoid(), name, sourceId });
 			//refresh from db
 			await this.initializeSavedRequests();
 		} catch (error) {
@@ -333,7 +284,7 @@ export class AppService {
 
 	public async deleteReqExample(id: string) {
 		try {
-			await DeleteReqExample(id);
+			await this.reqRepo.deleteReqExample(id);
 			//refresh from db
 			await this.initializeSavedExamples();
 		} catch (error) {
@@ -348,12 +299,8 @@ export class AppService {
 	public collections = computed(() => this._collections());
 
 	public async addCollection(name: string) {
-		const newCollection: models.AddCollectionDTO = {
-			id: nanoid(),
-			name,
-		};
 		try {
-			await AddCollection(newCollection);
+			await this.collectionRepo.addCollection(nanoid(), name);
 			await this.initializeCollections();
 		} catch (error) {
 			console.error(error);
@@ -362,8 +309,8 @@ export class AppService {
 
 	public async deleteCollection(id: string) {
 		try {
-			await DeleteCollection(id);
-			await DeleteDraftsUnderCollection(id);
+			await this.collectionRepo.deleteCollection(id);
+			await this.collectionRepo.deleteDraftsUnderCollection(id);
 			//refresh from db
 
 			await this.initializeCollections();
@@ -376,7 +323,7 @@ export class AppService {
 
 	public async renameCollection(id: string, name: string) {
 		try {
-			await RenameCollection(id, name);
+			await this.collectionRepo.renameCollection(id, name);
 			await this.initializeCollections();
 		} catch (error) {
 			console.error(error);
@@ -385,8 +332,8 @@ export class AppService {
 
 	public async clearCollection(id: string) {
 		try {
-			await ClearCollection(id);
-			await DeleteDraftsUnderCollection(id);
+			await this.collectionRepo.clearCollection(id);
+			await this.collectionRepo.deleteDraftsUnderCollection(id);
 
 			//refresh from db
 			await this.initializeSavedRequests();
@@ -572,8 +519,13 @@ export class AppService {
 
 		this.layoutChange$.pipe(takeUntilDestroyed(this.destoyRef)).subscribe({
 			next: (v) => {
-				console.log(`saving layout preference ${v} in db`);
-				UpdateLayoutPreference(v);
+				this.uiStateRepo
+					.updateUIState({
+						layout: v,
+					})
+					.then(() => {
+						console.log(`updated layout to ${v} in db`);
+					});
 			},
 		});
 
@@ -630,9 +582,15 @@ export class AppService {
 			.pipe(takeUntilDestroyed(this.destoyRef))
 			.subscribe({
 				next: (v) => {
-					UpdateSideBarPreference(v).then(() => {
-						console.log(`sidebar preference saved to db`);
-					});
+					this.uiStateRepo
+						.updateUIState({
+							isSidebarOpen: v,
+						})
+						.then(() => {
+							console.log(
+								`sidebar preference ${v ? "open" : "closed"} saved to db`,
+							);
+						});
 				},
 			});
 
@@ -640,9 +598,15 @@ export class AppService {
 			.pipe(takeUntilDestroyed(this.destoyRef))
 			.subscribe({
 				next: (v) => {
-					UpdateAlwaysDiscardDraftsPreference(v).then(() => {
-						console.log(`always discard drafts preference saved to db`);
-					});
+					this.uiStateRepo
+						.updateUIState({
+							alwaysDiscardReqDrafts: v,
+						})
+						.then(() => {
+							console.log(
+								`always discard req drafts: ${v ? "yes" : "no"}, saved to db`,
+							);
+						});
 				},
 			});
 
@@ -650,15 +614,20 @@ export class AppService {
 			.pipe(takeUntilDestroyed(this.destoyRef))
 			.subscribe({
 				next: (v) => {
-					UpdateAlwaysDiscardEnvDraftsPreference(v).then(() => {
-						console.log(`always discard env drafts preference saved to db`);
-					});
+					this.uiStateRepo
+						.updateUIState({
+							alwaysDiscardEnvDrafts: v,
+						})
+						.then(() => {
+							console.log(
+								`always discard env drafts: ${v ? "yes" : "no"}, saved to db`,
+							);
+						});
 				},
 			});
 	}
 
 	//#region init
-
 	initializeAppPreferences() {
 		const theme = window.localStorage.getItem(THEME_LOCALSTORAGE_KEY);
 		if (this.isAppTheme(theme)) {
@@ -670,7 +639,7 @@ export class AppService {
 
 	async initializeEnvironments() {
 		try {
-			const environments = await GetEnvironments();
+			const environments = await this.envRepo.getEnvironments();
 			if (Array.isArray(environments) && environments.length) {
 				this._environments.set(environments);
 			} else {
@@ -683,7 +652,7 @@ export class AppService {
 
 	async initializeCollections() {
 		try {
-			const collections = await GetAllCollections();
+			const collections = await this.collectionRepo.getAllCollections();
 			if (Array.isArray(collections) && collections.length) {
 				this._collections.set(collections);
 			} else {
@@ -696,7 +665,7 @@ export class AppService {
 
 	async initializeSavedRequests() {
 		try {
-			const savedRequests = await GetSavedRequests();
+			const savedRequests = await this.reqRepo.getSavedRequests();
 			if (Array.isArray(savedRequests) && savedRequests.length) {
 				this._savedRequests.set(savedRequests);
 			} else {
@@ -709,7 +678,7 @@ export class AppService {
 
 	async initializeSavedExamples() {
 		try {
-			const savedExamples = await GetReqExamples();
+			const savedExamples = await this.reqRepo.getReqExamples();
 			if (Array.isArray(savedExamples) && savedExamples.length) {
 				this._savedExamples.set(savedExamples);
 			} else {
@@ -722,7 +691,7 @@ export class AppService {
 
 	async initializeUIState() {
 		try {
-			const uiState = await GetUIState();
+			const uiState = await this.uiStateRepo.getUIState();
 			this._formLayout.set(
 				(uiState.layout as FormLayout) || FormLayout.Responsive,
 			);
@@ -736,6 +705,7 @@ export class AppService {
 
 	public async init() {
 		try {
+			this.initializeAppPreferences();
 			await new Promise((resolve) => setTimeout(resolve, 1500));
 			//initialize collections + saved requests
 			await this.initializeCollections();

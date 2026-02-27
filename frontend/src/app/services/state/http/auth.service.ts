@@ -1,15 +1,9 @@
 import { computed, type DestroyRef, signal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import type { models } from "@wailsjs/go/models";
-import {
-	UpdateDraftApiKeyAuth,
-	UpdateDraftAuthEnabled,
-	UpdateDraftAuthType,
-	UpdateDraftBasicAuth,
-	UpdateDraftTokenAuth,
-} from "@wailsjs/go/storage/Storage";
 import { debounceTime, Subject } from "rxjs";
 import { API_KEY_LOCATION, REQ_AUTH_TYPES } from "@/constants";
+import { getReqRepository } from "@/services";
 import type {
 	ApiKeyAuth,
 	BasicAuth,
@@ -26,6 +20,7 @@ export class AuthService {
 	private tokenAuthDbSync$ = new Subject<TokenAuth>();
 	private apiKeyDbSync$ = new Subject<ApiKeyAuth>();
 	private basicDbSync$ = new Subject<BasicAuth | null>();
+	private reqRepo = getReqRepository();
 
 	public init(data: models.RequestDraftDTO) {
 		const { id, authEnabled, authType, basicAuth, apiKeyAuth, tokenAuth } =
@@ -169,12 +164,16 @@ export class AuthService {
 
 		this.authTypeDbSync$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
 			next: (v) => {
-				UpdateDraftAuthType({
-					requestId: this.draftId,
-					authType: v,
-				}).then(() => {
-					console.log(`auth type ${v} to be updated for draft ${this.draftId}`);
-				});
+				this.reqRepo
+					.updatereqDraftFields({
+						draftId: this.draftId,
+						authType: v,
+					})
+					.then(() => {
+						console.log(
+							`auth type ${v} to be updated for draft ${this.draftId}`,
+						);
+					});
 			},
 		});
 
@@ -182,14 +181,16 @@ export class AuthService {
 			.pipe(takeUntilDestroyed(this.destroyRef), debounceTime(500))
 			.subscribe({
 				next: (v) => {
-					UpdateDraftBasicAuth({
-						requestId: this.draftId,
-						basicAuthJSON: JSON.stringify(v),
-					}).then(() => {
-						console.log(
-							`basic auth ${JSON.stringify(v, null, 2)}  updated for draft ${this.draftId}`,
-						);
-					});
+					this.reqRepo
+						.updatereqDraftFields({
+							draftId: this.draftId,
+							basicAuthJson: JSON.stringify(v),
+						})
+						.then(() => {
+							console.log(
+								`basic auth ${JSON.stringify(v, null, 2)}  updated for draft ${this.draftId}`,
+							);
+						});
 				},
 			});
 
@@ -197,14 +198,16 @@ export class AuthService {
 			.pipe(takeUntilDestroyed(this.destroyRef), debounceTime(500))
 			.subscribe({
 				next: (v) => {
-					UpdateDraftTokenAuth({
-						requestId: this.draftId,
-						tokenAuthJSON: JSON.stringify(v),
-					}).then(() => {
-						console.log(
-							`token auth ${JSON.stringify(v, null, 2)} updated for draft ${this.draftId}`,
-						);
-					});
+					this.reqRepo
+						.updatereqDraftFields({
+							draftId: this.draftId,
+							tokenAuthJson: JSON.stringify(v),
+						})
+						.then(() => {
+							console.log(
+								`token auth ${JSON.stringify(v, null, 2)} updated for draft ${this.draftId}`,
+							);
+						});
 				},
 			});
 
@@ -212,14 +215,16 @@ export class AuthService {
 			.pipe(takeUntilDestroyed(this.destroyRef), debounceTime(500))
 			.subscribe({
 				next: (v) => {
-					UpdateDraftApiKeyAuth({
-						requestId: this.draftId,
-						apiKeyAuthJSON: JSON.stringify(v),
-					}).then(() => {
-						console.log(
-							`api key ${JSON.stringify(v, null, 2)} updated for draft ${this.draftId}`,
-						);
-					});
+					this.reqRepo
+						.updatereqDraftFields({
+							draftId: this.draftId,
+							apiKeyAuthJson: JSON.stringify(v),
+						})
+						.then(() => {
+							console.log(
+								`api key ${JSON.stringify(v, null, 2)} updated for draft ${this.draftId}`,
+							);
+						});
 				},
 			});
 
@@ -227,12 +232,16 @@ export class AuthService {
 			.pipe(takeUntilDestroyed(this.destroyRef))
 			.subscribe({
 				next: (v) => {
-					UpdateDraftAuthEnabled({
-						requestId: this.draftId,
-						authEnabled: v,
-					}).then(() => {
-						console.log(`auth enabled ${v} updated for draft ${this.draftId}`);
-					});
+					this.reqRepo
+						.updatereqDraftFields({
+							draftId: this.draftId,
+							authEnabled: v,
+						})
+						.then(() => {
+							console.log(
+								`auth enabled ${v} updated for draft ${this.draftId}`,
+							);
+						});
 				},
 			});
 	}

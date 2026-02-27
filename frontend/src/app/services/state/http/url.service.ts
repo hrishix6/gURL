@@ -1,27 +1,20 @@
 import { computed, type DestroyRef, signal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import type { models } from "@wailsjs/go/models";
-import {
-	UpdateDraftMethod,
-	UpdateDraftQuery,
-	UpdateDraftUrl,
-} from "@wailsjs/go/storage/Storage";
 import { nanoid } from "nanoid";
 import { debounceTime, Subject } from "rxjs";
+import { extractTokens } from "@/common/utils/tokens";
 import { QID_PLACEHOLDER, REQ_METHODS } from "@/constants";
-import type {
-	DropDownItem,
-	KeyValItem,
-	RequestMethod,
-	RequestQuery,
-} from "@/types";
+import { getReqRepository } from "@/services";
+import type { DropDownItem, InputToken, RequestMethod } from "@/types";
 
 export class UrlService {
 	private draftId = "";
 	private destroyRef: DestroyRef;
 	private methodDbSync$ = new Subject<RequestMethod>();
 	private urlDbSync$ = new Subject<string>();
-	private queryDbSync$ = new Subject<KeyValItem[]>();
+	private reqRepo = getReqRepository();
+	private queryDbSync$ = new Subject<models.GurlKeyValItem[]>();
 
 	public init(data: models.RequestDraftDTO) {
 		this.draftId = data.id;
@@ -38,6 +31,7 @@ export class UrlService {
 				enabled: "on",
 			},
 		]);
+		this._pathParams.set([...JSON.parse(data.path)]);
 	}
 
 	public initExample(data: models.ReqExampleDTO) {
@@ -49,7 +43,7 @@ export class UrlService {
 		this._queryParams.set([...JSON.parse(data.query)]);
 	}
 
-	private _queryParams = signal<RequestQuery>([
+	private _queryParams = signal<models.GurlKeyValItem[]>([
 		{
 			id: QID_PLACEHOLDER,
 			key: "",
@@ -58,20 +52,28 @@ export class UrlService {
 		},
 	]);
 
+	private _pathParams = signal<models.GurlKeyValItem[]>([]);
+	public pathParams = computed(() => this._pathParams());
+	private pathDbSync$ = new Subject<models.GurlKeyValItem[]>();
+
 	private _url = signal<string>("");
 	public url = computed(() => this._url());
 	private _isUrlValid = signal<boolean>(true);
 	public isValidUrl = computed(() => this._isUrlValid());
 
 	public setUrl(v: string) {
+		let modified = false;
 		this._url.update((prev) => {
 			if (prev === v) {
 				return prev;
 			}
 
+			modified = true;
 			this.urlDbSync$.next(v);
 			return v;
 		});
+
+		return modified;
 	}
 
 	public _parseUrl() {
@@ -84,10 +86,74 @@ export class UrlService {
 				this.appendQueryParams(searchParams);
 			}
 
-			this.setUrl(baseUrl);
+			const decoded = decodeURIComponent(baseUrl);
+			this.appendPathParams(decoded);
+			return this.setUrl(decoded);
 		} catch (_error) {
 			console.error(`invalid URL: ${_error}`);
+			const v = this._url();
+			this.appendPathParams(v);
+			return false;
 		}
+	}
+
+	private setPathParams(items: models.GurlKeyValItem[]) {
+		this._pathParams.set(items);
+		this.pathDbSync$.next(items);
+	}
+
+	public updatePathParam(
+		id: string,
+		prop: Exclude<keyof models.GurlKeyValItem, "id">,
+		v: string,
+	) {
+		this._pathParams.update((prev) => {
+			const i = prev.findIndex((x) => x.id === id);
+			if (i === -1) {
+				return prev;
+			}
+			const copy = [...prev];
+
+			copy[i][prop] = v;
+
+			this.pathDbSync$.next(copy);
+			return copy;
+		});
+	}
+
+	private appendPathParams(v: string) {
+		const tokens = extractTokens(v);
+		const pathParams: models.GurlKeyValItem[] = [];
+		for (const token of tokens) {
+			if (token.type === "path") {
+				pathParams.push({
+					id: nanoid(),
+					enabled: "on",
+					key: token.key,
+					val: "",
+				});
+			}
+		}
+		this.setPathParams(pathParams);
+	}
+
+	public validateInterpolatedPathToken(token: InputToken): [boolean, string] {
+		const params = this._pathParams();
+
+		if (!params.length) {
+			return [false, ""];
+		}
+
+		const index = params.findIndex((x) => x.key === token.key);
+
+		if (index === -1) {
+			return [false, ""];
+		}
+
+		const v = params[index].val;
+		const valid = v?.trim() !== "";
+
+		return [valid, v];
 	}
 
 	private _method = signal<DropDownItem<RequestMethod>>(REQ_METHODS[0]);
@@ -104,7 +170,7 @@ export class UrlService {
 
 	private appendQueryParams(params: URLSearchParams) {
 		this._queryParams.update((_) => {
-			const newParams: KeyValItem[] = [];
+			const newParams: models.GurlKeyValItem[] = [];
 			for (const [k, v] of params.entries()) {
 				const newId = nanoid();
 				newParams.push({
@@ -176,7 +242,7 @@ export class UrlService {
 		});
 	}
 
-	public _bulkUpdateQueryParams(items: KeyValItem[]) {
+	public _bulkUpdateQueryParams(items: models.GurlKeyValItem[]) {
 		const newParams = [
 			...items,
 			{
@@ -192,7 +258,7 @@ export class UrlService {
 
 	public _updateQueryParam(
 		id: string,
-		prop: Exclude<keyof KeyValItem, "id">,
+		prop: Exclude<keyof models.GurlKeyValItem, "id">,
 		v: string,
 	) {
 		this._queryParams.update((prev) => {
@@ -226,29 +292,21 @@ export class UrlService {
 	}
 
 	public requestQueryParams() {
-		return this._queryParams().reduce((prev, curr) => {
-			if (curr.key && curr.key !== QID_PLACEHOLDER) {
-				prev.push({
-					key: curr.key,
-					value: curr.val,
-					enabled: curr.enabled === "on",
-				});
-			}
-			return prev;
-		}, [] as models.GurlKeyValItem[]);
+		return this._queryParams().filter((x) => x.id !== QID_PLACEHOLDER);
 	}
 
 	constructor(destroyRef: DestroyRef) {
 		this.destroyRef = destroyRef;
-
 		this.methodDbSync$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
 			next: (v) => {
-				UpdateDraftMethod({
-					requestId: this.draftId,
-					method: v,
-				}).then(() => {
-					console.log(`[${this.draftId}] method set to ${v} in SQlite`);
-				});
+				this.reqRepo
+					.updatereqDraftFields({
+						draftId: this.draftId,
+						method: v,
+					})
+					.then(() => {
+						console.log(`[${this.draftId}] method set to ${v} in SQlite`);
+					});
 			},
 		});
 
@@ -256,12 +314,14 @@ export class UrlService {
 			.pipe(takeUntilDestroyed(this.destroyRef), debounceTime(500))
 			.subscribe({
 				next: (v) => {
-					UpdateDraftUrl({
-						requestId: this.draftId,
-						url: v,
-					}).then(() => {
-						console.log(`[${this.draftId}] url set to ${v} in SQlite`);
-					});
+					this.reqRepo
+						.updatereqDraftFields({
+							draftId: this.draftId,
+							url: v,
+						})
+						.then(() => {
+							console.log(`[${this.draftId}] url set to ${v} in SQlite`);
+						});
 				},
 			});
 
@@ -270,12 +330,29 @@ export class UrlService {
 			.subscribe({
 				next: (v) => {
 					const payload = v.filter((x) => x.id !== QID_PLACEHOLDER);
-					UpdateDraftQuery({
-						requestId: this.draftId,
-						queryJson: JSON.stringify(payload),
-					}).then(() => {
-						console.log(`[${this.draftId}] query updated in SQlite`);
-					});
+					this.reqRepo
+						.updatereqDraftFields({
+							draftId: this.draftId,
+							queryJson: JSON.stringify(payload),
+						})
+						.then(() => {
+							console.log(`[${this.draftId}] query updated in SQlite`);
+						});
+				},
+			});
+
+		this.pathDbSync$
+			.pipe(takeUntilDestroyed(this.destroyRef), debounceTime(500))
+			.subscribe({
+				next: (v) => {
+					this.reqRepo
+						.updatereqDraftFields({
+							draftId: this.draftId,
+							pathJson: JSON.stringify(v),
+						})
+						.then(() => {
+							console.log(`[${this.draftId}] path updated in SQlite`);
+						});
 				},
 			});
 	}

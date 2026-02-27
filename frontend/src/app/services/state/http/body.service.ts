@@ -1,13 +1,6 @@
 import { computed, type DestroyRef, signal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import type { models } from "@wailsjs/go/models";
-import {
-	UpdateDraftBinaryBody,
-	UpdateDraftBodyType,
-	UpdateDraftMultipartForm,
-	UpdateDraftTextBody,
-	UpdateDraftUrlEncodedForm,
-} from "@wailsjs/go/storage/Storage";
 import { nanoid } from "nanoid";
 import { debounceTime, Subject } from "rxjs";
 import {
@@ -15,19 +8,16 @@ import {
 	REQ_BODY_TYPES,
 	URLENCODED_ID_PLACEHOLDER,
 } from "@/constants";
-import type {
-	DropDownItem,
-	KeyValItem,
-	MultipartItem,
-	ReqBodyType,
-} from "@/types";
+import { getReqRepository } from "@/services";
+import type { DropDownItem, MultipartItem, ReqBodyType } from "@/types";
 
 export class BodyService {
 	private draftId = "";
 	private destroyRef: DestroyRef;
 	private bodyTypeDbSync$ = new Subject<ReqBodyType>();
+	private reqRepo = getReqRepository();
 	private multipartDbSync$ = new Subject<MultipartItem[]>();
-	private urlEncodedDbSync$ = new Subject<KeyValItem[]>();
+	private urlEncodedDbSync$ = new Subject<models.GurlKeyValItem[]>();
 	private binaryBDbSync$ = new Subject<models.FileStats | null>();
 	private textBDbSync$ = new Subject<string>();
 
@@ -192,25 +182,33 @@ export class BodyService {
 
 	public requestMultipartData() {
 		return this._multiPartForm().reduce((prev, curr) => {
-			if (curr.key && curr.key !== MULTIPART_ID_PLACEHOLDER) {
+			if (curr.id !== MULTIPART_ID_PLACEHOLDER) {
 				if (typeof curr.val === "string") {
 					prev.push({
+						id: curr.id,
 						key: curr.key,
 						value: curr.val,
 						isFile: false,
-						enabled: curr.enabled === "on",
+						enabled: curr.enabled,
 					});
 				} else {
 					prev.push({
+						id: curr.id,
 						key: curr.key,
 						isFile: true,
 						value: curr.val.path,
-						enabled: curr.enabled === "on",
+						enabled: curr.enabled,
 					});
 				}
 			}
 			return prev;
 		}, [] as models.GurlKeyValMultiPartItem[]);
+	}
+
+	public multiPartItemsForHistory() {
+		return this._multiPartForm().filter(
+			(x) => x.id !== MULTIPART_ID_PLACEHOLDER,
+		);
 	}
 
 	//#endregion Multipart
@@ -242,7 +240,7 @@ export class BodyService {
 		}, "");
 	});
 
-	public _bulkUpdateUrlEncodedForm(items: KeyValItem[]) {
+	public _bulkUpdateUrlEncodedForm(items: models.GurlKeyValItem[]) {
 		const newParams = [
 			...items,
 			{
@@ -256,7 +254,7 @@ export class BodyService {
 		this.urlEncodedDbSync$.next(newParams);
 	}
 
-	private _urlEncodedParams = signal<KeyValItem[]>([
+	private _urlEncodedParams = signal<models.GurlKeyValItem[]>([
 		{
 			id: URLENCODED_ID_PLACEHOLDER,
 			key: "",
@@ -290,7 +288,7 @@ export class BodyService {
 
 	public _updateUrlEncodedField(
 		id: string,
-		prop: Exclude<keyof KeyValItem, "id">,
+		prop: Exclude<keyof models.GurlKeyValItem, "id">,
 		v: string,
 	) {
 		this._urlEncodedParams.update((prev) => {
@@ -327,16 +325,9 @@ export class BodyService {
 	}
 
 	public requestUrlEncodedData() {
-		return this._urlEncodedParams().reduce((prev, curr) => {
-			if (curr.key && curr.key !== URLENCODED_ID_PLACEHOLDER) {
-				prev.push({
-					key: curr.key,
-					value: curr.val,
-					enabled: curr.enabled === "on",
-				});
-			}
-			return prev;
-		}, [] as models.GurlKeyValItem[]);
+		return this._urlEncodedParams().filter(
+			(x) => x.id !== URLENCODED_ID_PLACEHOLDER,
+		);
 	}
 
 	//#endregion UrlEncoded
@@ -378,12 +369,14 @@ export class BodyService {
 		//body type
 		this.bodyTypeDbSync$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
 			next: (v) => {
-				UpdateDraftBodyType({
-					requestId: this.draftId,
-					bodyType: v,
-				}).then(() => {
-					console.log(`[${this.draftId}] body type set to ${v} in SQlite`);
-				});
+				this.reqRepo
+					.updatereqDraftFields({
+						draftId: this.draftId,
+						bodyType: v,
+					})
+					.then(() => {
+						console.log(`[${this.draftId}] body type set to ${v} in SQlite`);
+					});
 			},
 		});
 
@@ -393,11 +386,9 @@ export class BodyService {
 			.subscribe({
 				next: (v) => {
 					const payload = v.filter((x) => x.id !== URLENCODED_ID_PLACEHOLDER);
-					UpdateDraftUrlEncodedForm({
-						requestId: this.draftId,
+					this.reqRepo.updatereqDraftFields({
+						draftId: this.draftId,
 						urlencodedJson: JSON.stringify(payload),
-					}).then(() => {
-						console.log(`[${this.draftId}] url encoded form updated in SQlite`);
 					});
 				},
 			});
@@ -408,12 +399,14 @@ export class BodyService {
 			.subscribe({
 				next: (v) => {
 					const payload = v.filter((x) => x.id !== MULTIPART_ID_PLACEHOLDER);
-					UpdateDraftMultipartForm({
-						requestId: this.draftId,
-						multipartJson: JSON.stringify(payload),
-					}).then(() => {
-						console.log(`[${this.draftId}] multipart form updated in SQlite`);
-					});
+					this.reqRepo
+						.updatereqDraftFields({
+							draftId: this.draftId,
+							multipartJson: JSON.stringify(payload),
+						})
+						.then(() => {
+							console.log(`[${this.draftId}] multipart form updated in SQlite`);
+						});
 				},
 			});
 
@@ -422,24 +415,28 @@ export class BodyService {
 			.pipe(takeUntilDestroyed(this.destroyRef), debounceTime(500))
 			.subscribe({
 				next: (v) => {
-					UpdateDraftTextBody({
-						requestId: this.draftId,
-						textBody: v,
-					}).then(() => {
-						console.log(`[${this.draftId}] text body updated in SQlite`);
-					});
+					this.reqRepo
+						.updatereqDraftFields({
+							draftId: this.draftId,
+							text: v,
+						})
+						.then(() => {
+							console.log(`[${this.draftId}] text body updated in SQlite`);
+						});
 				},
 			});
 
 		//binary body
 		this.binaryBDbSync$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
 			next: (v) => {
-				UpdateDraftBinaryBody({
-					requestId: this.draftId,
-					binaryJson: v ? JSON.stringify(v) : "",
-				}).then(() => {
-					console.log(`[${this.draftId}] binary body updated in SQlite`);
-				});
+				this.reqRepo
+					.updatereqDraftFields({
+						draftId: this.draftId,
+						binaryJson: v ? JSON.stringify(v) : "",
+					})
+					.then(() => {
+						console.log(`[${this.draftId}] binary body updated in SQlite`);
+					});
 			},
 		});
 	}

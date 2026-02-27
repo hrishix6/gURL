@@ -1,15 +1,15 @@
 import { computed, type DestroyRef, signal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import type { models } from "@wailsjs/go/models";
-import { UpdateDraftCookies } from "@wailsjs/go/storage/Storage";
 import { nanoid } from "nanoid";
 import { debounceTime, Subject } from "rxjs";
 import { COOKIE_PLACEHOLDER } from "@/constants";
-import type { KeyValItem, ReqCookies } from "@/types";
+import { getReqRepository } from "@/services";
 
 export class CookieService {
 	private draftId = "";
 	private destroyRef: DestroyRef;
+	private reqRepo = getReqRepository();
 
 	public init(data: models.RequestDraftDTO) {
 		const { id, cookies } = data;
@@ -33,8 +33,8 @@ export class CookieService {
 		this._cookies.set([...JSON.parse(cookies)]);
 	}
 
-	private cookiesDbSync$ = new Subject<KeyValItem[]>();
-	private _cookies = signal<ReqCookies>([
+	private cookiesDbSync$ = new Subject<models.GurlKeyValItem[]>();
+	private _cookies = signal<models.GurlKeyValItem[]>([
 		{
 			id: COOKIE_PLACEHOLDER,
 			key: "",
@@ -66,7 +66,7 @@ export class CookieService {
 		}, "");
 	});
 
-	public _bulkUpdateCookieParams(items: KeyValItem[]) {
+	public _bulkUpdateCookieParams(items: models.GurlKeyValItem[]) {
 		const newParams = [
 			...items,
 			{
@@ -107,7 +107,7 @@ export class CookieService {
 
 	public _updateCookie(
 		id: string,
-		prop: Exclude<keyof KeyValItem, "id">,
+		prop: Exclude<keyof models.GurlKeyValItem, "id">,
 		v: string,
 	) {
 		this._cookies.update((prev) => {
@@ -136,21 +136,12 @@ export class CookieService {
 		});
 	}
 
-	public cookiesForExample(): KeyValItem[] {
+	public cookiesForExample(): models.GurlKeyValItem[] {
 		return this._cookies().filter((x) => x.id !== COOKIE_PLACEHOLDER);
 	}
 
 	public requestCookies() {
-		return this._cookies().reduce((prev, curr) => {
-			if (curr.key && curr.key !== COOKIE_PLACEHOLDER) {
-				prev.push({
-					key: curr.key,
-					value: curr.val,
-					enabled: curr.enabled === "on",
-				});
-			}
-			return prev;
-		}, [] as models.GurlKeyValItem[]);
+		return this._cookies().filter((x) => x.id !== COOKIE_PLACEHOLDER);
 	}
 
 	constructor(destroyRef: DestroyRef) {
@@ -161,12 +152,14 @@ export class CookieService {
 			.subscribe({
 				next: (v) => {
 					const payload = v.filter((x) => x.id !== COOKIE_PLACEHOLDER);
-					UpdateDraftCookies({
-						requestId: this.draftId,
-						cookiesJSON: JSON.stringify(payload),
-					}).then(() => {
-						console.log(`[${this.draftId}] cookies updated in SQlite`);
-					});
+					this.reqRepo
+						.updatereqDraftFields({
+							draftId: this.draftId,
+							cookiesJson: JSON.stringify(payload),
+						})
+						.then(() => {
+							console.log(`[${this.draftId}] cookies updated in SQlite`);
+						});
 				},
 			});
 	}

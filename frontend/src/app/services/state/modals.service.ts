@@ -1,7 +1,6 @@
 import { computed, Injectable, inject, signal } from "@angular/core";
 import type { models } from "@wailsjs/go/models";
-import { AppService } from "./app.service";
-import { TabsService } from "./tabs.service";
+import { AppService, TabsService } from "@/services";
 
 @Injectable({
 	providedIn: "root",

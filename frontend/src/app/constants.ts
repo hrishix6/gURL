@@ -19,7 +19,7 @@ export const THEME_LOCALSTORAGE_KEY = "gurl_theme";
 export const SUPPORTED_LAYOUTS: DropDownItem<FormLayout>[] = [
 	{ id: FormLayout.Horizontal, displayName: "Horizontal" },
 	{ id: FormLayout.Vertical, displayName: "Vertical" },
-	{ id: FormLayout.Responsive, displayName: "Responsive" },
+	{ id: FormLayout.Responsive, displayName: "Auto" },
 ];
 
 export const SUPPORTED_THEMES: ThemeLabel[] = [
@@ -53,6 +53,10 @@ export const REQ_DETAILS_TABS: Readonly<TabItem<ReqTabId>[]> = [
 	{
 		id: "req_headers",
 		Name: "Headers",
+	},
+	{
+		id: "req_path",
+		Name: "Path",
 	},
 	{
 		id: "req_query",
@@ -202,6 +206,10 @@ export const DEFAULT_COLLECTION_ID = "gurl_default_collection";
 export const NO_ENV_ID = "no_env";
 export const ENV_TOKEN_REGEX = /({{.*?}})/g;
 export const ENV_VAR_REGEX = /{{(.*?)}}/;
+export const PATH_TOKEN_REGEX = /({.*?})/g;
+export const PATH_VAR_REGEX = /{(.*?)}/;
+
+export const COMBINED_ENV_PATH_REGEX = /(\{\{[^{}]+\}\}|\{[^{}]+\})/g;
 
 export const QID_PLACEHOLDER = "qid_default";
 export const HID_PLACEHOLDER = "hid_default";
@@ -212,5 +220,7 @@ export const ENV_ID_PLACEHOLDER = "eid_default";
 export const DB_NAME = "gurl-db";
 export const DB_VERSION = 4;
 export const ROOT_USER = "gurl-default-user";
+export const DL_LIMIT_BYTES = 300_000_000;
 export const MIME_JSON_FILE = "/mime.db.json";
+export const CONFIG_FILE_PATH = "/config.json";
 export const APP_VERSION = "v0.6.0";

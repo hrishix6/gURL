@@ -7,25 +7,23 @@ import {
 } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import type { models } from "@wailsjs/go/models";
-import {
-	AddDraft,
-	AddDraftFromRequest,
-	AddEnvironmentDraft,
-	AddFreshDraft,
-	AddFreshEnvDraft,
-	RemoveDraft,
-	RemoveEnvDraft,
-	UpdateActiveTab,
-	UpdateOpenTabs,
-} from "@wailsjs/go/storage/Storage";
 import { nanoid } from "nanoid";
 import { debounceTime, Subject } from "rxjs";
+import {
+	getEnvRepository,
+	getReqRepository,
+	getUIStateRepository,
+} from "@/services";
 import { type ApplicationTab, AppTabType, type ReqHistoryItem } from "@/types";
 
 @Injectable({
 	providedIn: "root",
 })
 export class TabsService {
+	private uiStateRepo = getUIStateRepository();
+	private reqRepo = getReqRepository();
+	private envRepo = getEnvRepository();
+
 	private _openTabs = signal<ApplicationTab[]>([]);
 	private _activeTab = signal<string | null>("");
 	public openTabs = computed(() => this._openTabs());
@@ -45,9 +43,10 @@ export class TabsService {
 			.pipe(takeUntilDestroyed(this.destoyRef), debounceTime(500))
 			.subscribe({
 				next: (v) => {
-					UpdateOpenTabs({
-						openTabsJson: JSON.stringify(v),
-					})
+					this.uiStateRepo
+						.updateUIState({
+							openTabsJson: JSON.stringify(v),
+						})
 						.then(() => {
 							console.log(`updated tabs state in sqlite`);
 						})
@@ -59,7 +58,8 @@ export class TabsService {
 
 		this.reqChanges$.pipe(takeUntilDestroyed(this.destoyRef)).subscribe({
 			next: (v) => {
-				RemoveDraft(v)
+				this.reqRepo
+					.removeDraft(v)
 					.then(() => {
 						console.log(`request with id ${v} is deleted from db`);
 					})
@@ -71,7 +71,8 @@ export class TabsService {
 
 		this.envDraftrmDbSync$.pipe(takeUntilDestroyed(this.destoyRef)).subscribe({
 			next: (v) => {
-				RemoveEnvDraft(v)
+				this.envRepo
+					.removeEnvDraft(v)
 					.then(() => {
 						console.log(`env draft with id ${v} is deleted from db`);
 					})
@@ -83,8 +84,9 @@ export class TabsService {
 
 		this.activeTabChanges$.pipe(takeUntilDestroyed(this.destoyRef)).subscribe({
 			next: (v) => {
-				console.log(`saving tab ${v} as active in db`);
-				UpdateActiveTab(v);
+				this.uiStateRepo.updateUIState({ activeTabId: v }).then(() => {
+					console.log(`saving tab ${v} as active in db`);
+				});
 			},
 		});
 	}
@@ -100,7 +102,7 @@ export class TabsService {
 				isModified: false,
 			};
 
-			await AddFreshEnvDraft(newTab.entityId);
+			await this.envRepo.addFreshEnvDraft(newTab.entityId);
 
 			this._openTabs.update((prev) => {
 				const copy = [...prev, newTab];
@@ -155,7 +157,7 @@ export class TabsService {
 				isModified: false,
 			};
 
-			await AddEnvironmentDraft({
+			await this.envRepo.addEnvironmentDraft({
 				draftId: newTab.entityId,
 				envId: item.id,
 			});
@@ -180,7 +182,7 @@ export class TabsService {
 			};
 			console.dir(newDraft);
 
-			await AddDraftFromRequest(newDraft);
+			await this.reqRepo.addDraftFromRequest(newDraft);
 
 			const newTab: ApplicationTab = {
 				id: nanoid(),
@@ -205,7 +207,7 @@ export class TabsService {
 
 	public async createDuplicateTab(newDraft: models.RequestDraftDTO) {
 		try {
-			await AddDraft(newDraft);
+			await this.reqRepo.addDraft(newDraft);
 
 			const newTab: ApplicationTab = {
 				id: nanoid(),
@@ -238,6 +240,7 @@ export class TabsService {
 				parentRequestName: "",
 				parentCollectionId: "",
 				query: JSON.stringify(item.queryParams),
+				path: JSON.stringify(item.path),
 				cookies: JSON.stringify(item.cookies),
 				bodyType: item.bodyType,
 				headers: JSON.stringify(item.headers),
@@ -252,7 +255,7 @@ export class TabsService {
 				tokenAuth: item.tokenAuth ? JSON.stringify(item.tokenAuth) : "",
 			};
 
-			await AddDraft(newDraft);
+			await this.reqRepo.addDraft(newDraft);
 
 			const newTab: ApplicationTab = {
 				id: nanoid(),
@@ -290,7 +293,7 @@ export class TabsService {
 				isModified: false,
 			};
 
-			await AddFreshDraft(newDraft);
+			await this.reqRepo.addFreshDraft(newDraft);
 
 			this._openTabs.update((prev) => {
 				const copy = [...prev, newTab];
@@ -331,7 +334,7 @@ export class TabsService {
 	public async closeExampleTab(id: string) {
 		const tab = this._openTabs().find((x) => x.entityId === id);
 		const tabCount = this.tabCount();
-		if(tabCount === 1) {
+		if (tabCount === 1) {
 			await this.createFreshTab();
 		}
 		if (tab) {

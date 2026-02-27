@@ -6,26 +6,21 @@ import {
 	signal,
 } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import {
-	FindEnvDraft,
-	SaveEnvDraftAsEnv,
-	UpdateEnvDraftData,
-} from "@wailsjs/go/storage/Storage";
 import { nanoid } from "nanoid";
 import { debounceTime, Subject } from "rxjs";
 import { ENV_ID_PLACEHOLDER } from "@/constants";
+import { AppService, getEnvRepository, TabsService } from "@/services";
 import {
 	AppTabType,
 	type EnvironmentDraftParent,
 	type EnvironmentItem,
 } from "@/types";
-import { AppService } from "./app.service";
-import { TabsService } from "./tabs.service";
 
 @Injectable()
 export class EnvFormService {
 	private _envDraftId: string = "";
 	private destroyRef = inject(DestroyRef);
+	private readonly envRepo = getEnvRepository();
 
 	private _tabSvc = inject(TabsService);
 	private _appSvc = inject(AppService);
@@ -164,7 +159,7 @@ export class EnvFormService {
 		try {
 			console.log(`Initializing environment draft ${envDraftId}`);
 			//fetch data from the backend and populate draft state.
-			const draft = await FindEnvDraft(envDraftId);
+			const draft = await this.envRepo.findEnvDraft(envDraftId);
 
 			if (!draft) {
 				//TODO: show error
@@ -213,7 +208,7 @@ export class EnvFormService {
 				envId = parentEnvId;
 			}
 
-			await SaveEnvDraftAsEnv({
+			await this.envRepo.saveEnvDraftAsEnv({
 				draftId: this._envDraftId,
 				envId: envId,
 				name: this.environmentName(),
@@ -281,14 +276,16 @@ export class EnvFormService {
 			.pipe(takeUntilDestroyed(this.destroyRef), debounceTime(500))
 			.subscribe({
 				next: (v) => {
-					UpdateEnvDraftData({
-						draftId: this._envDraftId,
-						dataJSON: JSON.stringify(
-							v.filter((x) => x.id !== ENV_ID_PLACEHOLDER),
-						),
-					}).then(() => {
-						console.log(`env data updated for draft: ${this._envDraftId}`);
-					});
+					this.envRepo
+						.updateEnvDraftData({
+							draftId: this._envDraftId,
+							dataJSON: JSON.stringify(
+								v.filter((x) => x.id !== ENV_ID_PLACEHOLDER),
+							),
+						})
+						.then(() => {
+							console.log(`env data updated for draft: ${this._envDraftId}`);
+						});
 				},
 			});
 

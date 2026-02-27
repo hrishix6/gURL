@@ -1,15 +1,15 @@
 import { computed, type DestroyRef, signal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import type { models } from "@wailsjs/go/models";
-import { UpdateDraftHeaders } from "@wailsjs/go/storage/Storage";
 import { nanoid } from "nanoid";
 import { debounceTime, Subject } from "rxjs";
 import { HID_PLACEHOLDER } from "@/constants";
-import type { KeyValItem, RequestHeaders } from "@/types";
+import { getReqRepository } from "@/services";
 
 export class HeadersService {
 	private draftId = "";
 	private destroyRef: DestroyRef;
+	private reqRepo = getReqRepository();
 
 	public init(data: models.RequestDraftDTO) {
 		const { id, headers } = data;
@@ -33,9 +33,9 @@ export class HeadersService {
 		this._headers.set([...JSON.parse(headers)]);
 	}
 
-	private headersDbSync$ = new Subject<RequestHeaders>();
+	private headersDbSync$ = new Subject<models.GurlKeyValItem[]>();
 
-	private _headers = signal<RequestHeaders>([
+	private _headers = signal<models.GurlKeyValItem[]>([
 		{
 			id: HID_PLACEHOLDER,
 			key: "",
@@ -67,7 +67,7 @@ export class HeadersService {
 		}, "");
 	});
 
-	public _bulkUpdateHeadersParams(items: KeyValItem[]) {
+	public _bulkUpdateHeadersParams(items: models.GurlKeyValItem[]) {
 		const newParams = [
 			...items,
 			{
@@ -108,7 +108,7 @@ export class HeadersService {
 
 	public _updateHeader(
 		id: string,
-		prop: Exclude<keyof KeyValItem, "id">,
+		prop: Exclude<keyof models.GurlKeyValItem, "id">,
 		v: string,
 	) {
 		this._headers.update((prev) => {
@@ -138,22 +138,11 @@ export class HeadersService {
 	}
 
 	public requestHeaders(): models.GurlKeyValItem[] {
-		return this._headers().reduce((prev, curr) => {
-			if (curr.key && curr.key !== HID_PLACEHOLDER) {
-				prev.push({
-					key: curr.key,
-					value: curr.val,
-					enabled: curr.enabled === "on",
-				});
-			}
-			return prev;
-		}, [] as models.GurlKeyValItem[]);
+		return this._headers().filter((x) => x.id !== HID_PLACEHOLDER);
 	}
 
-	public headersForExample(): KeyValItem[] {
-		return this._headers().filter(
-			(curr) => curr.key && curr.key !== HID_PLACEHOLDER,
-		);
+	public headersForExample(): models.GurlKeyValItem[] {
+		return this._headers().filter((x) => x.id !== HID_PLACEHOLDER);
 	}
 
 	constructor(destroyRef: DestroyRef) {
@@ -163,12 +152,14 @@ export class HeadersService {
 			.subscribe({
 				next: (v) => {
 					const payload = v.filter((x) => x.id !== HID_PLACEHOLDER);
-					UpdateDraftHeaders({
-						requestId: this.draftId,
-						headersJson: JSON.stringify(payload),
-					}).then(() => {
-						console.log(`[${this.draftId}] headers updated in SQlite`);
-					});
+					this.reqRepo
+						.updatereqDraftFields({
+							draftId: this.draftId,
+							headersJson: JSON.stringify(payload),
+						})
+						.then(() => {
+							console.log(`[${this.draftId}] headers updated in SQlite`);
+						});
 				},
 			});
 	}

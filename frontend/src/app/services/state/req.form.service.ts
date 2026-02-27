@@ -6,21 +6,9 @@ import {
 	signal,
 } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import {
-	CancelReq,
-	GetSavedResponsesSrc,
-	SendHttpReq,
-} from "@wailsjs/go/executor/Executor";
 import type { models } from "@wailsjs/go/models";
-import {
-	AddReqExample,
-	FindDraftById,
-	GetReqExampleById,
-	SaveDraftAsRequest,
-	SaveFile,
-} from "@wailsjs/go/storage/Storage";
 import { nanoid } from "nanoid";
-
+import { extractTokens } from "@/common/utils/tokens";
 import {
 	COOKIE_PLACEHOLDER,
 	DEFAULT_REQ_TAB,
@@ -32,11 +20,17 @@ import {
 	RES_DETAILS_TABS,
 	URLENCODED_ID_PLACEHOLDER,
 } from "@/constants";
-import { AppService, TabsService } from "@/services";
+import {
+	AppService,
+	getFileRepository,
+	getHttpExecutor,
+	getReqRepository,
+	TabsService,
+} from "@/services";
 import {
 	AppTabType,
 	type DraftParentMetadata,
-	type KeyValItem,
+	type InputToken,
 	type MultipartItem,
 	type ReqBodyType,
 	type ReqState,
@@ -55,6 +49,9 @@ import { UrlService } from "./http/url.service";
 export class FormService {
 	private _requestId: string = "";
 	private _tabType = signal<AppTabType>(AppTabType.Req);
+	private reqRepository = getReqRepository();
+	private httpExecutor = getHttpExecutor();
+	private fileRepo = getFileRepository();
 	public tabType = computed(() => this._tabType());
 	private destroyRef = inject(DestroyRef);
 
@@ -190,14 +187,14 @@ export class FormService {
 				requestId = nanoid();
 			}
 
-			await SaveDraftAsRequest({
+			await this.reqRepository.saveDraftAsRequest({
 				draftId: this._requestId,
 				collectionId: collectionId,
 				name,
 				requestId,
 			});
 
-			this._appSvc.refreshSavedRequests$.next();
+			await this._appSvc.initializeSavedRequests();
 
 			this._parentMeta.set({
 				parentRequestId: requestId,
@@ -240,6 +237,7 @@ export class FormService {
 			query: JSON.stringify(
 				this.urlSvc.queryParams().filter((x) => x.id !== QID_PLACEHOLDER),
 			),
+			path: JSON.stringify(this.urlSvc.pathParams()),
 			binary: this.bodySvc.binaryBody()
 				? JSON.stringify(this.bodySvc.binaryBody())
 				: "",
@@ -292,25 +290,28 @@ export class FormService {
 	//#region proxy-setters
 
 	public setUrl(v: string) {
-		this.urlSvc.setUrl(v);
+		const modified = this.urlSvc.setUrl(v);
 		this._tabSvc.updateActiveTab("name", v);
-	}
-
-	public parseUrl() {
-		this.urlSvc._parseUrl();
-		if (this.urlSvc.url()) {
+		if (modified) {
 			this._tabSvc.updateModifiedStatus(true);
 		}
 	}
 
-	public bulkUpdateQueryParams(items: KeyValItem[]) {
+	public parseUrl() {
+		const modified = this.urlSvc._parseUrl();
+		if (modified) {
+			this._tabSvc.updateModifiedStatus(true);
+		}
+	}
+
+	public bulkUpdateQueryParams(items: models.GurlKeyValItem[]) {
 		this.urlSvc._bulkUpdateQueryParams(items);
 		this._tabSvc.updateModifiedStatus(true);
 	}
 
 	public updateQueryParam(
 		id: string,
-		prop: Exclude<keyof KeyValItem, "id">,
+		prop: Exclude<keyof models.GurlKeyValItem, "id">,
 		v: string,
 	) {
 		this.urlSvc._updateQueryParam(id, prop, v);
@@ -381,14 +382,14 @@ export class FormService {
 		this._tabSvc.updateModifiedStatus(true);
 	}
 
-	public bulkUpdateUrlEncodedForm(items: KeyValItem[]) {
+	public bulkUpdateUrlEncodedForm(items: models.GurlKeyValItem[]) {
 		this.bodySvc._bulkUpdateUrlEncodedForm(items);
 		this._tabSvc.updateModifiedStatus(true);
 	}
 
 	public updateUrlEncodedField(
 		id: string,
-		prop: Exclude<keyof KeyValItem, "id">,
+		prop: Exclude<keyof models.GurlKeyValItem, "id">,
 		v: string,
 	) {
 		this.bodySvc._updateUrlEncodedField(id, prop, v);
@@ -422,14 +423,14 @@ export class FormService {
 
 	public updateCookie(
 		id: string,
-		prop: Exclude<keyof KeyValItem, "id">,
+		prop: Exclude<keyof models.GurlKeyValItem, "id">,
 		v: string,
 	) {
 		this.cookieSvc._updateCookie(id, prop, v);
 		this._tabSvc.updateModifiedStatus(true);
 	}
 
-	public bulkUpdateCookieParams(items: KeyValItem[]) {
+	public bulkUpdateCookieParams(items: models.GurlKeyValItem[]) {
 		this.cookieSvc._bulkUpdateCookieParams(items);
 		this._tabSvc.updateModifiedStatus(true);
 	}
@@ -441,20 +442,36 @@ export class FormService {
 
 	public updateHeader(
 		id: string,
-		prop: Exclude<keyof KeyValItem, "id">,
+		prop: Exclude<keyof models.GurlKeyValItem, "id">,
 		v: string,
 	) {
 		this.headerSvc._updateHeader(id, prop, v);
 		this._tabSvc.updateModifiedStatus(true);
 	}
 
-	public bulkUpdateHeadersParams(items: KeyValItem[]) {
+	public bulkUpdateHeadersParams(items: models.GurlKeyValItem[]) {
 		this.headerSvc._bulkUpdateHeadersParams(items);
 		this._tabSvc.updateModifiedStatus(true);
 	}
 	//#endregion proxy-setters
 
 	//#region Request-Response
+	public extractTokens(v: string): InputToken[] {
+		const tokens = extractTokens(v);
+		for (const token of tokens) {
+			if (token.type === "env") {
+				[token.valid, token.interpolated] =
+					this._appSvc.validateInterpolatedToken(token);
+			}
+
+			if (token.type === "path") {
+				[token.valid, token.interpolated] =
+					this.urlSvc.validateInterpolatedPathToken(token);
+			}
+		}
+
+		return tokens;
+	}
 
 	private _res = signal<models.GurlRes | null>(null);
 
@@ -470,14 +487,14 @@ export class FormService {
 
 	public resHeadersRaw = computed(() => {
 		return this._res()?.resHeaders.reduce((acc, curr) => {
-			acc += `${curr.key}: ${curr.value}\n`;
+			acc += `${curr.key}: ${curr.val}\n`;
 			return acc;
 		}, "");
 	});
 
 	public reqHeadersRaw = computed(() => {
 		return this._res()?.reqHeaders.reduce((acc, curr) => {
-			acc += `${curr.key}: ${curr.value}\n`;
+			acc += `${curr.key}: ${curr.val}\n`;
 			return acc;
 		}, "");
 	});
@@ -534,16 +551,11 @@ export class FormService {
 						filepath: filepath,
 						detectedMimeType: "",
 						reportedMimeType: "",
-						src: await GetSavedResponsesSrc(filepath),
+						src: await this.httpExecutor.getSavedResponsesSrc(filepath),
 					},
 				} as models.GurlRes;
 
 				console.dir(res);
-
-				if (res.body?.html5Element === "text") {
-					this._previewMode.set(true);
-				}
-
 				this._res.set(res);
 			}
 
@@ -562,7 +574,7 @@ export class FormService {
 			if (reqTabType === AppTabType.ReqExample) {
 				console.log(`Initializing req example ${id}`);
 				//TODO: Fetch data from backend for request example
-				const dbExample = await GetReqExampleById(id);
+				const dbExample = await this.reqRepository.getReqExampleById(id);
 				if (!dbExample) {
 					//TODO: Warn using Toast message and close tab
 					console.warn(`example with id ${id} not found`);
@@ -577,7 +589,7 @@ export class FormService {
 				await this.populateRequestExampleState(dbExample);
 			} else {
 				console.log(`Initializing req draft ${id}`);
-				const dbRequest = await FindDraftById(id);
+				const dbRequest = await this.reqRepository.findDraftById(id);
 				if (!dbRequest) {
 					//TODO: Warn using Toast message and close tab
 					console.warn(`Draft with id ${id} not found`);
@@ -605,13 +617,35 @@ export class FormService {
 	private _previewMode = signal<boolean>(false);
 	public previewMode = computed(() => this._previewMode());
 
-	public togglePreviewMode() {
-		this._previewMode.update((x) => !x);
-	}
-
 	public clearResponse() {
 		this._reqStatus.set("idle");
 		this._res.set(null);
+	}
+
+	public interPolateTokens(v: string): string {
+		let o = "";
+
+		const tokens = this.extractTokens(v);
+
+		if (!tokens.length) {
+			return o;
+		}
+
+		for (const token of tokens) {
+			if (token.type === "env") {
+				o += token.valid ? token.interpolated : "";
+			}
+
+			if (token.type === "text") {
+				o += token.value;
+			}
+
+			if (token.type === "path") {
+				o += token.valid ? token.interpolated : "";
+			}
+		}
+
+		return o;
 	}
 
 	public interpolatedPayload(payload: models.GurlReq): models.GurlReq {
@@ -620,39 +654,39 @@ export class FormService {
 			headers: payload.headers.map((h) => {
 				return {
 					...h,
-					key: this._appSvc.interPolateEnvTokens(h.key),
-					value: this._appSvc.interPolateEnvTokens(h.value),
+					key: this.interPolateTokens(h.key),
+					val: this.interPolateTokens(h.val),
 				};
 			}),
 			query: payload.query.map((q) => {
 				return {
 					...q,
-					key: this._appSvc.interPolateEnvTokens(q.key),
-					value: this._appSvc.interPolateEnvTokens(q.value),
+					key: this.interPolateTokens(q.key),
+					val: this.interPolateTokens(q.val),
 				};
 			}),
 			cookies: payload.cookies.map((c) => {
 				return {
 					...c,
-					key: this._appSvc.interPolateEnvTokens(c.key),
-					value: this._appSvc.interPolateEnvTokens(c.value),
+					key: this.interPolateTokens(c.key),
+					val: this.interPolateTokens(c.val),
 				};
 			}),
 			urlencoded: payload.urlencoded.map((u) => {
 				return {
 					...u,
-					key: this._appSvc.interPolateEnvTokens(u.key),
-					value: this._appSvc.interPolateEnvTokens(u.value),
+					key: this.interPolateTokens(u.key),
+					val: this.interPolateTokens(u.val),
 				};
 			}),
 			multipart: payload.multipart.map((m) => {
 				return {
 					...m,
-					key: this._appSvc.interPolateEnvTokens(m.key),
-					value: this._appSvc.interPolateEnvTokens(m.value),
+					key: this.interPolateTokens(m.key),
+					value: this.interPolateTokens(m.value),
 				};
 			}),
-			url: this._appSvc.interPolateEnvTokens(payload.url),
+			url: this.interPolateTokens(this.interPolateTokens(payload.url)), //twice first pass for interpolating path params, 2nd pass for interpolating env (this is in case user has set path param value to {{var}})
 		};
 
 		const { apiKeyAuth, authEnabled, authType, basicAuth, tokenAuth } =
@@ -663,17 +697,17 @@ export class FormService {
 			authType,
 			apiKeyAuth: {
 				...apiKeyAuth,
-				key: this._appSvc.interPolateEnvTokens(apiKeyAuth.key),
-				value: this._appSvc.interPolateEnvTokens(apiKeyAuth.value),
+				key: this.interPolateTokens(apiKeyAuth.key),
+				value: this.interPolateTokens(apiKeyAuth.value),
 			},
 			basicAuth: {
 				...basicAuth,
-				username: this._appSvc.interPolateEnvTokens(basicAuth.username),
-				password: this._appSvc.interPolateEnvTokens(basicAuth.password),
+				username: this.interPolateTokens(basicAuth.username),
+				password: this.interPolateTokens(basicAuth.password),
 			},
 			tokenAuth: {
 				...tokenAuth,
-				token: this._appSvc.interPolateEnvTokens(tokenAuth.token),
+				token: this.interPolateTokens(tokenAuth.token),
 			},
 		};
 
@@ -710,7 +744,7 @@ export class FormService {
 
 			console.dir(substitudedPayload);
 
-			const res = await SendHttpReq(substitudedPayload);
+			const res = await this.httpExecutor.sendHttpReq(substitudedPayload);
 
 			console.dir(res);
 
@@ -728,21 +762,12 @@ export class FormService {
 				success: res.success,
 				url: this.urlSvc.url(),
 				method: this.urlSvc.method().id,
-				headers: this.headerSvc
-					.headers()
-					.filter((x) => x.id !== HID_PLACEHOLDER),
-				cookies: this.cookieSvc
-					.cookies()
-					.filter((x) => x.id !== COOKIE_PLACEHOLDER),
-				urlEncodedBody: this.bodySvc
-					.urlEncodedParams()
-					.filter((x) => x.id !== URLENCODED_ID_PLACEHOLDER),
-				multiPartBody: this.bodySvc
-					.multipartForm()
-					.filter((x) => x.id !== MULTIPART_ID_PLACEHOLDER),
-				queryParams: this.urlSvc
-					.queryParams()
-					.filter((x) => x.id !== QID_PLACEHOLDER),
+				headers: this.headerSvc.requestHeaders(),
+				cookies: this.cookieSvc.requestCookies(),
+				urlEncodedBody: this.bodySvc.requestUrlEncodedData(),
+				multiPartBody: this.bodySvc.multiPartItemsForHistory(),
+				queryParams: this.urlSvc.requestQueryParams(),
+				path: this.urlSvc.pathParams(),
 				binaryBody: this.bodySvc.binaryBody(),
 				statusText: res.statusText,
 				textBody: this.bodySvc.textBody(),
@@ -770,7 +795,7 @@ export class FormService {
 			if (!b) {
 				return;
 			}
-			await SaveFile(b.filepath);
+			await this.fileRepo.saveFile(b.filepath);
 		} catch (error) {
 			console.error(error);
 		}
@@ -778,7 +803,7 @@ export class FormService {
 
 	public async cancel() {
 		try {
-			await CancelReq(this._requestId);
+			await this.httpExecutor.cancelReq(this._requestId);
 			this._reqStatus.set("aborted");
 		} catch (error) {
 			console.error(error);
@@ -840,13 +865,14 @@ export class FormService {
 
 			const dto: models.ReqExampleDTO = {
 				id: nanoid(),
-				url: this._appSvc.interPolateEnvTokens(this.urlSvc.url()),
+				url: this.interPolateTokens(this.interPolateTokens(this.urlSvc.url())),
+				path: "",
 				query: JSON.stringify(
 					this.urlSvc.queryParamsForExample().map((q) => {
 						return {
 							...q,
-							key: this._appSvc.interPolateEnvTokens(q.key),
-							val: this._appSvc.interPolateEnvTokens(q.val),
+							key: this.interPolateTokens(q.key),
+							val: this.interPolateTokens(q.val),
 						};
 					}),
 				),
@@ -854,8 +880,8 @@ export class FormService {
 					this.headerSvc.headersForExample().map((h) => {
 						return {
 							...h,
-							key: this._appSvc.interPolateEnvTokens(h.key),
-							val: this._appSvc.interPolateEnvTokens(h.val),
+							key: this.interPolateTokens(h.key),
+							val: this.interPolateTokens(h.val),
 						};
 					}),
 				),
@@ -863,8 +889,8 @@ export class FormService {
 					this.cookieSvc.cookiesForExample().map((c) => {
 						return {
 							...c,
-							key: this._appSvc.interPolateEnvTokens(c.key),
-							val: this._appSvc.interPolateEnvTokens(c.val),
+							key: this.interPolateTokens(c.key),
+							val: this.interPolateTokens(c.val),
 						};
 					}),
 				),
@@ -875,8 +901,8 @@ export class FormService {
 					this.bodySvc.urlEncodedParamsForExample().map((u) => {
 						return {
 							...u,
-							key: this._appSvc.interPolateEnvTokens(u.key),
-							val: this._appSvc.interPolateEnvTokens(u.val),
+							key: this.interPolateTokens(u.key),
+							val: this.interPolateTokens(u.val),
 						};
 					}),
 				),
@@ -885,10 +911,10 @@ export class FormService {
 					this.bodySvc.multipartFormForExample().map((m) => {
 						return {
 							...m,
-							key: this._appSvc.interPolateEnvTokens(m.key),
+							key: this.interPolateTokens(m.key),
 							val:
 								typeof m.val === "string"
-									? this._appSvc.interPolateEnvTokens(m.val)
+									? this.interPolateTokens(m.val)
 									: m.val,
 						};
 					}),
@@ -899,25 +925,21 @@ export class FormService {
 					: "",
 
 				text: this.bodySvc.textBody(),
-
+				authEnabled: this.auth.authEnabled(),
 				authType: this.auth.activeAuth().id,
 				apiKeyAuth: JSON.stringify({
 					...this.auth.apiKey(),
-					key: this._appSvc.interPolateEnvTokens(this.auth.apiKey().key),
-					value: this._appSvc.interPolateEnvTokens(this.auth.apiKey().value),
+					key: this.interPolateTokens(this.auth.apiKey().key),
+					value: this.interPolateTokens(this.auth.apiKey().value),
 				}),
 				basicAuth: JSON.stringify({
 					...this.auth.basicAuth(),
-					username: this._appSvc.interPolateEnvTokens(
-						this.auth.basicAuth().username,
-					),
-					password: this._appSvc.interPolateEnvTokens(
-						this.auth.basicAuth().password,
-					),
+					username: this.interPolateTokens(this.auth.basicAuth().username),
+					password: this.interPolateTokens(this.auth.basicAuth().password),
 				}),
 				tokenAuth: JSON.stringify({
 					...this.auth.tokenAuth(),
-					token: this._appSvc.interPolateEnvTokens(this.auth.tokenAuth().token),
+					token: this.interPolateTokens(this.auth.tokenAuth().token),
 				}),
 				method: this.urlSvc.method().id,
 				name,
@@ -946,7 +968,7 @@ export class FormService {
 				src: "",
 			};
 			console.dir(meta);
-			await AddReqExample(dto, meta);
+			await this.reqRepository.addReqExample(dto, meta);
 
 			this._appSvc.refreshSavedExamples$.next();
 		} catch (error) {
