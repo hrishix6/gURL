@@ -68,7 +68,7 @@ func (htf *HttpTransformer) toURLEncodedFormData(r *models.GurlReq) (io.Reader, 
 	f := url.Values{}
 
 	for _, item := range r.UrlEncodedForm {
-		if item.Enabled && item.Key != "" {
+		if item.Enabled == "on" && item.Key != "" {
 			f.Add(item.Key, item.Value)
 		}
 	}
@@ -83,7 +83,7 @@ func (htf *HttpTransformer) toMultipartFormData(r *models.GurlReq) (io.Reader, s
 
 	for _, item := range r.MultiPartForm {
 
-		if item.Enabled && item.Key != "" {
+		if item.Enabled == "on" && item.Key != "" {
 
 			if item.IsFile {
 
@@ -208,7 +208,7 @@ func (htf *HttpTransformer) TransformToHttp(ctx context.Context, r *models.GurlR
 	queryParams := url.Values{}
 
 	for _, q := range r.Query {
-		if q.Enabled && q.Key != "" {
+		if q.Enabled == "on" && q.Key != "" {
 			queryParams.Add(q.Key, q.Value)
 		}
 	}
@@ -240,7 +240,7 @@ func (htf *HttpTransformer) TransformToHttp(ctx context.Context, r *models.GurlR
 
 	//set User Defined headers
 	for _, header := range r.Headers {
-		if header.Enabled && header.Key != "" {
+		if header.Enabled == "on" && header.Key != "" {
 			req.Header.Add(header.Key, header.Value)
 		}
 	}
@@ -258,7 +258,7 @@ func (htf *HttpTransformer) TransformToHttp(ctx context.Context, r *models.GurlR
 	//cookies
 	if v := req.Header.Get("Cookie"); v == "" {
 		for _, cookie := range r.Cookies {
-			if cookie.Enabled {
+			if cookie.Enabled == "on" {
 				req.AddCookie(&http.Cookie{
 					Name:  cookie.Key,
 					Value: cookie.Value,

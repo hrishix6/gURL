@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"gurl/internal/db"
 	"gurl/internal/models"
@@ -36,7 +37,9 @@ func TestMain(m *testing.M) {
 	testDb = d
 
 	gorm.G[db.Collection](testDb).Create(context.Background(), &db.Collection{
-		Id:   db.DEFAULT_COLLECTION_ID,
+		BaseEntity: db.BaseEntity{
+			Id: db.DEFAULT_COLLECTION_ID,
+		},
 		Name: db.DEFAULT_COLLECTION_NAME,
 	})
 
@@ -53,10 +56,7 @@ func TestAddCollection(t *testing.T) {
 
 	wantId := "add_collection_test"
 
-	err := storage.insertCollection(&db.Collection{
-		Id:   wantId,
-		Name: "Test Add collection",
-	})
+	err := storage.AddCollection(wantId, "Test Add collection")
 
 	if err != nil {
 		t.Errorf("failed to add collection")
@@ -121,27 +121,79 @@ func TestFindDraft(t *testing.T) {
 	fmt.Printf(`received binary bot json as "%s"`, string(got.BinaryBody))
 }
 
-func TestUpdateReqHeaders(t *testing.T) {
+func TestUpdateDraftFields(t *testing.T) {
 
-	wantReqId := "update_header_test"
+	wantDraftId := "update_draftFields_partial"
 
 	r := &models.AddFreshDraftDTO{
-		Id: wantReqId,
+		Id: wantDraftId,
 	}
 
 	err := storage.AddFreshDraft(*r)
 
 	if err != nil {
-		t.Errorf("failed to create request")
+		t.Errorf("failed to create draft")
 	}
 
-	err = storage.UpdateDraftHeaders(
-		models.UpdateDraftHeadersDTO{
-			RequestId:   wantReqId,
-			HeadersJSON: `[{"id":"1","key":"content-type","value":"application/json","enabled":"on"}]`,
-		})
+	uiPayload1 := `{
+	 	"draftId": "update_draftFields_partial",
+		"headersJson" : "[{\"id\":\"1\",\"key\":\"content-type\",\"value\":\"txt\",\"enabled\":\"on\"}]"
+	}`
+
+	fmt.Print(uiPayload1)
+
+	var parsedPayload models.UpdateDraftFieldsDTO
+
+	err = json.Unmarshal([]byte(uiPayload1), &parsedPayload)
 
 	if err != nil {
-		t.Errorf("failed to update headers request")
+		t.Fatalf("invalid ui payload json %v", err)
 	}
+
+	err = storage.UpdateDraftFields(parsedPayload)
+
+	if err != nil {
+		t.Fatalf("failed to update headers")
+	}
+
+	draft, _ := storage.findDraft(wantDraftId)
+
+	gotHeaders := string(draft.Headers)
+
+	if gotHeaders == "" || gotHeaders == "[]" {
+		t.Errorf("expected headers to be updated but they did not")
+	}
+
+	var parsedPayload2 models.UpdateDraftFieldsDTO
+
+	uiPayload2 := `{
+		"draftId": "update_draftFields_partial",
+		"queryJson": "[{\"id\":\"1\",\"key\":\"content-type\",\"value\":\"txt\",\"enabled\":\"on\"}]"
+	}`
+
+	err = json.Unmarshal([]byte(uiPayload2), &parsedPayload2)
+
+	if err != nil {
+		t.Fatalf("invalid ui payload json %v", err)
+	}
+
+	err = storage.UpdateDraftFields(parsedPayload2)
+
+	if err != nil {
+		t.Fatalf("subsequent update failed for updating query")
+	}
+
+	draft2, _ := storage.findDraft(wantDraftId)
+
+	gotHeaders2 := string(draft2.Headers)
+	gotquery := string(draft2.Headers)
+
+	if gotHeaders2 == "" || gotHeaders2 == "[]" {
+		t.Errorf("expected headers to not be updated but they did")
+	}
+
+	if gotquery == "" || gotquery == "[]" {
+		t.Errorf("expected query params to be updated but they did not")
+	}
+
 }

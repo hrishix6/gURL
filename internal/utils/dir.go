@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"encoding/json"
 	"fmt"
 	"gurl/internal/models"
 	"os"
@@ -84,4 +85,29 @@ func GetFileStats(filePath string) (*models.FileStats, error) {
 		Size: info.Size(),
 		Path: filePath,
 	}, nil
+}
+
+func WriteFrontendConfig(config models.AppConfig, path string) error {
+
+	b, err := json.Marshal(config)
+
+	if err != nil {
+		return err
+	}
+
+	f, err := os.Open(path)
+
+	if err != nil {
+		return err
+	}
+
+	defer f.Close()
+
+	_, err = f.Write(b)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

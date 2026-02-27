@@ -6,30 +6,24 @@ import (
 	"strings"
 )
 
+type AppConfig struct {
+	Mode       string `json:"mode"`
+	BackendURL string `json:"backend_url"`
+}
+
 type GurlKeyValItem struct {
+	Id      string `json:"id"`
 	Key     string `json:"key"`
-	Value   string `json:"value"`
-	Enabled bool   `json:"enabled"`
+	Value   string `json:"val"`
+	Enabled string `json:"enabled"`
 }
 
 type GurlKeyValMultiPartItem struct {
+	Id      string `json:"id"`
 	Key     string `json:"key"`
 	Value   string `json:"value"`
-	Enabled bool   `json:"enabled"`
+	Enabled string `json:"enabled"`
 	IsFile  bool   `json:"isFile"`
-}
-
-type MimeData struct {
-	Source       string   `json:"source"`
-	Extensions   []string `json:"extensions"`
-	Compressible *bool    `json:"compressible"`
-	Charset      string   `json:"charset"`
-}
-
-type FileStats struct {
-	Name string `json:"name"`
-	Size int64  `json:"size"`
-	Path string `json:"path"`
 }
 
 type TempStorageStats struct {
@@ -209,6 +203,7 @@ type ExportedGurlReq struct {
 	Cookies        []ExportedKeyValItem    `json:"cookies"`
 	Headers        []ExportedKeyValItem    `json:"headers"`
 	QueryParams    []ExportedKeyValItem    `json:"query"`
+	PathParams     []ExportedKeyValItem    `json:"path"`
 	BodyType       GurlBodyType            `json:"body_type"`
 	TextBody       string                  `json:"text"`
 	UrlEncodedBody []ExportedKeyValItem    `json:"urlencoded"`
@@ -267,6 +262,7 @@ type ImportedGurlReq struct {
 	Cookies        json.RawMessage `json:"cookies"`
 	Headers        json.RawMessage `json:"headers"`
 	QueryParams    json.RawMessage `json:"query"`
+	PathParams     json.RawMessage `json:"path"`
 	BodyType       *string         `json:"body_type"`
 	TextBody       *string         `json:"text"`
 	UrlEncodedBody json.RawMessage `json:"urlencoded"`

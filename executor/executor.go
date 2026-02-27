@@ -200,12 +200,22 @@ func (e *Executor) ParseCookieRaw(text string) ([]models.GurlKeyValItem, error) 
 
 	var results []models.GurlKeyValItem
 
+	isEnabled := func(v string) string {
+		disabled := strings.HasPrefix(v, "#")
+
+		if disabled {
+			return "off"
+		}
+
+		return "on"
+	}
+
 	for _, cookie := range cookies {
 
 		results = append(results, models.GurlKeyValItem{
 			Key:     cookie.Name,
 			Value:   cookie.Value,
-			Enabled: !strings.HasPrefix(cookie.Name, "#"),
+			Enabled: isEnabled(cookie.Name),
 		})
 
 	}
