@@ -1,24 +1,28 @@
-import {
-	type ApplicationConfig,
-	inject,
-	provideAppInitializer,
-	provideBrowserGlobalErrorListeners,
-} from "@angular/core";
-import { provideRouter } from "@angular/router";
-import { AppService } from "@/services";
-import { routes } from "./app.routes";
+import { CONFIG_FILE_PATH } from "./constants";
+import type { AppConfig } from "./types";
 
-async function initializeApp() {
-	const appSvc = inject(AppService);
-	//pdfjs
-	window.pdfWorkerSrc = "pdf.worker.min.mjs";
-	appSvc.initializeAppPreferences();
+let config_error = false;
+
+let appConfig: AppConfig | null = null;
+
+export async function loadConfig() {
+	try {
+		const res = await fetch(CONFIG_FILE_PATH);
+		if (!res.ok) {
+			config_error = true;
+			return;
+		}
+		appConfig = await res.json();
+	} catch (error) {
+		console.log(error);
+		config_error = true;
+	}
 }
 
-export const appConfig: ApplicationConfig = {
-	providers: [
-		provideBrowserGlobalErrorListeners(),
-		provideRouter(routes),
-		provideAppInitializer(initializeApp),
-	],
-};
+export function isConfigError() {
+	return config_error;
+}
+
+export function getAppConfig() {
+	return appConfig;
+}
