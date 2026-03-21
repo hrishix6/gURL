@@ -17,6 +17,7 @@ export namespace models {
 	export class AddEnvironmentDTO {
 	    id: string;
 	    name: string;
+	    workspaceId: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new AddEnvironmentDTO(source);
@@ -26,6 +27,7 @@ export namespace models {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
 	        this.name = source["name"];
+	        this.workspaceId = source["workspaceId"];
 	    }
 	}
 	export class AddEnvironmentDraftDTO {
@@ -110,6 +112,36 @@ export namespace models {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
 	        this.envId = source["envId"];
+	    }
+	}
+	export class CreateCollectionDTO {
+	    id: string;
+	    name: string;
+	    workspaceId: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new CreateCollectionDTO(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.name = source["name"];
+	        this.workspaceId = source["workspaceId"];
+	    }
+	}
+	export class CreateWorkspaceDTO {
+	    id: string;
+	    name: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new CreateWorkspaceDTO(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.name = source["name"];
 	    }
 	}
 	export class EnvironmentDTO {
@@ -441,6 +473,7 @@ export namespace models {
 	    id: string;
 	    requestId: string;
 	    collectionId: string;
+	    workspaceId: string;
 	    name: string;
 	    uploadSize: number;
 	    responseSuccess: boolean;
@@ -481,6 +514,7 @@ export namespace models {
 	        this.id = source["id"];
 	        this.requestId = source["requestId"];
 	        this.collectionId = source["collectionId"];
+	        this.workspaceId = source["workspaceId"];
 	        this.name = source["name"];
 	        this.uploadSize = source["uploadSize"];
 	        this.responseSuccess = source["responseSuccess"];
@@ -588,6 +622,7 @@ export namespace models {
 	    requestId: string;
 	    collectionId: string;
 	    name: string;
+	    workspaceId: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new SaveDraftAsReqDTO(source);
@@ -599,12 +634,14 @@ export namespace models {
 	        this.requestId = source["requestId"];
 	        this.collectionId = source["collectionId"];
 	        this.name = source["name"];
+	        this.workspaceId = source["workspaceId"];
 	    }
 	}
 	export class SaveEnvDraftAsEnvDTO {
 	    draftId: string;
 	    envId: string;
 	    name: string;
+	    workspaceId: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new SaveEnvDraftAsEnvDTO(source);
@@ -615,6 +652,7 @@ export namespace models {
 	        this.draftId = source["draftId"];
 	        this.envId = source["envId"];
 	        this.name = source["name"];
+	        this.workspaceId = source["workspaceId"];
 	    }
 	}
 	export class SaveRequestCopyDTO {
@@ -655,12 +693,11 @@ export namespace models {
 	}
 	
 	export class UIStateDTO {
-	    openTabsJson: string;
 	    layout: string;
-	    activeTab: string;
 	    isSidebarOpen: boolean;
 	    alwaysDiscardDrafts: boolean;
 	    alwaysDiscardEnvDrafts: boolean;
+	    activeWorkspace: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new UIStateDTO(source);
@@ -668,12 +705,11 @@ export namespace models {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.openTabsJson = source["openTabsJson"];
 	        this.layout = source["layout"];
-	        this.activeTab = source["activeTab"];
 	        this.isSidebarOpen = source["isSidebarOpen"];
 	        this.alwaysDiscardDrafts = source["alwaysDiscardDrafts"];
 	        this.alwaysDiscardEnvDrafts = source["alwaysDiscardEnvDrafts"];
+	        this.activeWorkspace = source["activeWorkspace"];
 	    }
 	}
 	export class UpdateDraftFieldsDTO {
@@ -736,9 +772,8 @@ export namespace models {
 	}
 	export class UpdateUIStateDTO {
 	    layout?: string;
-	    openTabsJson?: string;
 	    isSidebarOpen?: boolean;
-	    activeTabId?: string;
+	    activeWorkspace?: string;
 	    alwaysDiscardReqDrafts?: boolean;
 	    alwaysDiscardEnvDrafts?: boolean;
 	
@@ -749,11 +784,58 @@ export namespace models {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.layout = source["layout"];
-	        this.openTabsJson = source["openTabsJson"];
 	        this.isSidebarOpen = source["isSidebarOpen"];
-	        this.activeTabId = source["activeTabId"];
+	        this.activeWorkspace = source["activeWorkspace"];
 	        this.alwaysDiscardReqDrafts = source["alwaysDiscardReqDrafts"];
 	        this.alwaysDiscardEnvDrafts = source["alwaysDiscardEnvDrafts"];
+	    }
+	}
+	export class UpdateWorkspaceDTO {
+	    name?: string;
+	    activeTab?: string;
+	    openTabsJSON?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new UpdateWorkspaceDTO(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.activeTab = source["activeTab"];
+	        this.openTabsJSON = source["openTabsJSON"];
+	    }
+	}
+	export class WorkspaceDTO {
+	    id: string;
+	    name: string;
+	    openTabsJSON: string;
+	    activeTab: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new WorkspaceDTO(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.name = source["name"];
+	        this.openTabsJSON = source["openTabsJSON"];
+	        this.activeTab = source["activeTab"];
+	    }
+	}
+	export class WorkspaceLightDTO {
+	    id: string;
+	    name: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new WorkspaceLightDTO(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.name = source["name"];
 	    }
 	}
 
