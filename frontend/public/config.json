@@ -1,4 +1,5 @@
 {
     "mode": "desktop",
-    "backend_url": ""
+    "backend_url": "",
+    "appVersion": "v0.7.0"
 }
