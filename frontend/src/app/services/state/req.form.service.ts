@@ -21,6 +21,7 @@ import {
 	URLENCODED_ID_PLACEHOLDER,
 } from "@/constants";
 import {
+	AlertService,
 	AppService,
 	getFileRepository,
 	getHttpExecutor,
@@ -47,6 +48,7 @@ import { UrlService } from "./http/url.service";
 
 @Injectable()
 export class FormService {
+	private _requestTabId: string = "";
 	private _requestId: string = "";
 	private _tabType = signal<AppTabType>(AppTabType.Req);
 	private reqRepository = getReqRepository();
@@ -62,9 +64,9 @@ export class FormService {
 	});
 
 	public draftParentData = computed(() => this._parentMeta());
-	private _isInitialized = signal<boolean>(false);
 	private _tabSvc = inject(TabsService);
 	private _appSvc = inject(AppService);
+	private _alertSvc = inject(AlertService);
 	public auth = new AuthService(this.destroyRef);
 	public headerSvc = new HeadersService(this.destroyRef);
 	public cookieSvc = new CookieService(this.destroyRef);
@@ -99,7 +101,7 @@ export class FormService {
 				next: (v) => {
 					if (v === AppTabType.Req) {
 						console.log(`received signal to refresh self`);
-						this.initializeReqForm(this._requestId);
+						this.initializeReqForm(this._requestTabId, this._requestId);
 					}
 				},
 			});
@@ -108,6 +110,11 @@ export class FormService {
 			.subscribe({
 				next: (tab) => {
 					if (tab.entityId !== this._requestId) {
+						return;
+					}
+
+					if (this._appSvc.collections().length === 0) {
+						this._tabSvc.deleteTab(tab.id, AppTabType.Req);
 						return;
 					}
 
@@ -192,7 +199,10 @@ export class FormService {
 				collectionId: collectionId,
 				name,
 				requestId,
+				workspaceId: this._appSvc.activeWorkSpace().id,
 			});
+
+			this._alertSvc.addAlert(`Request "${name}" saved`, "success");
 
 			await this._appSvc.initializeSavedRequests();
 
@@ -207,6 +217,7 @@ export class FormService {
 			this._appSvc.refreshBreadcrumb$.next();
 		} catch (error) {
 			console.error(error);
+			this._alertSvc.addAlert(`Failed to save request`, "error");
 		} finally {
 			this.toggleSaveRequestModal();
 		}
@@ -500,85 +511,74 @@ export class FormService {
 	});
 
 	private populateInitialState(data: models.RequestDraftDTO) {
-		try {
-			this.urlSvc.init(data);
-			this.headerSvc.init(data);
-			this.cookieSvc.init(data);
-			this.bodySvc.init(data);
-			this.auth.init(data);
-		} catch (_error) {
-			console.error(_error);
-		}
+		this.urlSvc.init(data);
+		this.headerSvc.init(data);
+		this.cookieSvc.init(data);
+		this.bodySvc.init(data);
+		this.auth.init(data);
 	}
 
 	private async populateRequestExampleState(data: models.ReqExampleDTO) {
-		try {
-			this.urlSvc.initExample(data);
-			this.headerSvc.initExample(data);
-			this.cookieSvc.initExample(data);
-			this.bodySvc.initExample(data);
-			this.auth.initExample(data);
+		this.urlSvc.initExample(data);
+		this.headerSvc.initExample(data);
+		this.cookieSvc.initExample(data);
+		this.bodySvc.initExample(data);
+		this.auth.initExample(data);
 
-			const renderMeta = data.responseBody
-				? (JSON.parse(data.responseBody) as models.SavedResponseRenderMeta)
-				: null;
+		const renderMeta = data.responseBody
+			? (JSON.parse(data.responseBody) as models.SavedResponseRenderMeta)
+			: null;
 
-			if (renderMeta) {
-				const { canRender, html5Element, extension, filepath } = renderMeta;
+		if (renderMeta) {
+			const { canRender, html5Element, extension, filepath } = renderMeta;
 
-				const res = {
-					id: data.id,
-					dlMs: data.responseDlMs,
-					limitExceeded: data.limitExceeded,
-					ttfbMs: data.responseTffbMs,
-					uploadSize: data.uploadSize,
-					reportedSize: data.responseSize,
-					sizeNotReported: false,
-					status: data.responseStatus,
-					statusText: data.responseStatusText,
-					size: data.responseSize,
-					time: data.responseTimeMS,
-					success: data.responseSuccess,
-					cookies: data.responseCookies ? JSON.parse(data.responseCookies) : [],
-					resHeaders: data.responseHeaders
-						? JSON.parse(data.responseHeaders)
-						: [],
-					reqHeaders: data.sentHeaders ? JSON.parse(data.sentHeaders) : [],
-					body: {
-						canRender: canRender,
-						html5Element: html5Element,
-						extension: extension,
-						filepath: filepath,
-						detectedMimeType: "",
-						reportedMimeType: "",
-						src: await this.httpExecutor.getSavedResponsesSrc(filepath),
-					},
-				} as models.GurlRes;
+			const res = {
+				id: data.id,
+				dlMs: data.responseDlMs,
+				limitExceeded: data.limitExceeded,
+				ttfbMs: data.responseTffbMs,
+				uploadSize: data.uploadSize,
+				reportedSize: data.responseSize,
+				sizeNotReported: false,
+				status: data.responseStatus,
+				statusText: data.responseStatusText,
+				size: data.responseSize,
+				time: data.responseTimeMS,
+				success: data.responseSuccess,
+				cookies: data.responseCookies ? JSON.parse(data.responseCookies) : [],
+				resHeaders: data.responseHeaders
+					? JSON.parse(data.responseHeaders)
+					: [],
+				reqHeaders: data.sentHeaders ? JSON.parse(data.sentHeaders) : [],
+				body: {
+					canRender: canRender,
+					html5Element: html5Element,
+					extension: extension,
+					filepath: filepath,
+					detectedMimeType: "",
+					reportedMimeType: "",
+					src: await this.httpExecutor.getSavedResponsesSrc(filepath),
+				},
+			} as models.GurlRes;
 
-				console.dir(res);
-				this._res.set(res);
-			}
-
-			this._reqStatus.set("success");
-		} catch (_error) {
-			console.error(_error);
+			console.dir(res);
+			this._res.set(res);
 		}
+		this._reqStatus.set("success");
 	}
 
 	public async initializeReqForm(
+		tabId: string,
 		id: string,
 		reqTabType: AppTabType = AppTabType.Req,
 	) {
 		try {
 			this._tabType.set(reqTabType);
+			this._requestTabId = tabId;
 			if (reqTabType === AppTabType.ReqExample) {
-				console.log(`Initializing req example ${id}`);
-				//TODO: Fetch data from backend for request example
 				const dbExample = await this.reqRepository.getReqExampleById(id);
 				if (!dbExample) {
-					//TODO: Warn using Toast message and close tab
-					console.warn(`example with id ${id} not found`);
-					return;
+					throw new Error(`Example with id ${id} not found in db`);
 				}
 				this._requestId = dbExample.id;
 				this._parentMeta.set({
@@ -588,12 +588,9 @@ export class FormService {
 				});
 				await this.populateRequestExampleState(dbExample);
 			} else {
-				console.log(`Initializing req draft ${id}`);
 				const dbRequest = await this.reqRepository.findDraftById(id);
 				if (!dbRequest) {
-					//TODO: Warn using Toast message and close tab
-					console.warn(`Draft with id ${id} not found`);
-					return;
+					throw new Error(`Draft with id ${id} not found in db`);
 				}
 				this._requestId = dbRequest.id;
 				this._parentMeta.set({
@@ -606,8 +603,11 @@ export class FormService {
 			}
 		} catch (error) {
 			console.error(error);
-		} finally {
-			this._isInitialized.set(true);
+			this._alertSvc.addAlert(
+				`Failed to load request ${this._tabType() === AppTabType.ReqExample ? "example" : ""} tab`,
+				"error",
+			);
+			this._tabSvc.deleteTab(this._requestTabId, reqTabType);
 		}
 	}
 
@@ -796,8 +796,10 @@ export class FormService {
 				return;
 			}
 			await this.fileRepo.saveFile(b.filepath);
+			this._alertSvc.addAlert(`File saved`, "success");
 		} catch (error) {
 			console.error(error);
+			this._alertSvc.addAlert(`Failed to save file`, "error");
 		}
 	}
 
@@ -807,6 +809,7 @@ export class FormService {
 			this._reqStatus.set("aborted");
 		} catch (error) {
 			console.error(error);
+			this._alertSvc.addAlert(`Failed to cancel request`, "error");
 		}
 	}
 
@@ -945,6 +948,7 @@ export class FormService {
 				name,
 				requestId: parentRequestId,
 				collectionId: parentCollectionId,
+				workspaceId: this._appSvc.activeWorkSpace().id,
 				responseStatus: status,
 				responseStatusText: statusText,
 				responseSuccess: success,
@@ -970,9 +974,11 @@ export class FormService {
 			console.dir(meta);
 			await this.reqRepository.addReqExample(dto, meta);
 
+			this._alertSvc.addAlert(`Example saved`, "success");
 			this._appSvc.refreshSavedExamples$.next();
 		} catch (error) {
 			console.error(error);
+			this._alertSvc.addAlert(`Failed to save example`, "error");
 		} finally {
 			this._saveExampleInProgress.set(false);
 			this.handleCloseSaveExampleModal();

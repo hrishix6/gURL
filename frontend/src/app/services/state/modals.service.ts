@@ -1,4 +1,11 @@
-import { computed, Injectable, inject, signal } from "@angular/core";
+import {
+	computed,
+	DestroyRef,
+	Injectable,
+	inject,
+	signal,
+} from "@angular/core";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import type { models } from "@wailsjs/go/models";
 import { AppService, TabsService } from "@/services";
 
@@ -8,6 +15,76 @@ import { AppService, TabsService } from "@/services";
 export class GlobalModalsService {
 	private readonly appSvc = inject(AppService);
 	private readonly tabSvc = inject(TabsService);
+	private readonly destroyRef = inject(DestroyRef);
+
+	constructor() {
+		this.appSvc.initiateDefaultWorkspaceCreation$
+			.pipe(takeUntilDestroyed(this.destroyRef))
+			.subscribe(() => {
+				this.handleOpenCreateDefaultWorkspaceModal();
+			});
+	}
+
+	//#region workspace
+	private _isCreateDefaultWorkspaceModalOpen = signal<boolean>(false);
+	public isCreateDefaultWorkspaceModalOpen = computed(() =>
+		this._isCreateDefaultWorkspaceModalOpen(),
+	);
+	private _defaultWorkspaceCreateProgress = signal<boolean>(false);
+	public defaultWorkspaceCreateProgress = computed(() =>
+		this._defaultWorkspaceCreateProgress(),
+	);
+
+	public handleOpenCreateDefaultWorkspaceModal() {
+		this._isCreateDefaultWorkspaceModalOpen.set(true);
+	}
+
+	public handleCloseCreateDefaultWorkspaceModal() {
+		this._isCreateDefaultWorkspaceModalOpen.set(false);
+	}
+
+	public async handleCreateDefaultWorkspace(name: string) {
+		try {
+			this._defaultWorkspaceCreateProgress.set(true);
+			await this.appSvc.createDefaultWorkspace(name);
+		} catch (error) {
+			console.error(error);
+		} finally {
+			this._defaultWorkspaceCreateProgress.set(false);
+			this.handleCloseCreateDefaultWorkspaceModal();
+		}
+	}
+
+	private _workspaceCreateProgress = signal<boolean>(false);
+	public WorkspaceCreateProgress = computed(() =>
+		this._workspaceCreateProgress(),
+	);
+	private _isCreateWorkspaceModalOpen = signal<boolean>(false);
+	public isCreateWorkspaceModalOpen = computed(() =>
+		this._isCreateWorkspaceModalOpen(),
+	);
+
+	public handleOpenCreateWorkspaceModal() {
+		this._isCreateWorkspaceModalOpen.set(true);
+	}
+
+	public handleCloseCreateWorkspaceModal() {
+		this._isCreateWorkspaceModalOpen.set(false);
+	}
+
+	public async handleCreateWorkspace(name: string) {
+		try {
+			this._workspaceCreateProgress.set(true);
+			await this.appSvc.createNewWorkspace(name);
+		} catch (error) {
+			console.error(error);
+		} finally {
+			this._workspaceCreateProgress.set(false);
+			this.handleCloseCreateWorkspaceModal();
+		}
+	}
+
+	//#endregion workspace
 
 	//#region collection
 
