@@ -36,15 +36,7 @@ func TestMain(m *testing.M) {
 	d.AutoMigrate(&db.Collection{}, &db.RequestDraft{}, &db.MimeRecord{})
 	testDb = d
 
-	gorm.G[db.Collection](testDb).Create(context.Background(), &db.Collection{
-		BaseEntity: db.BaseEntity{
-			Id: db.DEFAULT_COLLECTION_ID,
-		},
-		Name: db.DEFAULT_COLLECTION_NAME,
-	})
-
 	storage = NewTestStorage(d, context.Background())
-
 	exitVal := m.Run()
 
 	//cleanup
@@ -56,7 +48,11 @@ func TestAddCollection(t *testing.T) {
 
 	wantId := "add_collection_test"
 
-	err := storage.AddCollection(wantId, "Test Add collection")
+	err := storage.AddCollection(models.CreateCollectionDTO{
+		Id:        wantId,
+		Name:      "Test Add collection",
+		Workspace: "test_workspace",
+	})
 
 	if err != nil {
 		t.Errorf("failed to add collection")

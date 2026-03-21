@@ -45,31 +45,19 @@ func Startup(s *Storage, appCtx context.Context) error {
 	log.Println("[Storage] Db Migrated")
 
 	err := s.db.AutoMigrate(
+		&db.MimeRecord{},
 		&db.UIState{},
+		&db.Workspace{},
 		&db.Collection{},
+		&db.Request{},
 		&db.RequestDraft{},
 		&db.RequestExample{},
-		&db.Request{},
-		&db.MimeRecord{},
-		&db.EnvironmentDraft{},
 		&db.Environment{},
+		&db.EnvironmentDraft{},
 	)
 
 	if err != nil {
 		return err
-	}
-
-	//add default collection if not exists
-	_, err = gorm.G[db.Collection](s.db).Where("id = ?", db.DEFAULT_COLLECTION_ID).First(s.appCtx)
-
-	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
-		addErr := s.AddCollection(db.DEFAULT_COLLECTION_ID, db.DEFAULT_COLLECTION_NAME)
-
-		if addErr != nil {
-			return fmt.Errorf("unable to add default collection")
-		}
-
-		log.Println("[Storage] Default Collection is created")
 	}
 
 	//add default UI state record if not exists

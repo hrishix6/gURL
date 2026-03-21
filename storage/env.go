@@ -10,9 +10,9 @@ import (
 	"gorm.io/gorm"
 )
 
-func (s *Storage) GetEnvironments() ([]models.EnvironmentDTO, error) {
+func (s *Storage) GetEnvironments(workspaceId string) ([]models.EnvironmentDTO, error) {
 
-	envs, err := gorm.G[db.Environment](s.db).Find(s.appCtx)
+	envs, err := gorm.G[db.Environment](s.db).Where("workspace_id = ?", workspaceId).Find(s.appCtx)
 
 	if err != nil {
 		return []models.EnvironmentDTO{}, err
@@ -32,7 +32,8 @@ func (s *Storage) AddEnvironment(dto models.AddEnvironmentDTO) error {
 		BaseEntity: db.BaseEntity{
 			Id: dto.Id,
 		},
-		Name: dto.Name,
+		Name:        dto.Name,
+		WorkspaceId: dto.WorkspaceId,
 	})
 }
 
@@ -71,8 +72,9 @@ func (s *Storage) CopyEnvironment(dto models.CopyEnvironmentDTO) error {
 		BaseEntity: db.BaseEntity{
 			Id: dto.Id,
 		},
-		Data: env.Data,
-		Name: fmt.Sprintf("%s-copy", env.Name),
+		Data:        env.Data,
+		Name:        fmt.Sprintf("%s-copy", env.Name),
+		WorkspaceId: env.WorkspaceId,
 	}
 
 	return s.addEnv(copyEnv)

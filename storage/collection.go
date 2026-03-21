@@ -8,17 +8,18 @@ import (
 	"gorm.io/gorm"
 )
 
-func (s *Storage) AddCollection(id, name string) error {
+func (s *Storage) AddCollection(dto models.CreateCollectionDTO) error {
 	return gorm.G[db.Collection](s.db).Create(s.appCtx, &db.Collection{
 		BaseEntity: db.BaseEntity{
-			Id: id,
+			Id: dto.Id,
 		},
-		Name: name,
+		Name:        dto.Name,
+		WorkspaceId: dto.Workspace,
 	})
 }
 
-func (s *Storage) GetAllCollections() ([]models.CollectionDTO, error) {
-	records, err := gorm.G[db.Collection](s.db).Find(s.appCtx)
+func (s *Storage) GetAllCollections(workspaceId string) ([]models.CollectionDTO, error) {
+	records, err := gorm.G[db.Collection](s.db).Where("workspace_id = ?", workspaceId).Find(s.appCtx)
 
 	if err != nil {
 		return []models.CollectionDTO{}, err

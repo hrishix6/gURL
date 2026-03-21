@@ -36,9 +36,9 @@ func (s *Storage) RemoveDraft(id string) error {
 	return nil
 }
 
-func (s *Storage) GetSavedRequests() ([]models.RequestLightDTO, error) {
+func (s *Storage) GetSavedRequests(workspaceId string) ([]models.RequestLightDTO, error) {
 
-	records, err := gorm.G[db.Request](s.db).Find(s.appCtx)
+	records, err := gorm.G[db.Request](s.db).Where("workspace_id = ?", workspaceId).Find(s.appCtx)
 
 	if err != nil {
 		return []models.RequestLightDTO{}, err

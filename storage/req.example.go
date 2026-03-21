@@ -38,6 +38,7 @@ func (s *Storage) AddReqExample(dto models.ReqExampleDTO, meta models.SavedRespo
 		},
 		RequestId:    dto.RequestId,
 		CollectionId: dto.CollectionId,
+		WorkspaceId:  dto.WorkspaceId,
 		Name:         dto.Name,
 
 		//Response data
@@ -108,9 +109,9 @@ func (s *Storage) GetReqExampleById(id string) (*models.ReqExampleDTO, error) {
 	return example.ToReqExampleDTO(), nil
 }
 
-func (s *Storage) GetReqExamples() ([]models.ReqExampleLightDTO, error) {
+func (s *Storage) GetReqExamples(workspaceId string) ([]models.ReqExampleLightDTO, error) {
 
-	records, err := gorm.G[db.RequestExample](s.db).Find(s.appCtx)
+	records, err := gorm.G[db.RequestExample](s.db).Where("workspace_id = ?", workspaceId).Find(s.appCtx)
 
 	if err != nil {
 		return []models.ReqExampleLightDTO{}, err
