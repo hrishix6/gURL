@@ -1,4 +1,5 @@
 import { Component, HostBinding } from "@angular/core";
+import { LucideAngularModule } from "lucide-angular";
 import { GurlLayoutSwitcher } from "./layout.switcher";
 import { GurlThemeSwitcher } from "./theme.switcher";
 
@@ -12,9 +13,9 @@ import { GurlThemeSwitcher } from "./theme.switcher";
 		 </div>
     </div>
   `,
-	imports: [GurlLayoutSwitcher, GurlThemeSwitcher],
+	imports: [GurlLayoutSwitcher, GurlThemeSwitcher, LucideAngularModule],
 })
 export class GurlFooter {
 	@HostBinding("class")
-	def = "px-4 py-1 flex items-center bg-base-200 border-t-2 border-base-100";
+	def = "px-4 py-1 bg-base-200 flex border-t-2 border-base-100";
 }

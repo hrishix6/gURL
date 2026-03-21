@@ -93,7 +93,7 @@ export class EnvironmentTab implements OnInit, AfterViewInit {
 	tab = input.required<ApplicationTab>();
 
 	ngOnInit(): void {
-		this.envFormSvc.initializeEnvForm(this.tab().entityId);
+		this.envFormSvc.initializeEnvForm(this.tab().id, this.tab().entityId);
 	}
 
 	ngAfterViewInit(): void {

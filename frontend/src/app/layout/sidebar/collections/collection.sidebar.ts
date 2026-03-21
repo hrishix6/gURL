@@ -1,5 +1,5 @@
 import { Component, HostBinding, inject, signal } from "@angular/core";
-import { LucideAngularModule, Search } from "lucide-angular";
+import { Info, LucideAngularModule, Search } from "lucide-angular";
 import { AppService } from "@/services";
 import { GurlCollectionItem } from "./collection.item";
 
@@ -18,11 +18,18 @@ import { GurlCollectionItem } from "./collection.item";
         />
       </label>
     </div>
+    @if (appSvc.collections().length) {
     <section class="flex flex-1 flex-col gap-1 overflow-y-auto p-2">
       @for (collection of appSvc.collections(); track collection.id) {
       <div gurl-collection-item [data]="collection" role="button"></div>
       }
     </section>
+    } @else {
+      <div class="flex items-center gap-2 my-2 justify-center text-sm opacity-25">
+        <lucide-angular [img]="InfoIcon" class="size-4" />
+		    To save requests, create a Collection
+      </div>
+    }
   `,
 	imports: [LucideAngularModule, GurlCollectionItem],
 })
@@ -33,6 +40,7 @@ export class GurlCollections {
 	protected readonly SearchIcon = Search;
 	protected readonly appSvc = inject(AppService);
 	protected searchInput = signal<string>("");
+	protected readonly InfoIcon = Info;
 
 	protected handleInput(e: Event) {
 		const target = e.target as HTMLInputElement;

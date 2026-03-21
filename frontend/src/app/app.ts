@@ -6,14 +6,14 @@ import {
 	type OnInit,
 } from "@angular/core";
 import { LucideAngularModule } from "lucide-angular";
-import { APP_VERSION } from "@/constants";
-import { AppService, TabsService } from "@/services";
+import { AlertService, AppService, TabsService } from "@/services";
 import { Breadcrumbs } from "./app.breadcrumb";
-import { EntityCreationButton } from "./app.entity.create";
 import { AppHome } from "./app.home";
 import { GlobalSpinner } from "./app.spinner";
 import { GurlDropdown } from "./common/components";
+import { Alert } from "./common/components/alert";
 import { GurlFooter } from "./layout/footer/footer";
+import { Navbar } from "./layout/navbar/navbar";
 import { DesktopSidebar } from "./layout/sidebar/desktop.sidebar";
 import { MobileSidebar } from "./layout/sidebar/mobile.sidebar";
 import { Taskbar } from "./layout/taskbar/task.bar";
@@ -33,44 +33,30 @@ import { TabsContainer } from "./tabs/tabs.container";
     <div class="drawer-content">
       <main class="h-screen flex flex-col relative overflow-hidden">
         @if (appSvc.appState() === "loaded") {
-          <nav class="flex p-2 gap-4 items-center bg-base-300 shadow-md">
-              <h2 class="text-lg ml-2 font-semibold text-primary">
-                gURL
-              </h2>
-            <div class="flex-1 flex items-center gap-2">
-            </div>
-             <div class="flex items-center gap-2">
-              <!-- <gurl-dropdown
-                [items]="appSvc.workspaces()"
-                [activeItem]="appSvc.activeWorkSpace()"
-                [align]="'end'"
-                [direction]="'down'"
-                [size]="'md'"
-                [varient]="'soft'"
-                (onItemSelection)="handleActiveItemSelection($event)"
-                >
-                </gurl-dropdown> -->
-                <div gurl-entity-creation></div>
-             </div>
-          </nav>
+          @if(tabsSvc.tabCount()){
+              <gurl-navbar />
+          }
           <main class="flex flex-1 overflow-hidden">
+              @if(tabsSvc.tabCount()){
                   <gurl-taskbar />
                   @if(appSvc.isDesktopSidebarOpen()){
-                  <aside gurl-desktop-sidebar></aside>
+                      <aside gurl-desktop-sidebar></aside>
                   }
+               }
                   <!-- Main view -->
                   <main class="flex flex-1 flex-col bg-base-200 overflow-hidden">
-                    <!-- Main header -->
+                    @if(tabsSvc.tabCount()){
+                       <!-- Main header -->
                     <header class="flex basis-14 grow-0 shrink-0 items-center px-2">
                         <div class="flex-1 overflow-hidden px-2">
                           <div gurl-breadcrumbs></div>
                         </div>
-                        <div class="flex items-center">
+                        <div class="flex gap-2 items-center">
                            <gurl-dropdown
                               [activeItem]="activeItem()!"
                               [items]="appSvc.environmentDropdownItems()"
                               (onItemSelection)="appSvc.setActiveEnvironment($event)"
-                              [size]="'md'"
+                              [size]="'sm'"
                               [align]="'end'"
                               [direction]="'down'"
                               [varient]="'soft'"
@@ -80,7 +66,6 @@ import { TabsContainer } from "./tabs/tabs.container";
                         </div>
                     </header>
                     <!-- Main content -->
-                    @if(tabsSvc.tabCount()){
                     <section gurl-tabs-container></section>
                     }@else {
                     <section appHome></section>
@@ -102,6 +87,13 @@ import { TabsContainer } from "./tabs/tabs.container";
     </div>
     <!-- Global modals -->
     <gurl-global-modals-host />
+
+    <!-- Global alerts -->
+     <div class="toast toast-start">
+      @for(alert of alertSvc.alerts(); track alert.id){
+        <gurl-alert [data]="alert"></gurl-alert>
+      }
+     </div>
   `,
 	imports: [
 		LucideAngularModule,
@@ -114,8 +106,9 @@ import { TabsContainer } from "./tabs/tabs.container";
 		GurlDropdown,
 		Taskbar,
 		Breadcrumbs,
-		EntityCreationButton,
 		GlobalModalsHost,
+		Alert,
+		Navbar,
 	],
 })
 export class App implements OnInit {
@@ -126,20 +119,13 @@ export class App implements OnInit {
 		await this.appSvc.init();
 	}
 
-	protected tabsSvc = inject(TabsService);
-	protected appSvc = inject(AppService);
+	protected readonly tabsSvc = inject(TabsService);
+	protected readonly appSvc = inject(AppService);
+	protected readonly alertSvc = inject(AlertService);
 
 	protected activeItem = computed(() => {
 		return this.appSvc
 			.environmentDropdownItems()
 			.find((x) => x.id === this.appSvc.activeEnvironment());
 	});
-
-	protected readonly appVersion = APP_VERSION;
-
-	protected handleActiveItemSelection(id: string) {
-		this.appSvc.setActiveWorkspace(id);
-		const activeItem = document.activeElement as HTMLAnchorElement;
-		activeItem?.blur();
-	}
 }

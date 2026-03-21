@@ -1,6 +1,5 @@
-import { Component, inject, signal } from "@angular/core";
-import { Ellipsis, LucideAngularModule } from "lucide-angular";
-import { AppService } from "@/services";
+import { Component } from "@angular/core";
+import { LucideAngularModule } from "lucide-angular";
 import { GurlReqSidebarTabs } from "./sidebar.tabs";
 
 @Component({
@@ -12,18 +11,4 @@ import { GurlReqSidebarTabs } from "./sidebar.tabs";
   `,
 	imports: [LucideAngularModule, GurlReqSidebarTabs],
 })
-export class GurlSidebarHeader {
-	private readonly appSvc = inject(AppService);
-
-	protected readonly WorkspaceOptsIcon = Ellipsis;
-	protected isOpen = signal<boolean>(false);
-
-	protected handleDropwnToggle() {
-		this.isOpen.update((prev) => !prev);
-	}
-
-	protected handleActiveItemSelection(id: string) {
-		this.appSvc.setActiveWorkspace(id);
-		this.handleDropwnToggle();
-	}
-}
+export class GurlSidebarHeader {}

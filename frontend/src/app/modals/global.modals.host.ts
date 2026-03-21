@@ -6,11 +6,33 @@ import { CreateEnvironmentModal } from "./create.env";
 import { CreateRequestModal } from "./create.req";
 import { DeleteConfirmationModal } from "./delete.confirmation";
 import { NewCollectionModal } from "./new.collection";
+import { DefaultWorkspaceModal } from "./new.workspace";
 import { RenameCollectionModal } from "./rename.collection";
 
 @Component({
 	selector: "gurl-global-modals-host",
 	template: `<ng-content>
+
+    <!-- Workspace modals -->
+      @if(modalsSvc.isCreateDefaultWorkspaceModalOpen()){
+      <dialog gurl-new-workspace-modal
+      [disableClose]="true"
+      [actionInProgress]="modalsSvc.defaultWorkspaceCreateProgress()"
+      [isOpen]="modalsSvc.isCreateDefaultWorkspaceModalOpen()"
+      (onSubmit)="modalsSvc.handleCreateDefaultWorkspace($event)"
+      ></dialog>
+    }
+
+     @if(modalsSvc.isCreateWorkspaceModalOpen()){
+      <dialog gurl-new-workspace-modal
+      [disableClose]="false"
+      [actionInProgress]="modalsSvc.WorkspaceCreateProgress()"
+      [isOpen]="modalsSvc.isCreateWorkspaceModalOpen()"
+      (onSubmit)="modalsSvc.handleCreateWorkspace($event)"
+      (onCancel)="modalsSvc.handleCloseCreateWorkspaceModal()"
+      ></dialog>
+    }
+
     <!-- Collection modals -->
     @if(modalsSvc.isNewEmptyCollectionModalOpen()){
       <dialog gurl-new-collection-modal
@@ -139,6 +161,7 @@ import { RenameCollectionModal } from "./rename.collection";
 		DeleteConfirmationModal,
 		RenameCollectionModal,
 		CopyRequestModal,
+		DefaultWorkspaceModal,
 	],
 })
 export class GlobalModalsHost {

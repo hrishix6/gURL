@@ -26,10 +26,7 @@ import { AppService, FormService } from "@/services";
         <div class="flex flex-col gap-4">
           <input
             [ngClass]="{
-              'input w-full bg-base-300': true,
-              'input-error': error(),
-              'input-primary': !error(),
-			  'input-ghost': !error()
+              'input w-full bg-base-300 input-ghost input-primary': true,
             }"
             placeholder="Name"
             required
@@ -39,6 +36,7 @@ import { AppService, FormService } from "@/services";
 			#reqNameInputEl
           />
           <select class="select w-full select-ghost bg-base-300 select-primary" (change)="onCollectionChange($event)">
+			<option [value]="defaultCollectionId" [selected]="selectedCollectionId() === defaultCollectionId">Select Collection</option>
             @for (collection of appSvc.collections(); track collection.id) {
             <option [value]="collection.id" [selected]="selectedCollectionId() === collection.id">
               {{ collection.name }}
@@ -46,6 +44,13 @@ import { AppService, FormService } from "@/services";
             }
           </select>
         </div>
+		 @if(error()){
+          <div class="flex items-center"> 
+            <span class="text-sm text-error">
+                {{errorMsg()}}
+            </span>
+          </div>
+		 }
       </div>
       <div class="modal-action">
         <button class="btn btn-soft btn-primary" (click)="onSubmit()" [disabled]="error()">Save</button>
@@ -69,6 +74,8 @@ export class SaveRequestModal implements AfterViewInit {
 		this.reqNameInputEl()?.nativeElement.focus();
 	}
 
+	protected readonly defaultCollectionId = DEFAULT_COLLECTION_ID;
+
 	protected readonly CancelIcon = X;
 	private readonly reqNameInputEl =
 		viewChild.required<ElementRef<HTMLInputElement>>("reqNameInputEl");
@@ -83,7 +90,9 @@ export class SaveRequestModal implements AfterViewInit {
 	protected selectedCollectionId = signal<string>(
 		this.formSvc.draftParentData().parentCollectionId || DEFAULT_COLLECTION_ID,
 	);
+
 	protected error = signal<boolean>(false);
+	protected errorMsg = signal<string>("");
 
 	protected onInput(text: string) {
 		this.error.set(false);
@@ -93,13 +102,18 @@ export class SaveRequestModal implements AfterViewInit {
 	protected onBlur() {
 		const name = this.requestName();
 		if (name === "" || name.trim() === "") {
-			this.error.set(false);
+			this.error.set(true);
+			this.errorMsg.set("Name cannot be empty");
 		}
 	}
 
 	protected onCollectionChange(e: Event) {
 		const target = e.target as HTMLSelectElement;
 		this.selectedCollectionId.set(target.value);
+
+		if (target.value !== this.defaultCollectionId) {
+			this.error.set(false);
+		}
 	}
 
 	protected onClose() {
@@ -109,6 +123,16 @@ export class SaveRequestModal implements AfterViewInit {
 	protected onSubmit() {
 		if (this.requestName() === "" || this.requestName().trim() === "") {
 			this.error.set(true);
+			this.errorMsg.set("Name cannot be empty");
+			return;
+		}
+
+		if (
+			!this.selectedCollectionId() ||
+			this.selectedCollectionId() === this.defaultCollectionId
+		) {
+			this.error.set(true);
+			this.errorMsg.set("Collection must be selected");
 			return;
 		}
 
