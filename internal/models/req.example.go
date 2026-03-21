@@ -5,6 +5,7 @@ type ReqExampleDTO struct {
 	Id           string `json:"id"`
 	RequestId    string `json:"requestId"`
 	CollectionId string `json:"collectionId"`
+	WorkspaceId  string `json:"workspaceId"`
 	Name         string `json:"name"`
 
 	UploadSize         int64  `json:"uploadSize"`

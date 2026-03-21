@@ -6,10 +6,8 @@ import (
 )
 
 const (
-	DB_NAME                 = "gurl.db"
-	DEFAULT_COLLECTION_ID   = "gurl_default_collection"
-	DEFAULT_COLLECTION_NAME = "Default"
-	DEFAULT_UI_STATE_ID     = "gurl_ui_state"
+	DB_NAME             = "gurl.db"
+	DEFAULT_UI_STATE_ID = "gurl_ui_state"
 )
 
 type BaseEntity struct {

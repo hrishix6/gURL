@@ -56,6 +56,7 @@ type SaveDraftAsReqDTO struct {
 	RequestId    string `json:"requestId"`
 	CollectionId string `json:"collectionId"`
 	Name         string `json:"name"`
+	WorkspaceId  string `json:"workspaceId"`
 }
 
 type UpdateDraftFieldsDTO struct {

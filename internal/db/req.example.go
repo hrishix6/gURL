@@ -28,6 +28,7 @@ type RequestExample struct {
 	ResponseHeaders datatypes.JSON `gorm:"column:responseHeaders;default:'[]'"`
 	ResponseCookies datatypes.JSON `gorm:"column:responseCookies;default:'[]'"`
 	ResponseBody    datatypes.JSON `gorm:"column:responseBody"`
+	WorkspaceId     string         `gorm:"column:workspace_id;default:null"`
 }
 
 func (r *RequestExample) ToReqExampleDTO() *models.ReqExampleDTO {

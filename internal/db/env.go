@@ -8,8 +8,9 @@ import (
 
 type Environment struct {
 	BaseEntity
-	Name string         `gorm:"column:name"`
-	Data datatypes.JSON `gorm:"column:data;default:'[]'"`
+	Name        string         `gorm:"column:name"`
+	Data        datatypes.JSON `gorm:"column:data;default:'[]'"`
+	WorkspaceId string         `gorm:"column:workspace_id;default:null"`
 }
 
 func (e *Environment) ToEnvironmentDTO() models.EnvironmentDTO {
@@ -30,4 +31,5 @@ func (e *Environment) FromEnvironmentDraft(dto *models.SaveEnvDraftAsEnvDTO, env
 	e.Id = dto.EnvId
 	e.Name = dto.Name
 	e.Data = env.Data
+	e.WorkspaceId = dto.WorkspaceId
 }

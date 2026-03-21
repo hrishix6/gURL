@@ -10,6 +10,7 @@ type Request struct {
 	Name         string     `gorm:"column:name;not null"`
 	CollectionId string     `gorm:"not null"`
 	Collection   Collection `gorm:"constraint:OnDelete:CASCADE;"`
+	WorkspaceId  string     `gorm:"column:workspace_id;default:null"`
 }
 
 func (r *Request) ToRequestDTO() *models.RequestDTO {
@@ -30,6 +31,7 @@ func (r *Request) FromRequestDraft(payload *models.SaveDraftAsReqDTO, dto *Reque
 
 	r.Id = payload.RequestId
 	r.CollectionId = payload.CollectionId
+	r.WorkspaceId = payload.WorkspaceId
 	r.Name = payload.Name
 	r.RequestCore = dto.RequestCore
 }

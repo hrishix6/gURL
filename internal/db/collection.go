@@ -4,7 +4,8 @@ import "gurl/internal/models"
 
 type Collection struct {
 	BaseEntity
-	Name string `gorm:"column:name"`
+	Name        string `gorm:"column:name"`
+	WorkspaceId string `gorm:"column:workspace_id;default:null"`
 }
 
 func (c *Collection) ToCollectionDTO() *models.CollectionDTO {
