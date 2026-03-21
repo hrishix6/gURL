@@ -18,6 +18,7 @@ day-to-day work.
 It's still in early stage, essential features are implemented. 
 
 * Simple UI to configure HTTP Requests
+* Workspaces to organize different orgs
 * Request history
 * Request collections
 * Environments
@@ -48,24 +49,9 @@ It's still in early stage, essential features are implemented.
   <img src="docs/screens/response_example.png"  alt="response example" />
 </figure>
 
-<!-- ## Building from source
-
-- clone this repository, checkout main branch
-
-- You will need to install Wails dependencies for your platform, follow instructions on [this page](https://wails.io/docs/gettingstarted/installation). 
-
-- Install `Node.js` >=20 and `Pnpm` >=10. 
-
-- Install `GNU Make` for your platform. 
-
-- run following command, binary will be built and saved under `./bin` directory.
-
-  ```bash
-  $ make build
-  ``` -->
-
 ## Roadmap
 
+- [ ] Web Client
 - [ ] Importing Open API 2.0, 3.0 and 3.1 specs as usable collections
 - [ ] Oauth 1.0 & 2.0 authorization support.
 - [ ] WSS, GRPC, SOAP support.
