@@ -72,12 +72,14 @@ export class DesktopReqRepository implements RequestRepository {
 	getReqExampleById(arg1: string): Promise<models.ReqExampleDTO> {
 		return GetReqExampleById(arg1);
 	}
-	getReqExamples(): Promise<Array<models.ReqExampleLightDTO>> {
-		return GetReqExamples();
+
+	getReqExamples(workspace: string): Promise<Array<models.ReqExampleLightDTO>> {
+		return GetReqExamples(workspace);
 	}
-	getSavedRequests(): Promise<Array<models.RequestLightDTO>> {
-		return GetSavedRequests();
+	getSavedRequests(workspace: string): Promise<Array<models.RequestLightDTO>> {
+		return GetSavedRequests(workspace);
 	}
+
 	saveDraftAsRequest(arg1: models.SaveDraftAsReqDTO): Promise<void> {
 		return SaveDraftAsRequest(arg1);
 	}

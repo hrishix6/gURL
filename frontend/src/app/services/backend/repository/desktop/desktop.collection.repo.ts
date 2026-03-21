@@ -24,11 +24,12 @@ export class DesktopCollectionRepository implements CollectionRepository {
 		return DesktopCollectionRepository.desktopCollectionRepo;
 	}
 
-	getAllCollections(): Promise<Array<models.CollectionDTO>> {
-		return GetAllCollections();
+	getAllCollections(workspace: string): Promise<Array<models.CollectionDTO>> {
+		return GetAllCollections(workspace);
 	}
-	addCollection(id: string, name: string): Promise<void> {
-		return AddCollection(id, name);
+
+	addCollection(dto: models.CreateCollectionDTO): Promise<void> {
+		return AddCollection(dto);
 	}
 	clearCollection(arg1: string): Promise<void> {
 		return ClearCollection(arg1);

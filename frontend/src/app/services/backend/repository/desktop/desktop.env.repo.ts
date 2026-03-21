@@ -17,6 +17,7 @@ export class DesktopEnvRepository implements EnvironmentRepository {
 	private static desktopEnvRepo: DesktopEnvRepository | null = null;
 
 	private constructor() {}
+
 	static getInstance() {
 		if (!DesktopEnvRepository.desktopEnvRepo) {
 			DesktopEnvRepository.desktopEnvRepo = new DesktopEnvRepository();
@@ -37,9 +38,10 @@ export class DesktopEnvRepository implements EnvironmentRepository {
 		return AddFreshEnvDraft(arg1);
 	}
 
-	getEnvironments(): Promise<Array<models.EnvironmentDTO>> {
-		return GetEnvironments();
+	getEnvironments(workspace: string): Promise<Array<models.EnvironmentDTO>> {
+		return GetEnvironments(workspace);
 	}
+
 	findEnvDraft(arg1: string): Promise<models.EnvironmentDraftDTO> {
 		return FindEnvDraft(arg1);
 	}

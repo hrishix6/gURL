@@ -95,6 +95,7 @@ export type AppState = "initializing" | "loaded" | "error";
 export interface DropDownItem<T> {
 	id: T;
 	displayName: string;
+	isTitle?: boolean;
 }
 
 export enum AppTabType {
@@ -177,11 +178,20 @@ export interface EnvironmentDraftParent {
 	parentEnvName: string;
 }
 
+export interface Alert {
+	id: string;
+	type: "success" | "error";
+	message: string;
+	selfDestruct?: boolean;
+	selfDestructTimeMS?: number;
+}
+
 export type GlobalEnvMap = Record<string, Record<string, string>>;
 
 export interface AppConfig {
 	mode: string;
 	backend_url: string;
+	appVersion: string;
 }
 
 export interface InputToken {
@@ -192,9 +202,16 @@ export interface InputToken {
 	interpolated: string;
 }
 
+export interface WorkspaceRepository {
+	getWorkspaces(): Promise<Array<models.WorkspaceLightDTO>>;
+	getWorkspaceById(id: string): Promise<models.WorkspaceDTO>;
+	addWorkspace(arg: models.CreateWorkspaceDTO): Promise<void>;
+	updateWorkspace(id: string, arg: models.UpdateWorkspaceDTO): Promise<void>;
+}
+
 export interface CollectionRepository {
-	getAllCollections(): Promise<Array<models.CollectionDTO>>;
-	addCollection(id: string, name: string): Promise<void>;
+	getAllCollections(workspace: string): Promise<Array<models.CollectionDTO>>;
+	addCollection(dto: models.CreateCollectionDTO): Promise<void>;
 	clearCollection(arg1: string): Promise<void>;
 	deleteCollection(arg1: string): Promise<void>;
 	deleteDraftsUnderCollection(arg1: string): Promise<void>;
@@ -205,7 +222,7 @@ export interface EnvironmentRepository {
 	addFreshEnvDraft(arg1: string): Promise<void>;
 	addEnvironmentDraft(arg1: models.AddEnvironmentDraftDTO): Promise<void>;
 	copyEnvironment(arg1: models.CopyEnvironmentDTO): Promise<void>;
-	getEnvironments(): Promise<Array<models.EnvironmentDTO>>;
+	getEnvironments(workspace: string): Promise<Array<models.EnvironmentDTO>>;
 	findEnvDraft(arg1: string): Promise<models.EnvironmentDraftDTO>;
 	removeEnv(arg1: string): Promise<void>;
 	removeEnvDraft(arg1: string): Promise<void>;
@@ -230,8 +247,8 @@ export interface RequestRepository {
 	findDraftIdsByCollection(arg1: string): Promise<Array<string>>;
 	findEnvDraft(arg1: string): Promise<models.EnvironmentDraftDTO>;
 	getReqExampleById(arg1: string): Promise<models.ReqExampleDTO>;
-	getReqExamples(): Promise<Array<models.ReqExampleLightDTO>>;
-	getSavedRequests(): Promise<Array<models.RequestLightDTO>>;
+	getReqExamples(workspace: string): Promise<Array<models.ReqExampleLightDTO>>;
+	getSavedRequests(workspace: string): Promise<Array<models.RequestLightDTO>>;
 	saveDraftAsRequest(arg1: models.SaveDraftAsReqDTO): Promise<void>;
 	saveRequestCopy(arg1: models.SaveRequestCopyDTO): Promise<void>;
 	updatereqDraftFields(arg: models.UpdateDraftFieldsDTO): Promise<void>;
