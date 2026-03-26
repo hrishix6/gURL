@@ -6,13 +6,13 @@ export function AddCollection(arg1:models.CreateCollectionDTO):Promise<void>;
 
 export function AddDraft(arg1:models.RequestDraftDTO):Promise<void>;
 
-export function AddDraftFromRequest(arg1:models.AddDraftFromRequestDTO):Promise<void>;
+export function AddDraftFromRequest(arg1:string,arg2:models.AddDraftDTO):Promise<void>;
 
 export function AddEnvironment(arg1:models.AddEnvironmentDTO):Promise<void>;
 
 export function AddEnvironmentDraft(arg1:models.AddEnvironmentDraftDTO):Promise<void>;
 
-export function AddFreshDraft(arg1:models.AddFreshDraftDTO):Promise<void>;
+export function AddFreshDraft(arg1:models.AddDraftDTO):Promise<void>;
 
 export function AddFreshEnvDraft(arg1:string):Promise<void>;
 
@@ -22,7 +22,7 @@ export function ChooseFile():Promise<models.FileStats>;
 
 export function ClearCollection(arg1:string):Promise<void>;
 
-export function CopyEnvironment(arg1:models.CopyEnvironmentDTO):Promise<void>;
+export function CopyEnvironment(arg1:string,arg2:models.CopyEnvironmentDTO):Promise<void>;
 
 export function CreateWorkspace(arg1:models.CreateWorkspaceDTO):Promise<void>;
 
@@ -39,8 +39,6 @@ export function DeleteRequestDrafts(arg1:string):Promise<void>;
 export function DeleteSavedReq(arg1:string):Promise<void>;
 
 export function FindDraftById(arg1:string):Promise<models.RequestDraftDTO>;
-
-export function FindDraftIdsByCollection(arg1:string):Promise<Array<string>>;
 
 export function FindEnvDraft(arg1:string):Promise<models.EnvironmentDraftDTO>;
 
@@ -68,17 +66,17 @@ export function RemoveEnvDraft(arg1:string):Promise<void>;
 
 export function RenameCollection(arg1:string,arg2:string):Promise<void>;
 
-export function SaveDraftAsRequest(arg1:models.SaveDraftAsReqDTO):Promise<void>;
+export function SaveDraftAsRequest(arg1:string,arg2:models.SaveDraftAsReqDTO):Promise<void>;
 
-export function SaveEnvDraftAsEnv(arg1:models.SaveEnvDraftAsEnvDTO):Promise<void>;
+export function SaveEnvDraftAsEnv(arg1:string,arg2:models.SaveEnvDraftAsEnvDTO):Promise<void>;
 
-export function SaveFile(arg1:string):Promise<void>;
+export function SaveFile(arg1:models.DownloadTmpFileDTO):Promise<void>;
 
-export function SaveRequestCopy(arg1:models.SaveRequestCopyDTO):Promise<void>;
+export function SaveRequestCopy(arg1:string,arg2:models.SaveRequestCopyDTO):Promise<void>;
 
-export function UpdateDraftFields(arg1:models.UpdateDraftFieldsDTO):Promise<void>;
+export function UpdateDraftFields(arg1:string,arg2:models.UpdateDraftFieldsDTO):Promise<void>;
 
-export function UpdateEnvDraftData(arg1:models.UpdateEnvDraftDataDTO):Promise<void>;
+export function UpdateEnvDraftData(arg1:string,arg2:models.UpdateEnvDraftDataDTO):Promise<void>;
 
 export function UpdateUIState(arg1:models.UpdateUIStateDTO):Promise<void>;
 

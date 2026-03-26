@@ -5,6 +5,6 @@ export function ExportCollection(arg1:string):Promise<void>;
 
 export function ExportEnvironment(arg1:string):Promise<void>;
 
-export function ImportCollection():Promise<void>;
+export function ImportCollection(arg1:string):Promise<void>;
 
-export function ImportEnvironment():Promise<void>;
+export function ImportEnvironment(arg1:string):Promise<void>;

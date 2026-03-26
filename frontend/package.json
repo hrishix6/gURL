@@ -5,6 +5,8 @@
 		"ng": "ng",
 		"start": "ng serve",
 		"build": "ng build",
+		"web-dev-build": "ng build --configuration web-dev",
+		"web-prod": "ng build --configuration web-production",
 		"watch": "ng build --watch --configuration development",
 		"test": "ng test",
 		"check": "biome check --write",

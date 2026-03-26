@@ -28,7 +28,8 @@
 						"styles": ["src/styles.css"]
 					},
 					"configurations": {
-						"production": {
+						"web-production": {
+							"outputPath": "dist/gurl",
 							"budgets": [
 								{
 									"type": "initial",
@@ -43,10 +44,44 @@
 							],
 							"outputHashing": "all"
 						},
+						"production": {
+							"outputPath": "../internal/assets/static",
+							"budgets": [
+								{
+									"type": "initial",
+									"maximumWarning": "2MB",
+									"maximumError": "5MB"
+								},
+								{
+									"type": "anyComponentStyle",
+									"maximumWarning": "4kB",
+									"maximumError": "8kB"
+								}
+							],
+							"outputHashing": "all"
+						},
+						"web-dev": {
+							"outputPath": "../internal/assets/static",
+							"budgets": [
+								{
+									"type": "initial",
+									"maximumWarning": "2MB",
+									"maximumError": "5MB"
+								},
+								{
+									"type": "anyComponentStyle",
+									"maximumWarning": "4kB",
+									"maximumError": "8kB"
+								}
+							],
+							"outputHashing": "all",
+							"sourceMap": true
+						},
 						"development": {
 							"optimization": false,
 							"extractLicenses": false,
-							"sourceMap": true
+							"sourceMap": true,
+							"outputPath": "../internal/assets/static"
 						}
 					},
 					"defaultConfiguration": "production"
