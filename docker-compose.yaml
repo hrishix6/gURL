@@ -6,7 +6,6 @@ services:
     image: gurl-web
     env_file:
       - ./web/web.env.prod
-    build: .
     restart: unless-stopped
     volumes:
       - ./appData:/usr/local/src/gURL
