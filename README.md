@@ -11,7 +11,7 @@
 gURL is just another fancy cURL. I am building this because I want to learn Go & desktop app development using Wails, plus it's something that is useful in my
 day-to-day work.
 
-> Declaimer: Entire is code is written by me, no LLMs were used to write any of the code.
+> Declaimer: Entire is code is written by me, no LLMs were used to write any of the code, you see only main branch here because this repository is just push mirror of my personal git hosting.
 
 ## Features
 
@@ -129,6 +129,7 @@ This project is designed with a shared core + multiple clients architecture. The
 
 ## Roadmap
 
+- [ ] Workspace Operations - import/export, delete, rename etc.
 - [ ] Importing Open API 2.0, 3.0 and 3.1 specs as usable collections
 - [ ] Oauth 1.0 & 2.0 authorization support.
 - [ ] WSS, GRPC, SOAP support.
