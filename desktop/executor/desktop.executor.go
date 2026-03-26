@@ -4,15 +4,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"gurl/internal"
-	dbPkg "gurl/internal/db"
-	httpExecutor "gurl/internal/executor"
-	"gurl/internal/models"
-	"gurl/internal/utils"
+	"gurl/desktop/internal"
+	dbPkg "gurl/shared/db"
+	httpExecutor "gurl/shared/executor"
+	"gurl/shared/models"
+	"gurl/shared/utils"
 	"log"
 	"net"
 	"net/http"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"gorm.io/gorm"
@@ -34,11 +35,33 @@ func NewExecutor(db *gorm.DB, appName string, tmpDir string, savedResponsesDir s
 	mimeRepo := dbPkg.NewMimeRepository(db)
 	return DesktopExecutor{
 		mimeRepo:     mimeRepo,
-		httpExecutor: httpExecutor.NewHttpExecutor(appName, tmpDir, mimeRepo),
+		httpExecutor: httpExecutor.NewHttpExecutor(appName, tmpDir, savedResponsesDir, mimeRepo, internal.TEMP_RESPONSE_PREFIX, internal.SAVED_RESPONSES_PREFIX, internal.MAX_RESPONSE_LIMIT_BYTES),
 		savedResDir:  savedResponsesDir,
 		cleanupWG:    &sync.WaitGroup{},
 		tmpDir:       tmpDir,
 	}
+}
+
+func withCORS(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		origin := r.Header.Get("Origin")
+
+		if strings.HasPrefix(origin, "wails://") {
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+			w.Header().Set("Vary", "Origin")
+		}
+
+		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
 }
 
 func Startup(e *DesktopExecutor, ctx context.Context, mimeDbJson []byte) error {
@@ -77,8 +100,15 @@ func Startup(e *DesktopExecutor, ctx context.Context, mimeDbJson []byte) error {
 		return err
 	}
 
-	e.previewSrv = NewPreviewServer(e.tmpDir, e.savedResDir)
+	previewHandler := e.httpExecutor.GetPreviewHandler()
+
+	previewServer := &http.Server{
+		Handler: withCORS(previewHandler),
+	}
+
 	previewSrvAddr := fmt.Sprintf("http://%s", listner.Addr().String())
+
+	e.previewSrv = previewServer
 	e.previewSrvAddr = previewSrvAddr
 	e.httpExecutor.SetPreviewSrvAddr(previewSrvAddr)
 

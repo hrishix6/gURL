@@ -1,17 +1,16 @@
-package web
+package main
 
 import (
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"gurl/internal"
-	"gurl/internal/assets"
-	internalExecutor "gurl/internal/executor"
-	"gurl/internal/models"
+	"gurl/shared/assets"
+	"gurl/shared/models"
 	"gurl/web/api"
 	"gurl/web/executor"
 	"gurl/web/exporter"
+	"gurl/web/internal"
 	"gurl/web/storage"
 	"io/fs"
 	"log"
@@ -42,7 +41,7 @@ func NewGurlWebApp(
 ) *GurlWebApp {
 	return &GurlWebApp{
 		storage:   storage.NewWebStorage(db, savedResDir),
-		executor:  executor.NewWebExecutor(db, appName, tmpDir, webTmpDir),
+		executor:  executor.NewWebExecutor(db, appName, tmpDir, savedResDir, webTmpDir),
 		exporter:  exporter.NewWebExporter(db),
 		cleanupWG: &sync.WaitGroup{},
 	}
@@ -138,7 +137,7 @@ func InitializeWebApp(
 		json.NewEncoder(w).Encode(webAppConfig)
 	})
 
-	previewHandler := internalExecutor.NewPreviewHandler(params.TempDir, params.SavedResponsesDir)
+	previewHandler := webApp.executor.GetPreviewHandler()
 
 	mux.Handle("/preview/", http.StripPrefix("/preview", previewHandler))
 

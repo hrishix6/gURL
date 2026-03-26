@@ -2,7 +2,7 @@ package api
 
 import (
 	"encoding/json"
-	"gurl/internal/models"
+	"gurl/shared/models"
 	"log"
 	"net/http"
 )

@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	dbPkg "gurl/internal/db"
+	dbPkg "gurl/shared/db"
 	"log"
 
 	"gorm.io/gorm"

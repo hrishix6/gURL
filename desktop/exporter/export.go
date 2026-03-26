@@ -3,7 +3,7 @@ package exporter
 import (
 	"context"
 	"encoding/json"
-	importexport "gurl/internal/import_export"
+	importexport "gurl/shared/import_export"
 	"os"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"

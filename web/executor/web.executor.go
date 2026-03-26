@@ -3,13 +3,14 @@ package executor
 import (
 	"context"
 	"fmt"
-	"gurl/internal"
-	dbPkg "gurl/internal/db"
-	internalExec "gurl/internal/executor"
-	importexport "gurl/internal/import_export"
-	"gurl/internal/models"
-	"gurl/internal/utils"
+	dbPkg "gurl/shared/db"
+	internalExec "gurl/shared/executor"
+	importexport "gurl/shared/import_export"
+	"gurl/shared/models"
+	"gurl/shared/utils"
+	"gurl/web/internal"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
 
@@ -123,7 +124,14 @@ func CleanupWebTempDir(dbConn *gorm.DB, webTempDir string) error {
 	return nil
 }
 
-func NewWebExecutor(db *gorm.DB, appName string, tmpDir string, webTmpDir string) *WebExecutor {
+func NewWebExecutor(
+	db *gorm.DB,
+	appName string,
+	tmpDir string,
+	savedResDir string,
+	webTmpDir string,
+
+) *WebExecutor {
 
 	mimeRepo := dbPkg.NewMimeRepository(db)
 
@@ -132,8 +140,16 @@ func NewWebExecutor(db *gorm.DB, appName string, tmpDir string, webTmpDir string
 		mimeRepo:       mimeRepo,
 		previewSrvAddr: "",
 		tmpDir:         tmpDir,
-		httpExecutor:   internalExec.NewHttpExecutor(appName, tmpDir, mimeRepo),
-		webTmpDir:      webTmpDir,
+		httpExecutor: internalExec.NewHttpExecutor(
+			appName,
+			tmpDir,
+			savedResDir,
+			mimeRepo,
+			internal.TEMP_RESPONSE_PREFIX,
+			internal.SAVED_RESPONSES_PREFIX,
+			internal.MAX_RESPONSE_LIMIT_BYTES,
+		),
+		webTmpDir: webTmpDir,
 	}
 }
 
@@ -238,4 +254,8 @@ func (we *WebExecutor) UploadWebTempFile(id string, data []byte) models.UploadWe
 		ErrMsg:  "",
 		Data:    tmpF.Name(),
 	}
+}
+
+func (we *WebExecutor) GetPreviewHandler() http.HandlerFunc {
+	return we.httpExecutor.GetPreviewHandler()
 }

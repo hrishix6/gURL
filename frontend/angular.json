@@ -45,7 +45,7 @@
 							"outputHashing": "all"
 						},
 						"production": {
-							"outputPath": "../internal/assets/static",
+							"outputPath": "../shared/assets/static",
 							"budgets": [
 								{
 									"type": "initial",
@@ -61,7 +61,7 @@
 							"outputHashing": "all"
 						},
 						"web-dev": {
-							"outputPath": "../internal/assets/static",
+							"outputPath": "../shared/assets/static",
 							"budgets": [
 								{
 									"type": "initial",
@@ -81,7 +81,7 @@
 							"optimization": false,
 							"extractLicenses": false,
 							"sourceMap": true,
-							"outputPath": "../internal/assets/static"
+							"outputPath": "../shared/assets/static"
 						}
 					},
 					"defaultConfiguration": "production"

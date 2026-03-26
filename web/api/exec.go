@@ -3,8 +3,8 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"gurl/internal"
-	"gurl/internal/models"
+	"gurl/shared/models"
+	"gurl/web/internal"
 	"io"
 	"log"
 	"net/http"

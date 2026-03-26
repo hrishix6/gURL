@@ -1,7 +1,7 @@
 package storage
 
 import (
-	"gurl/internal/models"
+	"gurl/shared/models"
 )
 
 func (s *DesktopStorage) GetEnvironments(workspaceId string) ([]models.EnvironmentDTO, error) {

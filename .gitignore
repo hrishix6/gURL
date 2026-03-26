@@ -5,4 +5,5 @@ bin/
 *md5
 *.env*
 *.db
-internal/assets/static/
+shared/assets/static/
+appData/

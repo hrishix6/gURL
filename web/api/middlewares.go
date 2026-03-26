@@ -2,7 +2,7 @@ package api
 
 import (
 	"context"
-	"gurl/internal/nanoid"
+	"gurl/shared/nanoid"
 	"log"
 	"net/http"
 	"time"

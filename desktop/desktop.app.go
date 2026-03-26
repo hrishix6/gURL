@@ -1,14 +1,14 @@
-package desktop
+package main
 
 import (
 	"context"
 	"fmt"
 	"gurl/desktop/executor"
 	"gurl/desktop/exporter"
+	"gurl/desktop/internal"
 	"gurl/desktop/storage"
-	"gurl/internal"
-	"gurl/internal/assets"
-	"gurl/internal/models"
+	"gurl/shared/assets"
+	"gurl/shared/models"
 	"log"
 
 	"github.com/wailsapp/wails/v2"

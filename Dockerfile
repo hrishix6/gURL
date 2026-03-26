@@ -8,7 +8,7 @@ RUN chown -R node:node /home/node
 
 USER node 
 
-COPY --chown=node:node ["frontend/package.json", "./frontend/pnpm-lock.yaml", "frontend/tsconfig.app.json","frontend/tsconfig.json", "frontend/angular.json", "frontend/biome.json", "frontend/.postcssrc.json", "./"]
+COPY --chown=node:node ["frontend/package.json", "frontend/pnpm-lock.yaml", "frontend/tsconfig.app.json","frontend/tsconfig.json", "frontend/angular.json", "frontend/biome.json", "frontend/.postcssrc.json", "./"]
 
 RUN pnpm install --frozen-lockfile
 
@@ -18,31 +18,35 @@ COPY --chown=node:node  frontend/wailsjs ./wailsjs
 
 RUN pnpm run web-prod
 
-FROM golang:1.24 AS backend
+FROM golang:1.25-alpine AS backend
 
-WORKDIR /app 
+RUN apk add --no-cache build-base musl-dev ca-certificates
 
-COPY ./cmd ./cmd
+WORKDIR /app
 
-COPY ./internal ./internal
-
-RUN mkdir -p ./internal/assets/static
+COPY ./shared ./shared
 
 COPY ./web ./web
 
-COPY ["go.mod", "go.sum", "./"]
+RUN mkdir -p ./shared/assets/static
 
-COPY --from=frontend /home/node/app/dist/gurl/ ./internal/assets/static/
+COPY go.work.web ./go.work
 
-RUN CGO_ENABLED=1 go build -ldflags '-s -w -extldflags "-static"' -o bin/gurl-web cmd/web/*
+COPY ["go.work.sum", "./"]
+
+RUN go work use ./web ./shared
+
+COPY --from=frontend /home/node/app/dist/gurl/ ./shared/assets/static/
+
+RUN CGO_ENABLED=1 go build -ldflags '-linkmode external -extldflags "-static" -s -w' -o bin/gurl-web ./web
 
 FROM scratch
 
+WORKDIR /app
+
 COPY --from=backend /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
-COPY --from=backend /app/bin /app/bin
-
-WORKDIR /app
+COPY --from=backend /app/bin ./bin
 
 ENV WEB_PORT=80
 EXPOSE 80

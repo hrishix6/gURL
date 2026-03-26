@@ -3,7 +3,7 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"gurl/internal/models"
+	"gurl/shared/models"
 	"log"
 	"net/http"
 )

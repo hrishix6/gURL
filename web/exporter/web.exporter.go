@@ -3,8 +3,8 @@ package exporter
 import (
 	"context"
 	"encoding/json"
-	importexport "gurl/internal/import_export"
-	"gurl/internal/models"
+	importexport "gurl/shared/import_export"
+	"gurl/shared/models"
 
 	"gorm.io/gorm"
 )
