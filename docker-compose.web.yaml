@@ -1,0 +1,14 @@
+version: '3'
+
+services:
+  gurl:
+    container_name: gurl-web-container
+    image: gurl-web
+    env_file:
+      - .env
+    build: .
+    restart: unless-stopped
+    volumes:
+      - /usr/local/src/gURL:/usr/local/src/gURL
+    ports:
+      - "8080:80"

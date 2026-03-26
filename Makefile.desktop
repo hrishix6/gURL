@@ -1,6 +1,9 @@
 .DEFAULT_GOAL := build
-.PHONY:fmt vet build
--include .env
+.PHONY:fmt vet build clean gen dev
+
+STATIC_DIR := internal/assets/static
+
+include desktop.env.local
 export
 
 fmt:
@@ -10,7 +13,7 @@ vet: fmt
 		go vet ./...
 
 clean: vet
-		rm -rf build/bin/*
+		rm -rf $(STATIC_DIR) && mkdir -p $(STATIC_DIR) && rm -rf build/bin/*
 
 gen:  vet
 		wails generate module
