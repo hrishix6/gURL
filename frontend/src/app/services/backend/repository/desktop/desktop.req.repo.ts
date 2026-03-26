@@ -8,8 +8,6 @@ import {
 	DeleteRequestDrafts,
 	DeleteSavedReq,
 	FindDraftById,
-	FindDraftIdsByCollection,
-	FindEnvDraft,
 	GetReqExampleById,
 	GetReqExamples,
 	GetSavedRequests,
@@ -17,7 +15,7 @@ import {
 	SaveDraftAsRequest,
 	SaveRequestCopy,
 	UpdateDraftFields,
-} from "@wailsjs/go/storage/Storage";
+} from "@wailsjs/go/storage/DesktopStorage";
 import type { RequestRepository } from "@/types";
 
 export class DesktopReqRepository implements RequestRepository {
@@ -36,10 +34,10 @@ export class DesktopReqRepository implements RequestRepository {
 	addDraft(arg1: models.RequestDraftDTO): Promise<void> {
 		return AddDraft(arg1);
 	}
-	addDraftFromRequest(arg1: models.AddDraftFromRequestDTO): Promise<void> {
-		return AddDraftFromRequest(arg1);
+	addDraftFromRequest(id: string, arg1: models.AddDraftDTO): Promise<void> {
+		return AddDraftFromRequest(id, arg1);
 	}
-	addFreshDraft(arg1: models.AddFreshDraftDTO): Promise<void> {
+	addFreshDraft(arg1: models.AddDraftDTO): Promise<void> {
 		return AddFreshDraft(arg1);
 	}
 	removeDraft(arg1: string): Promise<void> {
@@ -63,12 +61,7 @@ export class DesktopReqRepository implements RequestRepository {
 	findDraftById(arg1: string): Promise<models.RequestDraftDTO> {
 		return FindDraftById(arg1);
 	}
-	findDraftIdsByCollection(arg1: string): Promise<Array<string>> {
-		return FindDraftIdsByCollection(arg1);
-	}
-	findEnvDraft(arg1: string): Promise<models.EnvironmentDraftDTO> {
-		return FindEnvDraft(arg1);
-	}
+
 	getReqExampleById(arg1: string): Promise<models.ReqExampleDTO> {
 		return GetReqExampleById(arg1);
 	}
@@ -80,13 +73,22 @@ export class DesktopReqRepository implements RequestRepository {
 		return GetSavedRequests(workspace);
 	}
 
-	saveDraftAsRequest(arg1: models.SaveDraftAsReqDTO): Promise<void> {
-		return SaveDraftAsRequest(arg1);
+	saveDraftAsRequest(
+		draftId: string,
+		arg1: models.SaveDraftAsReqDTO,
+	): Promise<void> {
+		return SaveDraftAsRequest(draftId, arg1);
 	}
-	saveRequestCopy(arg1: models.SaveRequestCopyDTO): Promise<void> {
-		return SaveRequestCopy(arg1);
+	saveRequestCopy(
+		sourceId: string,
+		arg1: models.SaveRequestCopyDTO,
+	): Promise<void> {
+		return SaveRequestCopy(sourceId, arg1);
 	}
-	updatereqDraftFields(arg: models.UpdateDraftFieldsDTO): Promise<void> {
-		return UpdateDraftFields(arg);
+	updatereqDraftFields(
+		draftId: string,
+		arg: models.UpdateDraftFieldsDTO,
+	): Promise<void> {
+		return UpdateDraftFields(draftId, arg);
 	}
 }

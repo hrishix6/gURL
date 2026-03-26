@@ -7,12 +7,6 @@ import {
 	signal,
 } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import {
-	ExportCollection,
-	ExportEnvironment,
-	ImportCollection,
-	ImportEnvironment,
-} from "@wailsjs/go/exporter/Exporter";
 import type { models } from "@wailsjs/go/models";
 import { nanoid } from "nanoid";
 import { debounceTime, Subject } from "rxjs";
@@ -26,6 +20,7 @@ import {
 	AlertService,
 	getCollectionRepository,
 	getEnvRepository,
+	getExporter,
 	getReqRepository,
 	getUIStateRepository,
 	getWorkspaceRepository,
@@ -49,12 +44,12 @@ import { TabsService } from "./tabs.service";
 	providedIn: "root",
 })
 export class AppService {
-	private reqRepo = getReqRepository();
-	private collectionRepo = getCollectionRepository();
-	private envRepo = getEnvRepository();
-	private uiStateRepo = getUIStateRepository();
-	private workspaceRepo = getWorkspaceRepository();
-
+	private readonly reqRepo = getReqRepository();
+	private readonly collectionRepo = getCollectionRepository();
+	private readonly envRepo = getEnvRepository();
+	private readonly uiStateRepo = getUIStateRepository();
+	private readonly workspaceRepo = getWorkspaceRepository();
+	private readonly exporter = getExporter();
 	private _appState = signal<AppState>("initializing");
 	private _appError = signal<string | null>(null);
 	public appState = computed(() => this._appState());
@@ -181,6 +176,9 @@ export class AppService {
 
 	public async deleteEnvironment(id: string) {
 		try {
+			if (this._activeEnvironment() === id) {
+				this._activeEnvironment.set(NO_ENV_ID);
+			}
 			await this.envRepo.removeEnv(id);
 			await this.envRepo.deleteEnvDraftsUnderEnv(id);
 			this.alertSvc.addAlert(`Environment deleted.`, "success");
@@ -196,9 +194,8 @@ export class AppService {
 		try {
 			const copiedEnvId = nanoid();
 
-			await this.envRepo.copyEnvironment({
+			await this.envRepo.copyEnvironment(dto.id, {
 				id: copiedEnvId,
-				envId: dto.id,
 			});
 
 			this.alertSvc.addAlert(
@@ -222,9 +219,9 @@ export class AppService {
 		}
 	}
 
-	public async importEnvironment() {
+	public async importEnvironment(file?: File) {
 		try {
-			await ImportEnvironment();
+			await this.exporter.importEnvironment(this._activeWorkspace(), file);
 			this.alertSvc.addAlert(`Environment imported successfully.`, "success");
 			await this.initializeEnvironments();
 		} catch (error) {
@@ -233,9 +230,9 @@ export class AppService {
 		}
 	}
 
-	public async exportEnvironment(id: string) {
+	public async exportEnvironment(id: string, name: string) {
 		try {
-			await ExportEnvironment(id);
+			await this.exporter.exportEnvironment(id, name);
 			this.alertSvc.addAlert(`Environment exported successfully.`, "success");
 		} catch (error) {
 			console.error(error);
@@ -309,7 +306,7 @@ export class AppService {
 
 	public async copyRequest(sourceId: string, name: string) {
 		try {
-			await this.reqRepo.saveRequestCopy({ id: nanoid(), name, sourceId });
+			await this.reqRepo.saveRequestCopy(sourceId, { id: nanoid(), name });
 			this.alertSvc.addAlert(`Request copy "${name}" added.`, "success");
 			await this.initializeSavedRequests();
 		} catch (error) {
@@ -380,9 +377,9 @@ export class AppService {
 		}
 	}
 
-	public async exportCollection(id: string) {
+	public async exportCollection(id: string, name: string) {
 		try {
-			await ExportCollection(id);
+			await this.exporter.exportCollection(id, name);
 			this.alertSvc.addAlert(`Collection exported successfully.`, "success");
 		} catch (error) {
 			console.error(error);
@@ -390,9 +387,9 @@ export class AppService {
 		}
 	}
 
-	public async importCollection() {
+	public async importCollection(file?: File) {
 		try {
-			await ImportCollection();
+			await this.exporter.importCollection(this._activeWorkspace(), file);
 			this.alertSvc.addAlert(`Collection imported successfully.`, "success");
 			await this.initializeCollections();
 			await this.initializeSavedRequests();
@@ -488,6 +485,10 @@ export class AppService {
 
 	public async switchworkspace(id: string) {
 		try {
+			if (id === this.activeWorkSpace().id) {
+				return;
+			}
+
 			this._appState.set("initializing");
 			await new Promise((resolve) => setTimeout(resolve, 1000));
 			await this.initializeActiveWorkspace(id);

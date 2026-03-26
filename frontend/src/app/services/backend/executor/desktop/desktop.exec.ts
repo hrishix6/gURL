@@ -3,7 +3,7 @@ import {
 	GetSavedResponsesSrc,
 	ParseCookieRaw,
 	SendHttpReq,
-} from "@wailsjs/go/executor/Executor";
+} from "@wailsjs/go/executor/DesktopExecutor";
 import type { models } from "@wailsjs/go/models";
 import type { HttpExecutor } from "@/types";
 

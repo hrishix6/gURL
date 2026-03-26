@@ -300,8 +300,7 @@ export class UrlService {
 		this.methodDbSync$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
 			next: (v) => {
 				this.reqRepo
-					.updatereqDraftFields({
-						draftId: this.draftId,
+					.updatereqDraftFields(this.draftId, {
 						method: v,
 					})
 					.then(() => {
@@ -315,8 +314,7 @@ export class UrlService {
 			.subscribe({
 				next: (v) => {
 					this.reqRepo
-						.updatereqDraftFields({
-							draftId: this.draftId,
+						.updatereqDraftFields(this.draftId, {
 							url: v,
 						})
 						.then(() => {
@@ -331,8 +329,7 @@ export class UrlService {
 				next: (v) => {
 					const payload = v.filter((x) => x.id !== QID_PLACEHOLDER);
 					this.reqRepo
-						.updatereqDraftFields({
-							draftId: this.draftId,
+						.updatereqDraftFields(this.draftId, {
 							queryJson: JSON.stringify(payload),
 						})
 						.then(() => {
@@ -346,8 +343,7 @@ export class UrlService {
 			.subscribe({
 				next: (v) => {
 					this.reqRepo
-						.updatereqDraftFields({
-							draftId: this.draftId,
+						.updatereqDraftFields(this.draftId, {
 							pathJson: JSON.stringify(v),
 						})
 						.then(() => {

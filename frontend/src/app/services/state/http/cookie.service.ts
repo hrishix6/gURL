@@ -153,8 +153,7 @@ export class CookieService {
 				next: (v) => {
 					const payload = v.filter((x) => x.id !== COOKIE_PLACEHOLDER);
 					this.reqRepo
-						.updatereqDraftFields({
-							draftId: this.draftId,
+						.updatereqDraftFields(this.draftId, {
 							cookiesJson: JSON.stringify(payload),
 						})
 						.then(() => {

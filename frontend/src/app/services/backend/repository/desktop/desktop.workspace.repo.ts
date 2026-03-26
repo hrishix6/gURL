@@ -4,7 +4,7 @@ import {
 	GetAllWorkspaces,
 	GetWorkspaceById,
 	UpdateWorkspace,
-} from "@wailsjs/go/storage/Storage";
+} from "@wailsjs/go/storage/DesktopStorage";
 import type { WorkspaceRepository } from "@/types";
 
 export class DesktopWorkspaceRepository implements WorkspaceRepository {

@@ -212,8 +212,7 @@ export class EnvFormService {
 				envId = parentEnvId;
 			}
 
-			await this.envRepo.saveEnvDraftAsEnv({
-				draftId: this._envDraftId,
+			await this.envRepo.saveEnvDraftAsEnv(this._envDraftId, {
 				envId: envId,
 				name: this.environmentName(),
 				workspaceId: this._appSvc.activeWorkSpace().id,
@@ -287,8 +286,7 @@ export class EnvFormService {
 			.subscribe({
 				next: (v) => {
 					this.envRepo
-						.updateEnvDraftData({
-							draftId: this._envDraftId,
+						.updateEnvDraftData(this._envDraftId, {
 							dataJSON: JSON.stringify(
 								v.filter((x) => x.id !== ENV_ID_PLACEHOLDER),
 							),

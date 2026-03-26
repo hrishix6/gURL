@@ -15,6 +15,8 @@ export class AlertService {
 			id: nanoid(),
 			message,
 			type,
+			selfDestruct: true,
+			selfDestructTimeMS: 2500,
 		};
 		this._alerts.update((prev) => [...prev, alert]);
 	}

@@ -165,8 +165,7 @@ export class AuthService {
 		this.authTypeDbSync$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
 			next: (v) => {
 				this.reqRepo
-					.updatereqDraftFields({
-						draftId: this.draftId,
+					.updatereqDraftFields(this.draftId, {
 						authType: v,
 					})
 					.then(() => {
@@ -182,8 +181,7 @@ export class AuthService {
 			.subscribe({
 				next: (v) => {
 					this.reqRepo
-						.updatereqDraftFields({
-							draftId: this.draftId,
+						.updatereqDraftFields(this.draftId, {
 							basicAuthJson: JSON.stringify(v),
 						})
 						.then(() => {
@@ -199,8 +197,7 @@ export class AuthService {
 			.subscribe({
 				next: (v) => {
 					this.reqRepo
-						.updatereqDraftFields({
-							draftId: this.draftId,
+						.updatereqDraftFields(this.draftId, {
 							tokenAuthJson: JSON.stringify(v),
 						})
 						.then(() => {
@@ -216,8 +213,7 @@ export class AuthService {
 			.subscribe({
 				next: (v) => {
 					this.reqRepo
-						.updatereqDraftFields({
-							draftId: this.draftId,
+						.updatereqDraftFields(this.draftId, {
 							apiKeyAuthJson: JSON.stringify(v),
 						})
 						.then(() => {
@@ -233,8 +229,7 @@ export class AuthService {
 			.subscribe({
 				next: (v) => {
 					this.reqRepo
-						.updatereqDraftFields({
-							draftId: this.draftId,
+						.updatereqDraftFields(this.draftId, {
 							authEnabled: v,
 						})
 						.then(() => {

@@ -194,8 +194,7 @@ export class FormService {
 				requestId = nanoid();
 			}
 
-			await this.reqRepository.saveDraftAsRequest({
-				draftId: this._requestId,
+			await this.reqRepository.saveDraftAsRequest(this._requestId, {
 				collectionId: collectionId,
 				name,
 				requestId,
@@ -795,7 +794,11 @@ export class FormService {
 			if (!b) {
 				return;
 			}
-			await this.fileRepo.saveFile(b.filepath);
+			await this.fileRepo.saveFile({
+				file_path: b.filepath,
+				file_mimetype: b.detectedMimeType,
+				file_name: b.filename,
+			});
 			this._alertSvc.addAlert(`File saved`, "success");
 		} catch (error) {
 			console.error(error);

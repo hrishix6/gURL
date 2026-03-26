@@ -103,9 +103,14 @@ export class GlobalModalsService {
 		this._isCreateCollectionModalOpen.set(true);
 	}
 
-	async handleOpenImportCollectionDialogue() {
+	async handleDesktopCollectionImport() {
 		this.handleCloseCreateCollectionModal();
 		await this.appSvc.importCollection();
+	}
+
+	async handleWebCollectionImport(_file: File) {
+		this.handleCloseCreateCollectionModal();
+		await this.appSvc.importCollection(_file);
 	}
 
 	handleOpenEmptyCollectionDialogue() {
@@ -454,9 +459,14 @@ export class GlobalModalsService {
 		this.tabSvc.createFreshEnvTab();
 	}
 
-	async handleImportEnv() {
+	async handleImportDesktopEnv() {
 		this.handleCloseCreateEnvModal();
 		await this.appSvc.importEnvironment();
+	}
+
+	async handleImportWebEnv(file: File) {
+		this.handleCloseCreateEnvModal();
+		await this.appSvc.importEnvironment(file);
 	}
 
 	//#region delete-env

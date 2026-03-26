@@ -189,13 +189,12 @@ export class TabsService {
 
 	public async createTabFromSaved(item: models.RequestLightDTO) {
 		try {
-			const newDraft: models.AddDraftFromRequestDTO = {
+			const newDraft: models.AddDraftDTO = {
 				id: nanoid(),
-				requestId: item.id,
 			};
 			console.dir(newDraft);
 
-			await this.reqRepo.addDraftFromRequest(newDraft);
+			await this.reqRepo.addDraftFromRequest(item.id, newDraft);
 
 			const newTab: ApplicationTab = {
 				id: nanoid(),
@@ -296,7 +295,7 @@ export class TabsService {
 
 	public async createFreshTab() {
 		try {
-			const newDraft: models.AddFreshDraftDTO = {
+			const newDraft: models.AddDraftDTO = {
 				id: nanoid(),
 			};
 

@@ -1,5 +1,5 @@
 import type { models } from "@wailsjs/go/models";
-import { ChooseFile, SaveFile } from "@wailsjs/go/storage/Storage";
+import { ChooseFile, SaveFile } from "@wailsjs/go/storage/DesktopStorage";
 import type { FileRepository } from "@/types";
 
 export class DesktopFileRepository implements FileRepository {
@@ -15,7 +15,7 @@ export class DesktopFileRepository implements FileRepository {
 		return DesktopFileRepository.desktopFileRepo;
 	}
 
-	saveFile(arg1: string): Promise<void> {
+	saveFile(arg1: models.DownloadTmpFileDTO): Promise<void> {
 		return SaveFile(arg1);
 	}
 	chooseFile(): Promise<models.FileStats> {

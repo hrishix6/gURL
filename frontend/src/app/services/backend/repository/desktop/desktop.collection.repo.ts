@@ -6,7 +6,7 @@ import {
 	DeleteDraftsUnderCollection,
 	GetAllCollections,
 	RenameCollection,
-} from "@wailsjs/go/storage/Storage";
+} from "@wailsjs/go/storage/DesktopStorage";
 import type { CollectionRepository } from "@/types";
 
 export class DesktopCollectionRepository implements CollectionRepository {
