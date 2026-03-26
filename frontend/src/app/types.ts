@@ -210,7 +210,9 @@ export interface WorkspaceRepository {
 }
 
 export interface CollectionRepository {
-	getAllCollections(workspace: string): Promise<Array<models.CollectionDTO> | undefined | null>;
+	getAllCollections(
+		workspace: string,
+	): Promise<Array<models.CollectionDTO> | undefined | null>;
 	addCollection(dto: models.CreateCollectionDTO): Promise<void>;
 	clearCollection(arg1: string): Promise<void>;
 	deleteCollection(arg1: string): Promise<void>;
@@ -225,7 +227,9 @@ export interface EnvironmentRepository {
 		sourceId: string,
 		arg1: models.CopyEnvironmentDTO,
 	): Promise<void>;
-	getEnvironments(workspace: string): Promise<Array<models.EnvironmentDTO> | undefined | null>;
+	getEnvironments(
+		workspace: string,
+	): Promise<Array<models.EnvironmentDTO> | undefined | null>;
 	findEnvDraft(arg1: string): Promise<models.EnvironmentDraftDTO>;
 	removeEnv(arg1: string): Promise<void>;
 	removeEnvDraft(arg1: string): Promise<void>;
@@ -261,8 +265,12 @@ export interface RequestRepository {
 	deleteSavedReq(arg1: string): Promise<void>;
 	findDraftById(arg1: string): Promise<models.RequestDraftDTO>;
 	getReqExampleById(arg1: string): Promise<models.ReqExampleDTO>;
-	getReqExamples(workspace: string): Promise<Array<models.ReqExampleLightDTO> | undefined | null>;
-	getSavedRequests(workspace: string): Promise<Array<models.RequestLightDTO> | undefined | null>;
+	getReqExamples(
+		workspace: string,
+	): Promise<Array<models.ReqExampleLightDTO> | undefined | null>;
+	getSavedRequests(
+		workspace: string,
+	): Promise<Array<models.RequestLightDTO> | undefined | null>;
 	saveDraftAsRequest(
 		draftId: string,
 		arg1: models.SaveDraftAsReqDTO,

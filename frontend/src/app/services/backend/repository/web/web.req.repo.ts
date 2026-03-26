@@ -29,7 +29,7 @@ export class WebReqRepository implements RequestRepository {
 	//reqs
 	async getSavedRequests(
 		workspace: string,
-	): Promise<Array<models.RequestLightDTO>  | null | undefined> {
+	): Promise<Array<models.RequestLightDTO> | null | undefined> {
 		const query = new URLSearchParams({
 			workspace_id: workspace,
 		}).toString();

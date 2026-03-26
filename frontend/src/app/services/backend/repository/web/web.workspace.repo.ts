@@ -18,7 +18,9 @@ export class WebWorkspaceRepository implements WorkspaceRepository {
 		return WebWorkspaceRepository.webWorkspaceRepo;
 	}
 
-	async getWorkspaces(): Promise<Array<models.WorkspaceLightDTO> |  null | undefined> {
+	async getWorkspaces(): Promise<
+		Array<models.WorkspaceLightDTO> | null | undefined
+	> {
 		const res = await fetch(`${this._baseURL}/workspaces`);
 
 		if (!res.ok) {
