@@ -1,5 +1,16 @@
-import { Component, HostBinding, input, output, signal } from "@angular/core";
+import {
+	Component,
+	type ElementRef,
+	HostBinding,
+	inject,
+	input,
+	output,
+	signal,
+	viewChild,
+} from "@angular/core";
 import { FileDown, LucideAngularModule, Plus, X } from "lucide-angular";
+import { getAppConfig } from "@/app.config";
+import { AlertService } from "@/services";
 
 @Component({
 	selector: `dialog[gurl-create-collection-modal]`,
@@ -17,6 +28,9 @@ import { FileDown, LucideAngularModule, Plus, X } from "lucide-angular";
             <lucide-angular [img]="CreeateIcon" class="size-6" />
             <span>New</span>
           </button>
+          @if(mode === "web") {
+              <input type="file" class="hidden" #webFileInp (input)="handleWebCollectionImport($event)"   />
+          }
           <button class="btn btn-soft btn-primary xl:btn-lg" (click)="handleImport()">
             <lucide-angular [img]="ImportIcon" class="size-6" />
             <span>Import</span>
@@ -55,8 +69,14 @@ export class CreateCollectionModal {
 	isOpen = input.required<boolean>();
 	onCancel = output<void>();
 	onEmptyCollection = output<void>();
-	onImportCollection = output<void>();
+	onImportDesktopCollection = output<void>();
+	onImportWebCollection = output<File>();
 
+	private readonly webFileInp =
+		viewChild.required<ElementRef<HTMLInputElement>>("webFileInp");
+	protected readonly mode = getAppConfig().mode;
+
+	private readonly alertSvc = inject(AlertService);
 	protected readonly ImportIcon = FileDown;
 	protected readonly CancelIcon = X;
 	protected readonly CreeateIcon = Plus;
@@ -67,8 +87,32 @@ export class CreateCollectionModal {
 		this.onEmptyCollection.emit();
 	}
 
+	protected async handleWebCollectionImport(e: Event) {
+		const target = e.target as HTMLInputElement;
+		const files = target.files;
+		if (files?.length) {
+			const file = files[0];
+
+			if (!file.type.includes("json")) {
+				this.alertSvc.addAlert(
+					"invalid file type, only .json supported",
+					"error",
+				);
+				target.value = "";
+				return;
+			}
+
+			this.onImportWebCollection.emit(file);
+		}
+	}
+
 	protected handleImport() {
-		this.onImportCollection.emit();
+		if (this.mode === "web") {
+			this.webFileInp().nativeElement?.click();
+			return;
+		}
+
+		this.onImportDesktopCollection.emit();
 	}
 
 	protected handleCancel() {

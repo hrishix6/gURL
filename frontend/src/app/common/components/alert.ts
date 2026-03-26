@@ -8,9 +8,10 @@ import type { Alert as AlertData } from "@/types";
 	selector: "gurl-alert",
 	template: `
         <div [ngClass]="{
-          'alert alert-soft alert-animated': true,
+          'alert alert-soft': true,
           'alert-success': data().type === 'success',
-          'alert-error': data().type === 'error'
+          'alert-error': data().type === 'error',
+		  'alert-animated': !!data().selfDestruct
         }">
           <lucide-angular [img]="data().type === 'success' ? CheckIcon : FailedIcon" class="size-5" />
           <span>{{data().message}}</span>

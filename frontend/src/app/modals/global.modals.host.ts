@@ -48,7 +48,8 @@ import { RenameCollectionModal } from "./rename.collection";
       [isOpen]="modalsSvc.isCreateCollectionModalOpen()"
       (onCancel)="modalsSvc.handleCloseCreateCollectionModal()"
       (onEmptyCollection)="modalsSvc.handleOpenEmptyCollectionDialogue()"
-      (onImportCollection)="modalsSvc.handleOpenImportCollectionDialogue()"
+      (onImportDesktopCollection)="modalsSvc.handleDesktopCollectionImport()"
+      (onImportWebCollection)="modalsSvc.handleWebCollectionImport($event)"
       ></dialog>
     }
    
@@ -126,7 +127,8 @@ import { RenameCollectionModal } from "./rename.collection";
       [isOpen]="modalsSvc.isCreateEnvModalOpen()"
       (onCancel)="modalsSvc.handleCloseCreateEnvModal()"
       (onEmptyEnv)="modalsSvc.handleCreateEmptyEnv()"
-      (onImportEnv)="modalsSvc.handleImportEnv()"
+      (onImportDesktopEnv)="modalsSvc.handleImportDesktopEnv()"
+      (onImportWebEnv)="modalsSvc.handleImportWebEnv($event)"
       ></dialog>
     }
 

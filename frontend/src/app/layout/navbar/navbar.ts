@@ -6,7 +6,7 @@ import { WorkspaceOptions } from "@/workspaces/workspace.options";
 @Component({
 	selector: "gurl-navbar",
 	template: `
-        @switch (appConfig?.mode) {
+        @switch (appConfig.mode) {
             @case("desktop") {
                 <nav class="flex p-2 items-center justify-between bg-base-300 shadow-md">
                     <nav class="flex gap-2 items-center">
@@ -22,7 +22,7 @@ import { WorkspaceOptions } from "@/workspaces/workspace.options";
                     <nav class="flex items-center gap-2">
                         <h2 class="text-primary text-xl mx-2 font-medium">
                             gURL
-                            <span class="text-sm">{{ appConfig?.appVersion }}</span>
+                            <span class="text-sm">{{ appConfig.appVersion }}</span>
                         </h2>
                     </nav>
                     <nav class="flex gap-2 items-center">

@@ -1,8 +1,17 @@
 import { NgClass } from "@angular/common";
-import { Component, HostBinding, input, output } from "@angular/core";
+import {
+	Component,
+	type ElementRef,
+	HostBinding,
+	inject,
+	input,
+	output,
+	viewChildren,
+} from "@angular/core";
 import type { models } from "@wailsjs/go/models";
 import { Eraser, LucideAngularModule, Paperclip, X } from "lucide-angular";
-import { getFileRepository } from "@/services";
+import { getAppConfig } from "@/app.config";
+import { AlertService, getFileRepository } from "@/services";
 import type { AppTabType, MultipartItem } from "@/types";
 import { humanBytes } from "../utils/time";
 import { GurlHighlightedInput } from "./highlighted.input";
@@ -56,6 +65,10 @@ import { GurlHighlightedInput } from "./highlighted.input";
         }
         @if(tabType() === 'req') {
         <div class="absolute flex items-center justify-center z-10 top-0 right-1 h-full">
+            @if(mode === "web") {
+              <input type="file" class="hidden" #webFileInp [attr.data-item-id]="item.id" (input)="handleWebFileInput($event)"   />
+            }
+
           <button
             [ngClass]="{
             'btn btn-xs btn-ghost xl:btn-sm': true,
@@ -63,9 +76,9 @@ import { GurlHighlightedInput } from "./highlighted.input";
             }"
             [disabled]="item.id === placeholderId() || item.key == '' || item.key.trim() == ''"
             (click)="openFileDialogue(item.id)"
-          >
-            <lucide-angular [img]="BinaryIcon" class="size-4" />
-          </button>
+            >
+              <lucide-angular [img]="BinaryIcon" class="size-4" />
+            </button>
           <button
             [ngClass]="{  
             'btn btn-xs btn-ghost xl:btn-sm': true,
@@ -98,6 +111,8 @@ import { GurlHighlightedInput } from "./highlighted.input";
 export class MultiPartFormItem {
 	@HostBinding("class")
 	hostClass = "flex flex-col gap-2.5";
+	private readonly webFileInps =
+		viewChildren<ElementRef<HTMLInputElement>>("webFileInp");
 
 	tabType = input.required<AppTabType>();
 	items = input.required<MultipartItem[]>();
@@ -110,17 +125,44 @@ export class MultiPartFormItem {
 	onDelete = output<string>();
 
 	private readonly fileRepo = getFileRepository();
+	private readonly alertSvc = inject(AlertService);
 	protected readonly CanceIcon = X;
 	protected readonly BinaryIcon = Paperclip;
 	protected readonly ClearFileIcon = Eraser;
+	protected readonly mode = getAppConfig().mode;
+
+	protected async handleWebFileInput(e: Event) {
+		const target = e.target as HTMLInputElement;
+		const id = target.getAttribute("data-item-id");
+		const files = target.files;
+		if (files?.length && id) {
+			const file = files[0];
+			try {
+				const fstats = await this.fileRepo.chooseFile(file);
+				this.onValUpdate.emit({ id, v: fstats });
+			} catch (_error) {
+				this.alertSvc.addAlert("Unable to choose file", "error");
+			}
+		}
+	}
 
 	protected async openFileDialogue(id: string) {
 		try {
+			if (this.mode === "web") {
+				const targetIndex = this.webFileInps().findIndex(
+					(x) => x.nativeElement.getAttribute("data-item-id") === id,
+				);
+				if (targetIndex > -1) {
+					this.webFileInps()[targetIndex].nativeElement.click();
+				}
+				return;
+			}
 			const file = await this.fileRepo.chooseFile();
 
 			this.onValUpdate.emit({ id, v: file });
 		} catch (error) {
 			console.error(error);
+			this.alertSvc.addAlert("Unable to choose file", "error");
 		}
 	}
 
