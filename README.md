@@ -61,7 +61,6 @@ This project is designed with a shared core + multiple clients architecture. The
 
 <figure>
   <img src="docs/screens/hld.png"  alt="High Level Design" />
-  <figcaption align="center"><h3>High Level Design</h3></figcaption>
 </figure>
 
 ### Design Principles
