@@ -7,12 +7,6 @@ import {
 	signal,
 } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import {
-	ExportCollection,
-	ExportEnvironment,
-	ImportCollection,
-	ImportEnvironment,
-} from "@wailsjs/go/exporter/Exporter";
 import type { models } from "@wailsjs/go/models";
 import { nanoid } from "nanoid";
 import { debounceTime, Subject } from "rxjs";
@@ -23,10 +17,13 @@ import {
 	THEME_LOCALSTORAGE_KEY,
 } from "@/constants";
 import {
+	AlertService,
 	getCollectionRepository,
 	getEnvRepository,
+	getExporter,
 	getReqRepository,
 	getUIStateRepository,
+	getWorkspaceRepository,
 } from "@/services";
 import {
 	type ActiveItemInfo,
@@ -47,19 +44,25 @@ import { TabsService } from "./tabs.service";
 	providedIn: "root",
 })
 export class AppService {
-	private reqRepo = getReqRepository();
-	private collectionRepo = getCollectionRepository();
-	private envRepo = getEnvRepository();
-	private uiStateRepo = getUIStateRepository();
-
+	private readonly reqRepo = getReqRepository();
+	private readonly collectionRepo = getCollectionRepository();
+	private readonly envRepo = getEnvRepository();
+	private readonly uiStateRepo = getUIStateRepository();
+	private readonly workspaceRepo = getWorkspaceRepository();
+	private readonly exporter = getExporter();
 	private _appState = signal<AppState>("initializing");
+	private _appError = signal<string | null>(null);
 	public appState = computed(() => this._appState());
+	public appError = computed(() => this._appError());
 	private tabSvc = inject(TabsService);
+	private alertSvc = inject(AlertService);
 	private destoyRef = inject(DestroyRef);
 	private discardReqDraftsDbSync$ = new Subject<boolean>();
 	private discardEnvDraftsDbSync$ = new Subject<boolean>();
+	private activeWorkspaceDbSync$ = new Subject<string>();
 	public activeEnvChange$ = new Subject<void>();
 	public refreshBreadcrumb$ = new Subject<void>();
+	public initiateDefaultWorkspaceCreation$ = new Subject<void>();
 
 	private _alwaysDiscardReqDrafts = signal<boolean>(false);
 	public alwaysDiscardDrafts = computed(() => this._alwaysDiscardReqDrafts());
@@ -85,6 +88,21 @@ export class AppService {
 		parent: "",
 		type: AppTabType.Req,
 	});
+
+	private _savedExamples = signal<models.ReqExampleLightDTO[]>([]);
+	public savedExamples = computed(() => this._savedExamples());
+	public refreshSavedExamples$ = new Subject<void>();
+
+	public async deleteReqExample(id: string) {
+		try {
+			await this.reqRepo.deleteReqExample(id);
+			this.alertSvc.addAlert(`Request example deleted.`, "success");
+			await this.initializeSavedExamples();
+		} catch (error) {
+			console.error(error);
+			this.alertSvc.addAlert(`Failed to delete request example.`, "error");
+		}
+	}
 
 	//#region environments
 	public validateInterpolatedToken(token: InputToken): [boolean, string] {
@@ -158,12 +176,17 @@ export class AppService {
 
 	public async deleteEnvironment(id: string) {
 		try {
+			if (this._activeEnvironment() === id) {
+				this._activeEnvironment.set(NO_ENV_ID);
+			}
 			await this.envRepo.removeEnv(id);
 			await this.envRepo.deleteEnvDraftsUnderEnv(id);
+			this.alertSvc.addAlert(`Environment deleted.`, "success");
 			await this.initializeEnvironments();
 			this.tabSvc.refreshNotifier.next(AppTabType.Env);
 		} catch (error) {
 			console.error(error);
+			this.alertSvc.addAlert(`Failed to delete environment.`, "error");
 		}
 	}
 
@@ -171,10 +194,14 @@ export class AppService {
 		try {
 			const copiedEnvId = nanoid();
 
-			await this.envRepo.copyEnvironment({
+			await this.envRepo.copyEnvironment(dto.id, {
 				id: copiedEnvId,
-				envId: dto.id,
 			});
+
+			this.alertSvc.addAlert(
+				`Environment copy ${dto.name}-copy added.`,
+				"success",
+			);
 
 			await this.initializeEnvironments();
 
@@ -185,29 +212,38 @@ export class AppService {
 			});
 		} catch (error) {
 			console.error(error);
+			this.alertSvc.addAlert(
+				`Failed to copy environment ${dto.name}.`,
+				"error",
+			);
 		}
 	}
 
-	public async importEnvironment() {
+	public async importEnvironment(file?: File) {
 		try {
-			await ImportEnvironment();
+			await this.exporter.importEnvironment(this._activeWorkspace(), file);
+			this.alertSvc.addAlert(`Environment imported successfully.`, "success");
 			await this.initializeEnvironments();
 		} catch (error) {
 			console.error(error);
+			this.alertSvc.addAlert(`Failed to import environment.`, "error");
 		}
 	}
 
-	public async exportEnvironment(id: string) {
+	public async exportEnvironment(id: string, name: string) {
 		try {
-			await ExportEnvironment(id);
+			await this.exporter.exportEnvironment(id, name);
+			this.alertSvc.addAlert(`Environment exported successfully.`, "success");
 		} catch (error) {
 			console.error(error);
+			this.alertSvc.addAlert(`Failed to export environment.`, "error");
 		}
 	}
 
 	//#endregion environments
 
 	//#region history
+	private globalHistory: Record<string, ReqHistoryItem[]> = {};
 	private _historyItems = signal<ReqHistoryItem[]>([]);
 	public searchHistoryKeyChange$ = new Subject<string>();
 	private _searchHistoryKey = signal<string>("");
@@ -228,7 +264,9 @@ export class AppService {
 
 	public addHistoryItem(item: ReqHistoryItem) {
 		this._historyItems.update((prev) => {
-			return [item, ...prev];
+			const newHistory = [...prev, item];
+			this.globalHistory[this._activeWorkspace()] = newHistory;
+			return newHistory;
 		});
 	}
 
@@ -257,40 +295,27 @@ export class AppService {
 		try {
 			await this.reqRepo.deleteSavedReq(requestId);
 			await this.reqRepo.deleteRequestDrafts(requestId);
-			//refresh from db
+			this.alertSvc.addAlert(`Request deleted.`, "success");
 			await this.initializeSavedRequests();
 			this.tabSvc.refreshNotifier.next(AppTabType.Req);
 		} catch (error) {
 			console.error(error);
+			this.alertSvc.addAlert(`Failed to delete request.`, "error");
 		}
 	}
 
 	public async copyRequest(sourceId: string, name: string) {
 		try {
-			await this.reqRepo.saveRequestCopy({ id: nanoid(), name, sourceId });
-			//refresh from db
+			await this.reqRepo.saveRequestCopy(sourceId, { id: nanoid(), name });
+			this.alertSvc.addAlert(`Request copy "${name}" added.`, "success");
 			await this.initializeSavedRequests();
 		} catch (error) {
 			console.error(error);
+			this.alertSvc.addAlert(`Failed to copy request "${name}".`, "error");
 		}
 	}
 
 	//#endregion requests
-
-	//#region request examples
-	private _savedExamples = signal<models.ReqExampleLightDTO[]>([]);
-	public savedExamples = computed(() => this._savedExamples());
-	public refreshSavedExamples$ = new Subject<void>();
-
-	public async deleteReqExample(id: string) {
-		try {
-			await this.reqRepo.deleteReqExample(id);
-			//refresh from db
-			await this.initializeSavedExamples();
-		} catch (error) {
-			console.error(error);
-		}
-	}
 
 	//#region collections
 	public collectionSearchKeyChange$ = new Subject<string>();
@@ -300,10 +325,17 @@ export class AppService {
 
 	public async addCollection(name: string) {
 		try {
-			await this.collectionRepo.addCollection(nanoid(), name);
+			const newCollection: models.CreateCollectionDTO = {
+				id: nanoid(),
+				name,
+				workspaceId: this._activeWorkspace(),
+			};
+			await this.collectionRepo.addCollection(newCollection);
+			this.alertSvc.addAlert(`Collection ${name} added`, "success");
 			await this.initializeCollections();
 		} catch (error) {
 			console.error(error);
+			this.alertSvc.addAlert(`Failed to add collection ${name}`, "error");
 		}
 	}
 
@@ -311,22 +343,24 @@ export class AppService {
 		try {
 			await this.collectionRepo.deleteCollection(id);
 			await this.collectionRepo.deleteDraftsUnderCollection(id);
-			//refresh from db
-
+			this.alertSvc.addAlert(`Collection deleted.`, "success");
 			await this.initializeCollections();
 			await this.initializeSavedRequests();
 			this.tabSvc.refreshNotifier.next(AppTabType.Req);
 		} catch (error) {
 			console.error(error);
+			this.alertSvc.addAlert(`Failed to delete collection.`, "error");
 		}
 	}
 
 	public async renameCollection(id: string, name: string) {
 		try {
 			await this.collectionRepo.renameCollection(id, name);
+			this.alertSvc.addAlert(`Collection renamed to ${name}.`, "success");
 			await this.initializeCollections();
 		} catch (error) {
 			console.error(error);
+			this.alertSvc.addAlert(`Failed to rename collection.`, "error");
 		}
 	}
 
@@ -334,30 +368,34 @@ export class AppService {
 		try {
 			await this.collectionRepo.clearCollection(id);
 			await this.collectionRepo.deleteDraftsUnderCollection(id);
-
-			//refresh from db
+			this.alertSvc.addAlert(`Collection cleared.`, "success");
 			await this.initializeSavedRequests();
 			this.tabSvc.refreshNotifier.next(AppTabType.Req);
 		} catch (error) {
 			console.error(error);
+			this.alertSvc.addAlert(`Failed to clear collection.`, "error");
 		}
 	}
 
-	public async exportCollection(id: string) {
+	public async exportCollection(id: string, name: string) {
 		try {
-			await ExportCollection(id);
+			await this.exporter.exportCollection(id, name);
+			this.alertSvc.addAlert(`Collection exported successfully.`, "success");
 		} catch (error) {
 			console.error(error);
+			this.alertSvc.addAlert(`Failed to export collection.`, "error");
 		}
 	}
 
-	public async importCollection() {
+	public async importCollection(file?: File) {
 		try {
-			await ImportCollection();
+			await this.exporter.importCollection(this._activeWorkspace(), file);
+			this.alertSvc.addAlert(`Collection imported successfully.`, "success");
 			await this.initializeCollections();
 			await this.initializeSavedRequests();
 		} catch (error) {
 			console.error(error);
+			this.alertSvc.addAlert(`Failed to import collection.`, "error");
 		}
 	}
 
@@ -424,66 +462,85 @@ export class AppService {
 	//#endregion sidebar
 
 	//#region workspaces
-	private _workspaces = signal<DropDownItem<string>[]>([
-		{
-			id: "default",
-			displayName: "Select Workspace",
-		},
-		{
-			id: "workspace1",
-			displayName: "Workspace1",
-		},
-		{
-			id: "workspace2",
-			displayName: "Workspace2",
-		},
-		{
-			id: "workspace3",
-			displayName: "Workspace3",
-		},
-		{
-			id: "workspace4",
-			displayName: "Workspace4",
-		},
-		{
-			id: "workspace5",
-			displayName: "Workspace5",
-		},
-		{
-			id: "workspace6",
-			displayName: "Workspace6",
-		},
-		{
-			id: "workspace7",
-			displayName: "Workspace7",
-		},
-		{
-			id: "workspace8",
-			displayName: "Workspace8",
-		},
-		{
-			id: "workspace9",
-			displayName: "Workspace9",
-		},
-		{
-			id: "workspace10",
-			displayName: "Workspace10",
-		},
-	]);
+	private _workspaces = signal<DropDownItem<string>[]>([]);
 
-	private _activeWorkspace = signal<DropDownItem<string>>(
-		this._workspaces()[0],
-	);
-	public activeWorkSpace = computed(() => this._activeWorkspace());
+	private _activeWorkspace = signal<string>("");
+
+	public activeWorkSpace = computed<DropDownItem<string>>(() => {
+		const id = this._activeWorkspace();
+		return this._workspaces().find((x) => x.id === id)!;
+	});
 
 	public workspaces = computed(() => this._workspaces());
 
-	public setActiveWorkspace(id: string) {
+	private setActiveWorkspace(id: string) {
 		const index = this._workspaces().findIndex((x) => x.id === id);
-		if (index > -1) {
-			this._activeWorkspace.set(this._workspaces()[index]);
+		if (index === -1) {
+			throw new Error("Workspace with the given id does not exist");
+		}
+		this.activeWorkspaceDbSync$.next(id);
+		this.tabSvc.setWorkspaceId(id);
+		this._activeWorkspace.set(id);
+	}
+
+	public async switchworkspace(id: string) {
+		try {
+			if (id === this.activeWorkSpace().id) {
+				return;
+			}
+
+			this._appState.set("initializing");
+			await new Promise((resolve) => setTimeout(resolve, 1000));
+			await this.initializeActiveWorkspace(id);
+			this.alertSvc.addAlert(`Workspace initialized`, "success");
+			this._appState.set("loaded");
+		} catch (error) {
+			console.error(error);
+			this._appError.set("Failed to switch workspace, please reload.");
+			this._appState.set("error");
 		}
 	}
+
+	async createDefaultWorkspace(name: string) {
+		try {
+			const newWorkspace: models.CreateWorkspaceDTO = {
+				name,
+				id: nanoid(),
+			};
+			await this.workspaceRepo.addWorkspace(newWorkspace);
+			await this.initializeWorkspaces(newWorkspace.id);
+		} catch (error) {
+			console.error(error);
+			this._appError.set("Failed to create default workspace.");
+			this._appState.set("error");
+		}
+	}
+
+	async refreshWorkspaces() {
+		const workspaces = await this.workspaceRepo.getWorkspaces();
+		if (Array.isArray(workspaces) && workspaces.length) {
+			const workspaceDropdownItems = workspaces.map((ws) => ({
+				id: ws.id,
+				displayName: ws.name,
+			}));
+
+			this._workspaces.set(workspaceDropdownItems);
+		}
+	}
+
+	async createNewWorkspace(name: string) {
+		try {
+			const newWorkspace: models.CreateWorkspaceDTO = {
+				name,
+				id: nanoid(),
+			};
+			await this.workspaceRepo.addWorkspace(newWorkspace);
+			await this.refreshWorkspaces();
+		} catch (error) {
+			console.error(error);
+		}
+	}
+
 	//#endregion workspaces
 
 	constructor() {
@@ -625,6 +682,20 @@ export class AppService {
 						});
 				},
 			});
+
+		this.activeWorkspaceDbSync$
+			.pipe(takeUntilDestroyed(this.destoyRef))
+			.subscribe({
+				next: (v) => {
+					this.uiStateRepo
+						.updateUIState({
+							activeWorkspace: v,
+						})
+						.then(() => {
+							console.log(`active workspace ${v} saved to db`);
+						});
+				},
+			});
 	}
 
 	//#region init
@@ -639,7 +710,9 @@ export class AppService {
 
 	async initializeEnvironments() {
 		try {
-			const environments = await this.envRepo.getEnvironments();
+			const environments = await this.envRepo.getEnvironments(
+				this._activeWorkspace(),
+			);
 			if (Array.isArray(environments) && environments.length) {
 				this._environments.set(environments);
 			} else {
@@ -647,74 +720,102 @@ export class AppService {
 			}
 		} catch (error) {
 			console.error(error);
+			this.alertSvc.addAlert("Failed to load environments.", "error");
 		}
 	}
 
 	async initializeCollections() {
 		try {
-			const collections = await this.collectionRepo.getAllCollections();
+			const collections = await this.collectionRepo.getAllCollections(
+				this._activeWorkspace(),
+			);
 			if (Array.isArray(collections) && collections.length) {
 				this._collections.set(collections);
 			} else {
 				this._collections.set([]);
 			}
-		} catch (_error) {
-			this._appState.set("error");
+		} catch (error) {
+			console.error(error);
+			this.alertSvc.addAlert("Failed to load collections.", "error");
 		}
 	}
 
 	async initializeSavedRequests() {
 		try {
-			const savedRequests = await this.reqRepo.getSavedRequests();
+			const savedRequests = await this.reqRepo.getSavedRequests(
+				this._activeWorkspace(),
+			);
 			if (Array.isArray(savedRequests) && savedRequests.length) {
 				this._savedRequests.set(savedRequests);
 			} else {
 				this._savedRequests.set([]);
 			}
-		} catch (_error) {
-			this._appState.set("error");
+		} catch (error) {
+			console.error(error);
+			this.alertSvc.addAlert("Failed to load requests.", "error");
 		}
 	}
 
 	async initializeSavedExamples() {
 		try {
-			const savedExamples = await this.reqRepo.getReqExamples();
+			const savedExamples = await this.reqRepo.getReqExamples(
+				this._activeWorkspace(),
+			);
 			if (Array.isArray(savedExamples) && savedExamples.length) {
 				this._savedExamples.set(savedExamples);
 			} else {
 				this._savedExamples.set([]);
 			}
 		} catch (_error) {
-			this._appState.set("error");
+			this.alertSvc.addAlert("Failed to load request examples.", "error");
 		}
 	}
 
-	async initializeUIState() {
-		try {
-			const uiState = await this.uiStateRepo.getUIState();
-			this._formLayout.set(
-				(uiState.layout as FormLayout) || FormLayout.Responsive,
-			);
-			this._isDesktopSidebarOpen.set(uiState.isSidebarOpen);
-			this._alwaysDiscardReqDrafts.set(uiState.alwaysDiscardDrafts);
-			await this.tabSvc.init(uiState);
-		} catch (_error) {
-			this._appState.set("error");
+	async initializeUIState(): Promise<string> {
+		this.initializeAppPreferences();
+		const uiState = await this.uiStateRepo.getUIState();
+		this._formLayout.set(
+			(uiState.layout as FormLayout) || FormLayout.Responsive,
+		);
+		this._isDesktopSidebarOpen.set(uiState.isSidebarOpen);
+		this._alwaysDiscardReqDrafts.set(uiState.alwaysDiscardDrafts);
+		return uiState.activeWorkspace;
+	}
+
+	async initializeWorkspaces(activeWorkspace: string) {
+		await this.refreshWorkspaces();
+		if (activeWorkspace !== "") {
+			await this.initializeActiveWorkspace(activeWorkspace);
+			return;
 		}
+
+		this.initiateDefaultWorkspaceCreation$.next();
+	}
+
+	public async initializeActiveWorkspace(workspaceId: string) {
+		this.setActiveWorkspace(workspaceId);
+		if (this.globalHistory[workspaceId]) {
+			this._historyItems.set(this.globalHistory[workspaceId]);
+		} else {
+			this._historyItems.set([]);
+		}
+		this._activeEnvironment.set(NO_ENV_ID);
+		await this.initializeCollections();
+		await this.initializeSavedRequests();
+		await this.initializeSavedExamples();
+		await this.initializeEnvironments();
+		await this.tabSvc.init(workspaceId);
 	}
 
 	public async init() {
 		try {
-			this.initializeAppPreferences();
-			await new Promise((resolve) => setTimeout(resolve, 1500));
-			//initialize collections + saved requests
-			await this.initializeCollections();
-			await this.initializeSavedRequests();
-			await this.initializeSavedExamples();
-			await this.initializeEnvironments();
-			await this.initializeUIState();
+			const activeWorkspace = await this.initializeUIState();
+			await this.initializeWorkspaces(activeWorkspace);
 			this._appState.set("loaded");
+			this.alertSvc.addAlert("App initialized.", "success");
 		} catch (_error) {
+			console.log(_error);
+			this._appError.set("Failed to initialize the workspace.");
 			this._appState.set("error");
 		}
 	}

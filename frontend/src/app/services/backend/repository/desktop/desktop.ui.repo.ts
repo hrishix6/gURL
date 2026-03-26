@@ -1,5 +1,5 @@
 import type { models } from "@wailsjs/go/models";
-import { GetUIState, UpdateUIState } from "@wailsjs/go/storage/Storage";
+import { GetUIState, UpdateUIState } from "@wailsjs/go/storage/DesktopStorage";
 import type { UIStateRepository } from "@/types";
 
 export class DesktopUIStateRepository implements UIStateRepository {

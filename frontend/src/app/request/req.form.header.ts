@@ -11,7 +11,7 @@ import { GurlDropdown } from "@/common/components";
 import { GurlHighlightedInput } from "@/common/components/highlighted.input";
 import { REQ_METHODS } from "@/constants";
 import { SaveRequestModal } from "@/modals/save.request";
-import { FormService } from "@/services";
+import { AppService, FormService } from "@/services";
 import type { RequestMethod } from "@/types";
 
 @Component({
@@ -55,12 +55,14 @@ import type { RequestMethod } from "@/types";
             tabindex="-1"
             class="dropdown-content menu bg-base-100 rounded-box z-50 w-36 shadow-sm"
           > 
+           @if(appSvc.collections().length) {
             <li class="my-0.5">
               <a href="#" (click)="handleOpenSaveRequestModal()">
                 <lucide-angular [img]="SaveIcon" class="size-4" /> 
                  Save
              </a>
             </li>
+           }
             <li class="my-0.5">
               <a href="#" (click)="f.copyRequest()">
                 <lucide-angular [img]="CopyIcon" class="size-4"  /> 
@@ -95,6 +97,7 @@ export class ReqFormHeader {
 	protected readonly DeleteIcon = Trash2;
 	protected readonly reqMethods = REQ_METHODS;
 	protected readonly f = inject(FormService);
+	protected readonly appSvc = inject(AppService);
 
 	protected handleActiveItemSelection(id: RequestMethod) {
 		this.f.setMethod(id);

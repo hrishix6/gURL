@@ -370,8 +370,7 @@ export class BodyService {
 		this.bodyTypeDbSync$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
 			next: (v) => {
 				this.reqRepo
-					.updatereqDraftFields({
-						draftId: this.draftId,
+					.updatereqDraftFields(this.draftId, {
 						bodyType: v,
 					})
 					.then(() => {
@@ -386,8 +385,7 @@ export class BodyService {
 			.subscribe({
 				next: (v) => {
 					const payload = v.filter((x) => x.id !== URLENCODED_ID_PLACEHOLDER);
-					this.reqRepo.updatereqDraftFields({
-						draftId: this.draftId,
+					this.reqRepo.updatereqDraftFields(this.draftId, {
 						urlencodedJson: JSON.stringify(payload),
 					});
 				},
@@ -400,8 +398,7 @@ export class BodyService {
 				next: (v) => {
 					const payload = v.filter((x) => x.id !== MULTIPART_ID_PLACEHOLDER);
 					this.reqRepo
-						.updatereqDraftFields({
-							draftId: this.draftId,
+						.updatereqDraftFields(this.draftId, {
 							multipartJson: JSON.stringify(payload),
 						})
 						.then(() => {
@@ -416,8 +413,7 @@ export class BodyService {
 			.subscribe({
 				next: (v) => {
 					this.reqRepo
-						.updatereqDraftFields({
-							draftId: this.draftId,
+						.updatereqDraftFields(this.draftId, {
 							text: v,
 						})
 						.then(() => {
@@ -430,8 +426,7 @@ export class BodyService {
 		this.binaryBDbSync$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
 			next: (v) => {
 				this.reqRepo
-					.updatereqDraftFields({
-						draftId: this.draftId,
+					.updatereqDraftFields(this.draftId, {
 						binaryJson: v ? JSON.stringify(v) : "",
 					})
 					.then(() => {

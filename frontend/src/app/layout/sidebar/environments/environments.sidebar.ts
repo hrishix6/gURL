@@ -1,5 +1,5 @@
 import { Component, HostBinding, inject, signal } from "@angular/core";
-import { Ban, LucideAngularModule, Search } from "lucide-angular";
+import { Info, LucideAngularModule, Search } from "lucide-angular";
 import { AppService } from "@/services";
 import { GurlEnvironmentItem } from "./environment.item";
 
@@ -30,8 +30,8 @@ import { GurlEnvironmentItem } from "./environment.item";
     </div>
     }@else {
     <div class="flex items-center gap-2 my-2 justify-center text-sm opacity-25">
-        <lucide-angular [img]="NoneIcon" class="size-4" />
-		    No items
+        <lucide-angular [img]="InfoIcon" class="size-4" />
+		    To interpolate variables, create an Environment
       </div>
     }
   `,
@@ -41,7 +41,7 @@ export class GurlEnvironments {
 	@HostBinding("class")
 	def = "flex flex-1 flex-col overflow-hidden";
 
-	protected readonly NoneIcon = Ban;
+	protected readonly InfoIcon = Info;
 	protected readonly SearchIcon = Search;
 	protected appSvc = inject(AppService);
 

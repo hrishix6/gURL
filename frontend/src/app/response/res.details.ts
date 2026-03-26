@@ -5,6 +5,7 @@ import {
 	ChevronUp,
 	EllipsisVertical,
 	Eraser,
+	FileDown,
 	LucideAngularModule,
 	MessageCircleWarning,
 	Save,
@@ -36,12 +37,16 @@ import { ResHeaders } from "./res.headers";
 					@if(formSvc.draftParentData().parentRequestId){
 						<button class="btn btn-sm btn-soft join-item" (click)="formSvc.handleOpenSaveExampleModal()">
 							<lucide-angular [img]="SaveIcon" class="size-4" />
-							Save
+							<!-- Save -->
 						</button>
 					}
+					<button class="btn btn-sm btn-soft join-item" (click)="formSvc.saveToFile()">
+						<lucide-angular [img]="DownloadIcon"  class="size-4"/>
+						<!-- Download -->
+					</button>
 					<button class="btn btn-sm btn-soft join-item" (click)="formSvc.clearResponse()">
 						<lucide-angular [img]="ClearIcon"  class="size-4"/>
-						Clear
+						<!-- Clear -->
 					</button>
                   }
         </div>
@@ -54,11 +59,7 @@ import { ResHeaders } from "./res.headers";
         <gurl-res-headers />
       } @case ("res_body"){ 
         <gurl-res-body />
-      } @case('res_console') {
-      <div class="flex flex-1 flex-col items-center justify-center opacity-25">
-            Coming Soon
-      </div>
-      } 
+      }
       @case("res_cookies"){
         <gurl-res-cookies />
       }
@@ -89,6 +90,7 @@ export class ResponseDetails {
 	protected readonly DeleteIcon = Trash2;
 	protected readonly ClearIcon = Eraser;
 	protected readonly SaveIcon = Save;
+	protected readonly DownloadIcon = FileDown;
 	protected readonly NoneIcon = Ban;
 	protected readonly AbortedIcon = ShieldBanIcon;
 	protected readonly ErroredReqIcon = MessageCircleWarning;

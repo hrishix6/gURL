@@ -153,8 +153,7 @@ export class HeadersService {
 				next: (v) => {
 					const payload = v.filter((x) => x.id !== HID_PLACEHOLDER);
 					this.reqRepo
-						.updatereqDraftFields({
-							draftId: this.draftId,
+						.updatereqDraftFields(this.draftId, {
 							headersJson: JSON.stringify(payload),
 						})
 						.then(() => {

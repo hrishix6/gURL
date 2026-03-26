@@ -1,5 +1,4 @@
 <a id="readme-top"></a>
-<!-- PROJECT LOGO -->
 <br />
 <div align="center">
   <a href="https://github.com/othneildrew/Best-README-Template">
@@ -8,25 +7,33 @@
   <p>Cross platform API Client</p>
 </div>
 
-<!-- ABOUT THE PROJECT -->
-## Motivation
-gURL is just another fancy cURL. I am building this because I want to learn Go & desktop app development using Wails, plus it's something that would be useful in my
+## About
+gURL is just another fancy cURL. I am building this because I want to learn Go & desktop app development using Wails, plus it's something that is useful in my
 day-to-day work.
+
+> Declaimer: Entire is code is written by me, no LLMs were used to write any of the code.
 
 ## Features
 
 It's still in early stage, essential features are implemented. 
 
 * Simple UI to configure HTTP Requests
+* Workspaces to organize different orgs
 * Request history
 * Request collections
 * Environments
 * Request examples
 * Response preview for supported media types (Images, Audio, Video, Pdfs etc)
 * Import & Export
-* Linux & Mac Os supported, Windows support in progress.
+* Linux & Mac Os supported, Windows support in progress
+* Web client is also present, can be self hosted
 
 ## Screenshots
+
+<figure>
+  <figcaption align="center"><h3>Web Client</h3></figcaption>
+  <img src="docs/screens/web_client.png"  alt="Web Client" />
+</figure>
 
 <figure>
   <figcaption align="center"><h3>Collections</h3></figcaption>
@@ -48,21 +55,77 @@ It's still in early stage, essential features are implemented.
   <img src="docs/screens/response_example.png"  alt="response example" />
 </figure>
 
-<!-- ## Building from source
+## Architecture 
 
-- clone this repository, checkout main branch
+This project is designed with a shared core + multiple clients architecture. The goal is to keep all business logic centralized while allowing different frontends (desktop and web) to reuse the same underlying functionality.
 
-- You will need to install Wails dependencies for your platform, follow instructions on [this page](https://wails.io/docs/gettingstarted/installation). 
+<figure>
+  <img src="docs/screens/hld.png"  alt="High Level Design" />
+</figure>
 
-- Install `Node.js` >=20 and `Pnpm` >=10. 
+### Design Principles
 
-- Install `GNU Make` for your platform. 
+- **Shared Core**:  business logic shared avoiding duplication.
+- **Platform agnostic frontend**: dynamically switches implementations based on runtime environment.
+- **Thin Clients**: Client modules act as thin wrappers on top of shared core.
+- **Separation of Concerns**: Clear boundaries between,
+    - UI (`frontend/`)
+    - Transport (`/desktop`, `/web`)
+    - Business Logic (`shared/`)
 
-- run following command, binary will be built and saved under `./bin` directory.
+### Modules
 
-  ```bash
-  $ make build
-  ``` -->
+`desktop/` 
+- A standalone Go module built using Wails.
+- Acts as the desktop client.
+- Integrates the Angular frontend via Wails.
+- Communicates with the frontend through Wails JS bindings.
+- Reuses all core logic from the shared/ module.
+
+`web/`
+- A Go module that uses the standard net/http package.
+- Exposes RESTful APIs for backend operations
+- Serves the Angular SPA (static files)
+- Also depends on the shared/ module for all core functionality.
+
+`shared/`
+- The core module containing all reusable business logic.
+- Designed to be platform-agnostic and shared across both desktop and web clients.
+- Submodules
+  
+  `db/`
+    - Repository layer for interacting with SQLite.
+    - Handles persistence and data access.
+  
+  `assets/`
+    - **embeds static assets** in the final binary
+  
+  `executor/`
+    - Responsible for **executing HTTP requests**.
+    - Includes logic for request handling, response parsing, and detection.
+
+  `import_export`
+    - Handles **import/export** functionality.
+    - Supports Workspace, collections, requests, environment exports to `.json` & imports from `.json`
+  
+`frontend/`
+- Angular SPA
+- Built with **Program to interface** architecture:
+- Declares abstractions for Storage, Executor, Exporter. 
+- Provides concrete implementations based on runtime environment
+  | Environment | Implementation Strategy     |
+  | ----------- | --------------------------- |
+  | Web         | Calls backend via REST APIs |
+  | Desktop     | Uses Wails JS bindings      |
+
+- allows the same frontend codebase to work in both desktop & client mode and can be extended further.
+
+### Request Flow 
+
+<figure>
+  <img src="docs/screens/req_flow.png"  alt="Request Flow" />
+</figure>
+
 
 ## Roadmap
 
@@ -73,9 +136,9 @@ It's still in early stage, essential features are implemented.
 - [ ] Mock server
 - [ ] Git integration
 - [ ] Web Hooks testing & replayability
+- [ ] Ability to execute collections and add tests
 - [ ] OAS generation
 
-<!-- ACKNOWLEDGMENTS -->
 ## Acknowledgments
 
 * [Wails Project](https://wails.io/)

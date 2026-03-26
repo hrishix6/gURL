@@ -13,7 +13,12 @@ import {
 	RadioTower,
 	ScrollText,
 } from "lucide-angular";
-import { AppService, getReqRepository, TabsService } from "@/services";
+import {
+	AppService,
+	getEnvRepository,
+	getReqRepository,
+	TabsService,
+} from "@/services";
 import { AppTabType } from "./types";
 
 enum CrumbType {
@@ -95,6 +100,7 @@ export class Breadcrumbs {
 	}
 
 	private reqRepo = getReqRepository();
+	private envRepo = getEnvRepository();
 	private destroyRef = inject(DestroyRef);
 	private readonly tabSvc = inject(TabsService);
 	private readonly appSvc = inject(AppService);
@@ -142,7 +148,7 @@ export class Breadcrumbs {
 					break;
 				}
 				case AppTabType.Env: {
-					this.reqRepo
+					this.envRepo
 						.findEnvDraft(tab.entityId)
 						.then((draft) => {
 							if (draft) {
@@ -159,7 +165,6 @@ export class Breadcrumbs {
 						});
 					break;
 				}
-
 				case AppTabType.ReqExample: {
 					this.reqRepo
 						.getReqExampleById(tab.entityId)
@@ -194,7 +199,6 @@ export class Breadcrumbs {
 						});
 					break;
 				}
-
 				default: {
 					this.crumbs.set([]);
 				}

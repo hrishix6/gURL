@@ -88,7 +88,7 @@ export class GurlEnvironmentItem {
 	protected toggleExportEnv() {
 		const target = document.activeElement as HTMLAnchorElement;
 		target.blur();
-		this.appSvc.exportEnvironment(this.data().id);
+		this.appSvc.exportEnvironment(this.data().id, this.data().name);
 	}
 
 	protected toggleDeleteModal() {

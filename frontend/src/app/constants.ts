@@ -89,10 +89,10 @@ export const RES_DETAILS_TABS: readonly TabItem<ResTabId>[] = [
 		id: "res_cookies",
 		Name: "Cookies",
 	},
-	{
-		id: "res_console",
-		Name: "Trace",
-	},
+	// {
+	// 	id: "res_console",
+	// 	Name: "Trace",
+	// },
 ];
 
 export const REQ_BODY_TYPES: readonly DropDownItem<ReqBodyType>[] = [
@@ -223,4 +223,3 @@ export const ROOT_USER = "gurl-default-user";
 export const DL_LIMIT_BYTES = 300_000_000;
 export const MIME_JSON_FILE = "/mime.db.json";
 export const CONFIG_FILE_PATH = "/config.json";
-export const APP_VERSION = "v0.6.0";

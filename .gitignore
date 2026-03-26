@@ -3,5 +3,7 @@ frontend/dist
 frontend/.angular
 bin/
 *md5
-*.env
+*.env*
 *.db
+shared/assets/static/
+appData/

@@ -144,7 +144,7 @@ export class GurlCollectionItem {
 	protected toggleExportDialogue() {
 		const activeEl = document.activeElement as HTMLElement;
 		activeEl?.blur();
-		this.appSvc.exportCollection(this.data().id);
+		this.appSvc.exportCollection(this.data().id, this.data().name);
 	}
 
 	protected toggleDeleteModal() {

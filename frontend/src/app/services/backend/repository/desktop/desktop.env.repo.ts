@@ -10,13 +10,14 @@ import {
 	RemoveEnvDraft,
 	SaveEnvDraftAsEnv,
 	UpdateEnvDraftData,
-} from "@wailsjs/go/storage/Storage";
+} from "@wailsjs/go/storage/DesktopStorage";
 import type { EnvironmentRepository } from "@/types";
 
 export class DesktopEnvRepository implements EnvironmentRepository {
 	private static desktopEnvRepo: DesktopEnvRepository | null = null;
 
 	private constructor() {}
+
 	static getInstance() {
 		if (!DesktopEnvRepository.desktopEnvRepo) {
 			DesktopEnvRepository.desktopEnvRepo = new DesktopEnvRepository();
@@ -25,8 +26,11 @@ export class DesktopEnvRepository implements EnvironmentRepository {
 		return DesktopEnvRepository.desktopEnvRepo;
 	}
 
-	copyEnvironment(arg1: models.CopyEnvironmentDTO): Promise<void> {
-		return CopyEnvironment(arg1);
+	copyEnvironment(
+		sourceId: string,
+		arg1: models.CopyEnvironmentDTO,
+	): Promise<void> {
+		return CopyEnvironment(sourceId, arg1);
 	}
 
 	addEnvironmentDraft(arg1: models.AddEnvironmentDraftDTO): Promise<void> {
@@ -37,9 +41,10 @@ export class DesktopEnvRepository implements EnvironmentRepository {
 		return AddFreshEnvDraft(arg1);
 	}
 
-	getEnvironments(): Promise<Array<models.EnvironmentDTO>> {
-		return GetEnvironments();
+	getEnvironments(workspace: string): Promise<Array<models.EnvironmentDTO>> {
+		return GetEnvironments(workspace);
 	}
+
 	findEnvDraft(arg1: string): Promise<models.EnvironmentDraftDTO> {
 		return FindEnvDraft(arg1);
 	}
@@ -49,11 +54,17 @@ export class DesktopEnvRepository implements EnvironmentRepository {
 	removeEnvDraft(arg1: string): Promise<void> {
 		return RemoveEnvDraft(arg1);
 	}
-	saveEnvDraftAsEnv(arg1: models.SaveEnvDraftAsEnvDTO): Promise<void> {
-		return SaveEnvDraftAsEnv(arg1);
+	saveEnvDraftAsEnv(
+		draftId: string,
+		arg1: models.SaveEnvDraftAsEnvDTO,
+	): Promise<void> {
+		return SaveEnvDraftAsEnv(draftId, arg1);
 	}
-	updateEnvDraftData(arg1: models.UpdateEnvDraftDataDTO): Promise<void> {
-		return UpdateEnvDraftData(arg1);
+	updateEnvDraftData(
+		draftId: string,
+		arg1: models.UpdateEnvDraftDataDTO,
+	): Promise<void> {
+		return UpdateEnvDraftData(draftId, arg1);
 	}
 	deleteEnvDraftsUnderEnv(arg1: string): Promise<void> {
 		return DeleteEnvDraftsUnderEnv(arg1);

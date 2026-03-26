@@ -1,22 +1,22 @@
 export namespace models {
 	
-	export class AddDraftFromRequestDTO {
+	export class AddDraftDTO {
 	    id: string;
-	    requestId: string;
 	
 	    static createFrom(source: any = {}) {
-	        return new AddDraftFromRequestDTO(source);
+	        return new AddDraftDTO(source);
 	    }
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
-	        this.requestId = source["requestId"];
 	    }
 	}
 	export class AddEnvironmentDTO {
 	    id: string;
 	    name: string;
+	    workspaceId: string;
+	    dataJSON: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new AddEnvironmentDTO(source);
@@ -26,6 +26,8 @@ export namespace models {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
 	        this.name = source["name"];
+	        this.workspaceId = source["workspaceId"];
+	        this.dataJSON = source["dataJSON"];
 	    }
 	}
 	export class AddEnvironmentDraftDTO {
@@ -40,18 +42,6 @@ export namespace models {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.draftId = source["draftId"];
 	        this.envId = source["envId"];
-	    }
-	}
-	export class AddFreshDraftDTO {
-	    id: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new AddFreshDraftDTO(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.id = source["id"];
 	    }
 	}
 	export class ApiKeyAuth {
@@ -100,7 +90,6 @@ export namespace models {
 	}
 	export class CopyEnvironmentDTO {
 	    id: string;
-	    envId: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new CopyEnvironmentDTO(source);
@@ -109,7 +98,52 @@ export namespace models {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
-	        this.envId = source["envId"];
+	    }
+	}
+	export class CreateCollectionDTO {
+	    id: string;
+	    name: string;
+	    workspaceId: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new CreateCollectionDTO(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.name = source["name"];
+	        this.workspaceId = source["workspaceId"];
+	    }
+	}
+	export class CreateWorkspaceDTO {
+	    id: string;
+	    name: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new CreateWorkspaceDTO(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.name = source["name"];
+	    }
+	}
+	export class DownloadTmpFileDTO {
+	    file_path: string;
+	    file_name: string;
+	    file_mimetype: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new DownloadTmpFileDTO(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.file_path = source["file_path"];
+	        this.file_name = source["file_name"];
+	        this.file_mimetype = source["file_mimetype"];
 	    }
 	}
 	export class EnvironmentDTO {
@@ -259,6 +293,7 @@ export namespace models {
 	    src: string;
 	    canRender: boolean;
 	    filepath: string;
+	    filename: string;
 	    detectedMimeType: string;
 	    reportedMimeType: string;
 	    extension: string;
@@ -273,6 +308,7 @@ export namespace models {
 	        this.src = source["src"];
 	        this.canRender = source["canRender"];
 	        this.filepath = source["filepath"];
+	        this.filename = source["filename"];
 	        this.detectedMimeType = source["detectedMimeType"];
 	        this.reportedMimeType = source["reportedMimeType"];
 	        this.extension = source["extension"];
@@ -441,6 +477,7 @@ export namespace models {
 	    id: string;
 	    requestId: string;
 	    collectionId: string;
+	    workspaceId: string;
 	    name: string;
 	    uploadSize: number;
 	    responseSuccess: boolean;
@@ -481,6 +518,7 @@ export namespace models {
 	        this.id = source["id"];
 	        this.requestId = source["requestId"];
 	        this.collectionId = source["collectionId"];
+	        this.workspaceId = source["workspaceId"];
 	        this.name = source["name"];
 	        this.uploadSize = source["uploadSize"];
 	        this.responseSuccess = source["responseSuccess"];
@@ -584,10 +622,10 @@ export namespace models {
 	    }
 	}
 	export class SaveDraftAsReqDTO {
-	    draftId: string;
 	    requestId: string;
 	    collectionId: string;
 	    name: string;
+	    workspaceId: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new SaveDraftAsReqDTO(source);
@@ -595,16 +633,16 @@ export namespace models {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.draftId = source["draftId"];
 	        this.requestId = source["requestId"];
 	        this.collectionId = source["collectionId"];
 	        this.name = source["name"];
+	        this.workspaceId = source["workspaceId"];
 	    }
 	}
 	export class SaveEnvDraftAsEnvDTO {
-	    draftId: string;
 	    envId: string;
 	    name: string;
+	    workspaceId: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new SaveEnvDraftAsEnvDTO(source);
@@ -612,13 +650,12 @@ export namespace models {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.draftId = source["draftId"];
 	        this.envId = source["envId"];
 	        this.name = source["name"];
+	        this.workspaceId = source["workspaceId"];
 	    }
 	}
 	export class SaveRequestCopyDTO {
-	    sourceId: string;
 	    id: string;
 	    name: string;
 	
@@ -628,7 +665,6 @@ export namespace models {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.sourceId = source["sourceId"];
 	        this.id = source["id"];
 	        this.name = source["name"];
 	    }
@@ -655,12 +691,11 @@ export namespace models {
 	}
 	
 	export class UIStateDTO {
-	    openTabsJson: string;
 	    layout: string;
-	    activeTab: string;
 	    isSidebarOpen: boolean;
 	    alwaysDiscardDrafts: boolean;
 	    alwaysDiscardEnvDrafts: boolean;
+	    activeWorkspace: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new UIStateDTO(source);
@@ -668,16 +703,14 @@ export namespace models {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.openTabsJson = source["openTabsJson"];
 	        this.layout = source["layout"];
-	        this.activeTab = source["activeTab"];
 	        this.isSidebarOpen = source["isSidebarOpen"];
 	        this.alwaysDiscardDrafts = source["alwaysDiscardDrafts"];
 	        this.alwaysDiscardEnvDrafts = source["alwaysDiscardEnvDrafts"];
+	        this.activeWorkspace = source["activeWorkspace"];
 	    }
 	}
 	export class UpdateDraftFieldsDTO {
-	    draftId: string;
 	    url?: string;
 	    method?: string;
 	    queryJson?: string;
@@ -701,7 +734,6 @@ export namespace models {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.draftId = source["draftId"];
 	        this.url = source["url"];
 	        this.method = source["method"];
 	        this.queryJson = source["queryJson"];
@@ -721,7 +753,6 @@ export namespace models {
 	    }
 	}
 	export class UpdateEnvDraftDataDTO {
-	    draftId: string;
 	    dataJSON: string;
 	
 	    static createFrom(source: any = {}) {
@@ -730,15 +761,13 @@ export namespace models {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.draftId = source["draftId"];
 	        this.dataJSON = source["dataJSON"];
 	    }
 	}
 	export class UpdateUIStateDTO {
 	    layout?: string;
-	    openTabsJson?: string;
 	    isSidebarOpen?: boolean;
-	    activeTabId?: string;
+	    activeWorkspace?: string;
 	    alwaysDiscardReqDrafts?: boolean;
 	    alwaysDiscardEnvDrafts?: boolean;
 	
@@ -749,11 +778,58 @@ export namespace models {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.layout = source["layout"];
-	        this.openTabsJson = source["openTabsJson"];
 	        this.isSidebarOpen = source["isSidebarOpen"];
-	        this.activeTabId = source["activeTabId"];
+	        this.activeWorkspace = source["activeWorkspace"];
 	        this.alwaysDiscardReqDrafts = source["alwaysDiscardReqDrafts"];
 	        this.alwaysDiscardEnvDrafts = source["alwaysDiscardEnvDrafts"];
+	    }
+	}
+	export class UpdateWorkspaceDTO {
+	    name?: string;
+	    activeTab?: string;
+	    openTabsJSON?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new UpdateWorkspaceDTO(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.activeTab = source["activeTab"];
+	        this.openTabsJSON = source["openTabsJSON"];
+	    }
+	}
+	export class WorkspaceDTO {
+	    id: string;
+	    name: string;
+	    openTabsJSON: string;
+	    activeTab: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new WorkspaceDTO(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.name = source["name"];
+	        this.openTabsJSON = source["openTabsJSON"];
+	        this.activeTab = source["activeTab"];
+	    }
+	}
+	export class WorkspaceLightDTO {
+	    id: string;
+	    name: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new WorkspaceLightDTO(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.name = source["name"];
 	    }
 	}
 

@@ -9,7 +9,12 @@ import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { nanoid } from "nanoid";
 import { debounceTime, Subject } from "rxjs";
 import { ENV_ID_PLACEHOLDER } from "@/constants";
-import { AppService, getEnvRepository, TabsService } from "@/services";
+import {
+	AlertService,
+	AppService,
+	getEnvRepository,
+	TabsService,
+} from "@/services";
 import {
 	AppTabType,
 	type EnvironmentDraftParent,
@@ -18,12 +23,14 @@ import {
 
 @Injectable()
 export class EnvFormService {
+	private _envTabId: string = "";
 	private _envDraftId: string = "";
 	private destroyRef = inject(DestroyRef);
 	private readonly envRepo = getEnvRepository();
 
 	private _tabSvc = inject(TabsService);
 	private _appSvc = inject(AppService);
+	private _alertSvc = inject(AlertService);
 
 	private envDataDbSync$ = new Subject<EnvironmentItem[]>();
 
@@ -155,15 +162,13 @@ export class EnvFormService {
 		});
 	}
 
-	public async initializeEnvForm(envDraftId: string) {
+	public async initializeEnvForm(tabId: string, envDraftId: string) {
 		try {
-			console.log(`Initializing environment draft ${envDraftId}`);
-			//fetch data from the backend and populate draft state.
+			this._envTabId = tabId;
 			const draft = await this.envRepo.findEnvDraft(envDraftId);
 
 			if (!draft) {
-				//TODO: show error
-				return;
+				throw new Error(`No draft found with id ${envDraftId} in db`);
 			}
 
 			const { id, name, dataJSON, parentEnvId, parentEnvName } = draft;
@@ -185,10 +190,9 @@ export class EnvFormService {
 				},
 			]);
 		} catch (error) {
-			console.error(
-				`Error initializing environment draft ${envDraftId}:`,
-				error,
-			);
+			console.error(error);
+			this._alertSvc.addAlert("Failed to load environment draft", "error");
+			this._tabSvc.deleteTab(tabId, AppTabType.Env);
 		}
 	}
 
@@ -208,11 +212,16 @@ export class EnvFormService {
 				envId = parentEnvId;
 			}
 
-			await this.envRepo.saveEnvDraftAsEnv({
-				draftId: this._envDraftId,
+			await this.envRepo.saveEnvDraftAsEnv(this._envDraftId, {
 				envId: envId,
 				name: this.environmentName(),
+				workspaceId: this._appSvc.activeWorkSpace().id,
 			});
+
+			this._alertSvc.addAlert(
+				`Environment "${this.environmentName()}" saved.`,
+				"success",
+			);
 
 			this._appSvc.refreshEnvs$.next();
 
@@ -267,7 +276,7 @@ export class EnvFormService {
 				next: (v) => {
 					if (v === AppTabType.Env) {
 						console.log(`received signal to refresh self`);
-						this.initializeEnvForm(this._envDraftId);
+						this.initializeEnvForm(this._envTabId, this._envDraftId);
 					}
 				},
 			});
@@ -277,8 +286,7 @@ export class EnvFormService {
 			.subscribe({
 				next: (v) => {
 					this.envRepo
-						.updateEnvDraftData({
-							draftId: this._envDraftId,
+						.updateEnvDraftData(this._envDraftId, {
 							dataJSON: JSON.stringify(
 								v.filter((x) => x.id !== ENV_ID_PLACEHOLDER),
 							),

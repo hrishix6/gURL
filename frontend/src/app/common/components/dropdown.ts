@@ -1,6 +1,7 @@
 import { NgClass } from "@angular/common";
 import { Component, input, output } from "@angular/core";
 import {
+	Building,
 	Check,
 	ChevronsUpDown,
 	Container,
@@ -25,6 +26,9 @@ import type { DropDownItem } from "@/types";
                   'btn-soft': varient() === 'soft',
                 }">
                     @switch(icon()) {
+                      @case('workspace') {
+                        <lucide-angular [img]="WorkspaceIcon" class="size-4 mr-0.5" />
+                      }
                       @case("env") {
                         <lucide-angular [img]="EnvironmentIcon" class="size-4 mr-0.5" />
                       }
@@ -51,6 +55,9 @@ import type { DropDownItem } from "@/types";
                   'btn-soft': varient() === 'soft',
                 }">
                     @switch(icon()) {
+                      @case('workspace') {
+                        <lucide-angular [img]="WorkspaceIcon" class="size-4 mr-0.5" />
+                      }
                       @case("env") {
                         <lucide-angular [img]="EnvironmentIcon" class="size-4 mr-0.5" />
                       }
@@ -70,18 +77,23 @@ import type { DropDownItem } from "@/types";
                 class="menu menu-{{size()}} bg-base-100 rounded-box z-50 w-max p-2 shadow-sm"
               >
               @for (item of items(); track item.id) {
-              <li class="my-0.5">
-                <button
-                  role="link"
-                  [ngClass]="{ 'menu-active': item.id === activeItem().id}"
-                  (click)="handleItemSelection(item.id)"
-                >
-                  {{ item.displayName }}
-                  @if(item.id == activeItem().id) {
-                  <lucide-angular [img]="CheckedIcon" class="size-4 ml-auto" />
-                  }
-                </button>
-              </li>
+                @if(item.isTitle) {
+                  <li class="menu-title">{{item.displayName}}</li>
+                }
+                @else {
+                  <li class="my-0.5">
+                    <button
+                      role="link"
+                      [ngClass]="{ 'menu-active': item.id === activeItem().id}"
+                      (click)="handleItemSelection(item.id)"
+                    >
+                      {{ item.displayName }}
+                      @if(item.id == activeItem().id) {
+                      <lucide-angular [img]="CheckedIcon" class="size-4 ml-auto" />
+                      }
+                    </button>
+                  </li>
+                }
             }
             </ul>
               </div>
@@ -105,6 +117,7 @@ export class GurlDropdown<T> {
 	protected readonly DropdownIcon = ChevronsUpDown;
 	protected readonly CheckedIcon = Check;
 	protected readonly CollectionIcon = Layers;
+	protected readonly WorkspaceIcon = Building;
 	protected readonly EnvironmentIcon = Container;
 	protected readonly ReqIcon = RadioTower;
 

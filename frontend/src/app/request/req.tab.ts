@@ -67,7 +67,11 @@ export class RequestTab implements OnInit {
 	}
 
 	ngOnInit(): void {
-		this.formSvc.initializeReqForm(this.tab().entityId, this.tab().entityType);
+		this.formSvc.initializeReqForm(
+			this.tab().id,
+			this.tab().entityId,
+			this.tab().entityType,
+		);
 	}
 
 	activeId = input.required<string | null>();

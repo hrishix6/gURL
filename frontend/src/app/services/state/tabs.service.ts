@@ -10,9 +10,10 @@ import type { models } from "@wailsjs/go/models";
 import { nanoid } from "nanoid";
 import { debounceTime, Subject } from "rxjs";
 import {
+	AlertService,
 	getEnvRepository,
 	getReqRepository,
-	getUIStateRepository,
+	getWorkspaceRepository,
 } from "@/services";
 import { type ApplicationTab, AppTabType, type ReqHistoryItem } from "@/types";
 
@@ -20,10 +21,10 @@ import { type ApplicationTab, AppTabType, type ReqHistoryItem } from "@/types";
 	providedIn: "root",
 })
 export class TabsService {
-	private uiStateRepo = getUIStateRepository();
 	private reqRepo = getReqRepository();
+	private alertSvc = inject(AlertService);
 	private envRepo = getEnvRepository();
-
+	private workspaceRepo = getWorkspaceRepository();
 	private _openTabs = signal<ApplicationTab[]>([]);
 	private _activeTab = signal<string | null>("");
 	public openTabs = computed(() => this._openTabs());
@@ -38,14 +39,19 @@ export class TabsService {
 	public closeEnvTabEvent$ = new Subject<ApplicationTab>();
 	public refreshNotifier = new Subject<AppTabType>();
 
+	private _workspaceId = signal<string>("");
+	public setWorkspaceId(id: string) {
+		this._workspaceId.set(id);
+	}
+
 	constructor() {
 		this.tabChanges$
 			.pipe(takeUntilDestroyed(this.destoyRef), debounceTime(500))
 			.subscribe({
 				next: (v) => {
-					this.uiStateRepo
-						.updateUIState({
-							openTabsJson: JSON.stringify(v),
+					this.workspaceRepo
+						.updateWorkspace(this._workspaceId(), {
+							openTabsJSON: JSON.stringify(v),
 						})
 						.then(() => {
 							console.log(`updated tabs state in sqlite`);
@@ -84,9 +90,11 @@ export class TabsService {
 
 		this.activeTabChanges$.pipe(takeUntilDestroyed(this.destoyRef)).subscribe({
 			next: (v) => {
-				this.uiStateRepo.updateUIState({ activeTabId: v }).then(() => {
-					console.log(`saving tab ${v} as active in db`);
-				});
+				this.workspaceRepo
+					.updateWorkspace(this._workspaceId(), { activeTab: v })
+					.then(() => {
+						console.log(`saving tab ${v} as active in db`);
+					});
 			},
 		});
 	}
@@ -111,7 +119,10 @@ export class TabsService {
 			});
 
 			this.setActiveTab(newTab.id);
-		} catch (_error) {}
+		} catch (_error) {
+			console.error(_error);
+			this.alertSvc.addAlert("Failed to open new environment tab", "error");
+		}
 	}
 
 	public async openReqExampleTab(item: models.ReqExampleLightDTO) {
@@ -143,6 +154,7 @@ export class TabsService {
 			this.setActiveTab(newTab.id);
 		} catch (error) {
 			console.error(error);
+			this.alertSvc.addAlert("Failed to open request example", "error");
 		}
 	}
 
@@ -171,18 +183,18 @@ export class TabsService {
 			this.setActiveTab(newTab.id);
 		} catch (error) {
 			console.error(error);
+			this.alertSvc.addAlert("Failed to open saved environment", "error");
 		}
 	}
 
 	public async createTabFromSaved(item: models.RequestLightDTO) {
 		try {
-			const newDraft: models.AddDraftFromRequestDTO = {
+			const newDraft: models.AddDraftDTO = {
 				id: nanoid(),
-				requestId: item.id,
 			};
 			console.dir(newDraft);
 
-			await this.reqRepo.addDraftFromRequest(newDraft);
+			await this.reqRepo.addDraftFromRequest(item.id, newDraft);
 
 			const newTab: ApplicationTab = {
 				id: nanoid(),
@@ -202,6 +214,7 @@ export class TabsService {
 			this.setActiveTab(newTab.id);
 		} catch (error) {
 			console.error(error);
+			this.alertSvc.addAlert("Failed to open saved request", "error");
 		}
 	}
 
@@ -227,6 +240,7 @@ export class TabsService {
 			this.setActiveTab(newTab.id);
 		} catch (error) {
 			console.error(error);
+			this.alertSvc.addAlert("Failed to copy tab", "error");
 		}
 	}
 
@@ -275,12 +289,13 @@ export class TabsService {
 			this.setActiveTab(newTab.id);
 		} catch (error) {
 			console.error(error);
+			this.alertSvc.addAlert("Failed to open history item", "error");
 		}
 	}
 
 	public async createFreshTab() {
 		try {
-			const newDraft: models.AddFreshDraftDTO = {
+			const newDraft: models.AddDraftDTO = {
 				id: nanoid(),
 			};
 
@@ -333,12 +348,12 @@ export class TabsService {
 
 	public async closeExampleTab(id: string) {
 		const tab = this._openTabs().find((x) => x.entityId === id);
-		const tabCount = this.tabCount();
-		if (tabCount === 1) {
-			await this.createFreshTab();
-		}
 		if (tab) {
 			this.deleteTab(tab.id, AppTabType.ReqExample);
+		}
+		const tabCount = this.tabCount();
+		if (tabCount === 0) {
+			await this.createFreshTab();
 		}
 	}
 
@@ -417,10 +432,12 @@ export class TabsService {
 		});
 	}
 
-	async init(uiState: models.UIStateDTO) {
+	async init(workspaceId: string) {
 		try {
-			const { openTabsJson, activeTab } = uiState;
-			const parsedTabs: ApplicationTab[] = JSON.parse(openTabsJson);
+			const workspace = await this.workspaceRepo.getWorkspaceById(workspaceId);
+			this.setWorkspaceId(workspaceId);
+			const { openTabsJSON, activeTab } = workspace;
+			const parsedTabs: ApplicationTab[] = JSON.parse(openTabsJSON);
 			if (Array.isArray(parsedTabs) && parsedTabs.length) {
 				console.log(`populating tabs`);
 				this._openTabs.set(parsedTabs);
@@ -431,10 +448,12 @@ export class TabsService {
 					this._activeTab.set(parsedTabs[0].id);
 				}
 			} else {
+				this._openTabs.set([]);
 				this.createFreshTab();
 			}
 		} catch (error) {
 			console.error(error);
+			this.alertSvc.addAlert("Failed to load tabs", "error");
 		}
 	}
 }
