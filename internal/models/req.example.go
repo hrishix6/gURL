@@ -29,3 +29,8 @@ type ReqExampleLightDTO struct {
 	RequestId string `json:"requestId"`
 	Name      string `json:"name"`
 }
+
+type AddRequestExampleDTO struct {
+	Example        ReqExampleDTO           `json:"example"`
+	RenderMetadata SavedResponseRenderMeta `json:"metadata"`
+}

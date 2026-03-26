@@ -27,6 +27,7 @@ type GurlKeyValMultiPartItem struct {
 }
 
 type TempStorageStats struct {
+	TempFileName      string
 	TempFilePath      string
 	Size              int64
 	TimeToStoredMs    int64
@@ -80,6 +81,7 @@ type GurlRenderMeta struct {
 	Src              string `json:"src"`
 	CanRender        bool   `json:"canRender"`
 	Filepath         string `json:"filepath"`
+	Filename         string `json:"filename"`
 	DetectedMimeType string `json:"detectedMimeType"`
 	ReportedMimeType string `json:"reportedMimeType"`
 	Extension        string `json:"extension"`

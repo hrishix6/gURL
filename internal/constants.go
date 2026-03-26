@@ -6,6 +6,7 @@ const (
 	SAVED_RESPONSES_PREFIX   = "/__gurl_saved__/"
 	TEMP_RESPONSE_PREFIX     = "/__gurl_temp__/"
 	MAX_RESPONSE_LIMIT_BYTES = 300_000_000
+	MAX_WEB_TEMP_FILE_BYES   = 100_000_000
 	SCHEMA_VERSION           = "1.0"
 	SAVED_RESPONSES_LOCATION = "saved_responses"
 )

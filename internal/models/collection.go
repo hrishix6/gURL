@@ -10,3 +10,7 @@ type CreateCollectionDTO struct {
 	Name      string `json:"name"`
 	Workspace string `json:"workspaceId"`
 }
+
+type RenameCollectionDTO struct {
+	Name string `json:"name"`
+}

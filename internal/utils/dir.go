@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"encoding/json"
 	"fmt"
 	"gurl/internal/models"
 	"os"
@@ -41,21 +40,25 @@ func CleanupTempDir(tempDir string) error {
 	return nil
 }
 
-func InitDataDir(appDataDir string) (string, error) {
-
-	base, err := os.UserConfigDir()
-
-	if err != nil {
-		return "", err
-	}
-
-	dataDir := filepath.Join(base, appDataDir)
+func InitDataDir(appDataDir string) error {
+	dataDir := filepath.Join(appDataDir)
 
 	if err := os.MkdirAll(dataDir, 0o755); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func InitWebTempDir(appDataDir string) (string, error) {
+
+	webTempDir := filepath.Join(appDataDir, "uploads")
+
+	if err := os.MkdirAll(webTempDir, 0o755); err != nil {
 		return "", err
 	}
 
-	return dataDir, nil
+	return webTempDir, nil
 }
 
 func InitSavedResponsesDir(appDataDir string, savedResponsesDir string) (string, error) {
@@ -85,29 +88,4 @@ func GetFileStats(filePath string) (*models.FileStats, error) {
 		Size: info.Size(),
 		Path: filePath,
 	}, nil
-}
-
-func WriteFrontendConfig(config models.AppConfig, path string) error {
-
-	b, err := json.Marshal(config)
-
-	if err != nil {
-		return err
-	}
-
-	f, err := os.Open(path)
-
-	if err != nil {
-		return err
-	}
-
-	defer f.Close()
-
-	_, err = f.Write(b)
-
-	if err != nil {
-		return err
-	}
-
-	return nil
 }

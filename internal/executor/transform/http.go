@@ -5,7 +5,7 @@ import (
 	"context"
 	"fmt"
 	"gurl/internal"
-	"gurl/internal/db"
+	dbPkg "gurl/internal/db"
 	"gurl/internal/models"
 	"gurl/internal/utils"
 	"io"
@@ -23,7 +23,6 @@ import (
 	"github.com/wailsapp/mimetype"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
-	"gorm.io/gorm"
 )
 
 var PREVIEWABLE_IMAGE_MIME = []string{
@@ -35,19 +34,13 @@ var PREVIEWABLE_IMAGE_MIME = []string{
 }
 
 type HttpTransformer struct {
-	appCtx context.Context
-	db     *gorm.DB
+	mimeRepo *dbPkg.MimeRepository
 }
 
-func NewHttpTransformer(db *gorm.DB, appCtx context.Context) *HttpTransformer {
+func NewHttpTransformer(mimeRepo *dbPkg.MimeRepository) *HttpTransformer {
 	return &HttpTransformer{
-		db:     db,
-		appCtx: appCtx,
+		mimeRepo: mimeRepo,
 	}
-}
-
-func (htf *HttpTransformer) lookupMimeRecord(id string) (db.MimeRecord, error) {
-	return gorm.G[db.MimeRecord](htf.db).Where("id = ?", id).First(htf.appCtx)
 }
 
 func (htf *HttpTransformer) toTextBody(r *models.GurlReq) io.Reader {
@@ -273,7 +266,7 @@ func (htf *HttpTransformer) TransformToHttp(ctx context.Context, r *models.GurlR
 	return req, nil
 }
 
-func (htf *HttpTransformer) TempStoreResponse(id string, res *http.Response, baseDir string) (*models.TempStorageStats, error) {
+func (htf *HttpTransformer) TempStoreResponse(ctx context.Context, id string, res *http.Response, baseDir string) (*models.TempStorageStats, error) {
 
 	log.Println("[Transformer] determining file extension and content type")
 
@@ -325,7 +318,7 @@ func (htf *HttpTransformer) TempStoreResponse(id string, res *http.Response, bas
 
 	normalizedCtype := utils.NormalizeContentType(detectedCtype.String())
 
-	mimeRecord, err := htf.lookupMimeRecord(normalizedCtype)
+	mimeRecord, err := htf.mimeRepo.FindMimeRecord(ctx, normalizedCtype)
 
 	defaultExt := ".bin"
 	mimeTypeLibExt := detectedCtype.Extension()
@@ -364,6 +357,7 @@ func (htf *HttpTransformer) TempStoreResponse(id string, res *http.Response, bas
 
 	return &models.TempStorageStats{
 		TempFilePath:      newTempFilePath,
+		TempFileName:      filepath.Base(newTempFilePath),
 		Size:              writtenBytes,
 		TimeToStoredMs:    dlMs,
 		TempFileExtension: finalExt,
@@ -455,6 +449,7 @@ func (htf *HttpTransformer) TransformHttpResponse(
 		Src:              fmt.Sprintf("%s%s", renderBasePath, tmpFileName),
 		CanRender:        canRender,
 		Filepath:         tempStorageStats.TempFilePath,
+		Filename:         tempStorageStats.TempFileName,
 		DetectedMimeType: cType,
 		ReportedMimeType: tempStorageStats.ReportedMimeType,
 		Extension:        tempStorageStats.TempFileExtension,

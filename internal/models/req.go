@@ -42,17 +42,11 @@ type RequestLightDTO struct {
 	CollectionId string `json:"collectionId"`
 }
 
-type AddFreshDraftDTO struct {
+type AddDraftDTO struct {
 	Id string `json:"id"`
 }
 
-type AddDraftFromRequestDTO struct {
-	Id        string `json:"id"`
-	RequestId string `json:"requestId"`
-}
-
 type SaveDraftAsReqDTO struct {
-	DraftId      string `json:"draftId"`
 	RequestId    string `json:"requestId"`
 	CollectionId string `json:"collectionId"`
 	Name         string `json:"name"`
@@ -60,7 +54,6 @@ type SaveDraftAsReqDTO struct {
 }
 
 type UpdateDraftFieldsDTO struct {
-	DraftId string  `json:"draftId"`
 	Url     *string `json:"url"`
 	Method  *string `json:"method"`
 	Query   *string `json:"queryJson"`
@@ -82,7 +75,6 @@ type UpdateDraftFieldsDTO struct {
 }
 
 type SaveRequestCopyDTO struct {
-	SourceId string `json:"sourceId"`
-	Id       string `json:"id"`
-	Name     string `json:"name"`
+	Id   string `json:"id"`
+	Name string `json:"name"`
 }

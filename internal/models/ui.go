@@ -31,10 +31,10 @@ type UIMultipartKeyValueItem struct {
 }
 
 type UIMultipartFileItem struct {
-	Id      string    `json:"id"`
-	Key     string    `json:"key"`
-	Value   FileStats `json:"val"`
-	Enabled string    `json:"enabled"`
+	Id      string     `json:"id"`
+	Key     string     `json:"key"`
+	Value   *FileStats `json:"val"`
+	Enabled string     `json:"enabled"`
 }
 
 type UIEnvironmentItem struct {

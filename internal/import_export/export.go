@@ -1,42 +1,32 @@
-package exporter
+package importexport
 
 import (
 	"context"
 	"encoding/json"
 	"gurl/internal"
-	"gurl/internal/db"
+	dbPkg "gurl/internal/db"
 	"gurl/internal/models"
 	"log"
-	"os"
 
-	"github.com/wailsapp/wails/v2/pkg/runtime"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
 
-type Exporter struct {
-	db     *gorm.DB
-	appCtx context.Context
-	tmpDir string
+type InternalExporter struct {
+	collectionRepo *dbPkg.CollectionRepository
+	reqRepo        *dbPkg.RequestRepository
+	envRepo        *dbPkg.EnvironmentRepository
 }
 
-func NewExporter(db *gorm.DB, tmpDir string) Exporter {
-	return Exporter{
-		db:     db,
-		tmpDir: tmpDir,
+func NewInternalExporter(db *gorm.DB) *InternalExporter {
+	return &InternalExporter{
+		collectionRepo: dbPkg.NewCollectionRepository(db),
+		reqRepo:        dbPkg.NewRequestRepository(db),
+		envRepo:        dbPkg.NewEnvironmentRepository(db),
 	}
 }
 
-func Startup(ex *Exporter, appCtx context.Context) error {
-	ex.appCtx = appCtx
-	return nil
-}
-
-func ShutDown(ex *Exporter) {
-
-}
-
-func toExportedMultipartItem(input datatypes.JSON) []models.ExportedMultipartItem {
+func ToExportedMultipartItem(input datatypes.JSON) []models.ExportedMultipartItem {
 
 	var o []models.MultipartKeyValItem
 
@@ -73,7 +63,7 @@ func toExportedMultipartItem(input datatypes.JSON) []models.ExportedMultipartIte
 	return results
 }
 
-func toExportedBinaryBody(input datatypes.JSON) string {
+func ToExportedBinaryBody(input datatypes.JSON) string {
 	var o models.FileStats
 
 	if err := json.Unmarshal(input, &o); err == nil {
@@ -135,7 +125,16 @@ func toExportedTokenAuth(input datatypes.JSON) (*models.TokenAuth, bool) {
 	return nil, false
 }
 
-func toExportedRequest(input db.Request) models.ExportedGurlReq {
+func toExportedRequest(input dbPkg.Request) models.ExportedGurlReq {
+
+	var multipartItems []models.ExportedMultipartItem
+
+	for _, mi := range ToExportedMultipartItem(input.MultipartForm) {
+		if mi.IsFile {
+			mi.V = ""
+		}
+		multipartItems = append(multipartItems, mi)
+	}
 
 	var o = models.ExportedGurlReq{
 		Version:        internal.SCHEMA_VERSION,
@@ -148,9 +147,9 @@ func toExportedRequest(input db.Request) models.ExportedGurlReq {
 		Cookies:        toExportedKeyValItem(input.Cookies),
 		BodyType:       models.ValidateOrDefaultBodyType(input.BodyType, models.NoBodyType),
 		UrlEncodedBody: toExportedKeyValItem(input.UrlEncodedForm),
-		MultipartBody:  toExportedMultipartItem(input.MultipartForm),
+		MultipartBody:  multipartItems,
 		TextBody:       input.TextBody,
-		BinaryBody:     toExportedBinaryBody(input.BinaryBody),
+		BinaryBody:     "",
 		AuthType:       models.GurlAuthType(input.AuthType),
 	}
 
@@ -169,15 +168,15 @@ func toExportedRequest(input db.Request) models.ExportedGurlReq {
 	return o
 }
 
-func (ex *Exporter) _exportCollection(collectionId string) (*models.ExportedGurlCollection, error) {
+func (ex *InternalExporter) ExportCollection(ctx context.Context, collectionId string) (*models.ExportedGurlCollection, error) {
 
-	collection, err := gorm.G[db.Collection](ex.db).Where("id = ?", collectionId).First(ex.appCtx)
+	collection, err := ex.collectionRepo.FindCollectionById(ctx, collectionId)
 
 	if err != nil {
 		return nil, err
 	}
 
-	requests, err := gorm.G[db.Request](ex.db).Where("collection_id = ?", collection.Id).Order("created desc").Find(ex.appCtx)
+	requests, err := ex.reqRepo.FindSavedReqByCollectionId(ctx, collectionId)
 
 	if err != nil {
 		return nil, err
@@ -195,49 +194,8 @@ func (ex *Exporter) _exportCollection(collectionId string) (*models.ExportedGurl
 	return ec, nil
 }
 
-func (ex *Exporter) ExportCollection(id string) error {
-
-	exportedCollection, err := ex._exportCollection(id)
-
-	if err != nil {
-		return err
-	}
-
-	//open save file dialogue and perform io.copy
-	dialogueOptions := runtime.SaveDialogOptions{
-		Title:           "Choose location to store response",
-		DefaultFilename: "gurl.collection.json",
-	}
-
-	if dir, err := os.UserHomeDir(); err == nil {
-		dialogueOptions.DefaultDirectory = dir
-	}
-
-	dst, err := runtime.SaveFileDialog(ex.appCtx, dialogueOptions)
-
-	if err != nil {
-		return err
-	}
-
-	dstF, err := os.Create(dst)
-
-	if err != nil {
-		return err
-	}
-
-	defer dstF.Close()
-
-	err = json.NewEncoder(dstF).Encode(exportedCollection)
-
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (ex *Exporter) _exportEnvironment(id string) (*models.ExportedEnvironment, error) {
-	env, err := gorm.G[db.Environment](ex.db).Where("id = ?", id).First(ex.appCtx)
+func (ex *InternalExporter) ExportEnvironment(ctx context.Context, id string) (*models.ExportedEnvironment, error) {
+	env, err := ex.envRepo.FindSavedEnvById(ctx, id)
 
 	if err != nil {
 		return nil, err
@@ -267,44 +225,4 @@ func (ex *Exporter) _exportEnvironment(id string) (*models.ExportedEnvironment, 
 	}
 
 	return exportedEnv, nil
-}
-
-func (ex *Exporter) ExportEnvironment(id string) error {
-	exportedEnv, err := ex._exportEnvironment(id)
-
-	if err != nil {
-		return err
-	}
-
-	//open save file dialogue and perform io.copy
-	dialogueOptions := runtime.SaveDialogOptions{
-		Title:           "Choose location to store environment",
-		DefaultFilename: "gurl.environment.json",
-	}
-
-	if dir, err := os.UserHomeDir(); err == nil {
-		dialogueOptions.DefaultDirectory = dir
-	}
-
-	dst, err := runtime.SaveFileDialog(ex.appCtx, dialogueOptions)
-
-	if err != nil {
-		return err
-	}
-
-	dstF, err := os.Create(dst)
-
-	if err != nil {
-		return err
-	}
-
-	defer dstF.Close()
-
-	err = json.NewEncoder(dstF).Encode(exportedEnv)
-
-	if err != nil {
-		return err
-	}
-
-	return nil
 }

@@ -1,20 +1,34 @@
-package exporter
+package importexport
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"gurl/internal/db"
+	dbPkg "gurl/internal/db"
 	"gurl/internal/models"
 	"gurl/internal/nanoid"
-	"gurl/internal/utils"
 	"os"
 	"strings"
 
-	"github.com/wailsapp/wails/v2/pkg/runtime"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
+
+type InternalImporter struct {
+	collectionRepo *dbPkg.CollectionRepository
+	reqRepo        *dbPkg.RequestRepository
+	envRepo        *dbPkg.EnvironmentRepository
+}
+
+func NewInternalImporter(db *gorm.DB) *InternalImporter {
+	return &InternalImporter{
+		collectionRepo: dbPkg.NewCollectionRepository(db),
+		reqRepo:        dbPkg.NewRequestRepository(db),
+		envRepo:        dbPkg.NewEnvironmentRepository(db),
+	}
+}
 
 func toImportedBasicAuth(raw json.RawMessage) (datatypes.JSON, error) {
 	var item models.BasicAuth
@@ -54,16 +68,17 @@ func toImportedApiKeyAuth(raw json.RawMessage) (datatypes.JSON, error) {
 
 func toImportedMultipartFileItem(item models.ExportedMultipartItem) (*models.UIMultipartFileItem, error) {
 
-	fileStats, err := utils.GetFileStats(item.V)
+	//Cross platform file import is not going to work
+	//fileStats, err := utils.GetFileStats(item.V)
 
-	if err != nil {
-		return nil, err
-	}
+	// if err != nil {
+	// 	return nil, err
+	// }
 
 	return &models.UIMultipartFileItem{
 		Id:      nanoid.Must(),
 		Key:     item.K,
-		Value:   *fileStats,
+		Value:   nil,
 		Enabled: "on",
 	}, nil
 }
@@ -146,13 +161,14 @@ func toImportedKeyValItems(raw json.RawMessage) (datatypes.JSON, error) {
 	return datatypes.JSON(bs), nil
 }
 
-func toDbRequestFromImported(importedReq models.ImportedGurlReq, collectionId string) (*db.Request, error) {
+func toDbRequestFromImported(importedReq models.ImportedGurlReq, collectionId string, workspaceId string) (*dbPkg.Request, error) {
 
 	newReq := &db.Request{
 		BaseEntity: db.BaseEntity{
 			Id: nanoid.Must(),
 		},
 		CollectionId: collectionId,
+		WorkspaceId:  workspaceId,
 	}
 
 	if importedReq.Name == nil || strings.TrimSpace(*importedReq.Name) == "" {
@@ -211,18 +227,19 @@ func toDbRequestFromImported(importedReq models.ImportedGurlReq, collectionId st
 		newReq.TextBody = *importedReq.TextBody
 	}
 
-	if importedReq.BinaryBody != nil {
-		bStats, err := utils.GetFileStats(*importedReq.BinaryBody)
+	// TODO: remove or fild better way to share files cross platform
+	// if importedReq.BinaryBody != nil && *importedReq.BinaryBody != "" {
+	// 	bStats, err := utils.GetFileStats(*importedReq.BinaryBody)
 
-		if err == nil {
+	// 	if err == nil {
 
-			bjson, err := json.Marshal(bStats)
+	// 		bjson, err := json.Marshal(bStats)
 
-			if err == nil {
-				newReq.BinaryBody = datatypes.JSON(bjson)
-			}
-		}
-	}
+	// 		if err == nil {
+	// 			newReq.BinaryBody = datatypes.JSON(bjson)
+	// 		}
+	// 	}
+	// }
 
 	if importedReq.AuthType != nil {
 		newReq.AuthType = string(models.ValidateOrDefaultAuthType(*importedReq.AuthType, models.NoAuthType))
@@ -257,122 +274,57 @@ func toDbRequestFromImported(importedReq models.ImportedGurlReq, collectionId st
 	return newReq, nil
 }
 
-func (ex *Exporter) ImportCollection() error {
-
-	//open save file dialogue and perform io.copy
-	dialogueOptions := runtime.OpenDialogOptions{
-		Title: "Choose collection file to import",
-		Filters: []runtime.FileFilter{
-			{
-				DisplayName: "JSON (*.json)",
-				Pattern:     "*.json",
-			},
-		},
-	}
-
-	if dir, err := os.UserHomeDir(); err == nil {
-		dialogueOptions.DefaultDirectory = dir
-	}
-
-	src, err := runtime.OpenFileDialog(ex.appCtx, dialogueOptions)
-
-	if err != nil {
-		return err
-	}
-
-	srcF, err := os.Open(src)
-
-	if err != nil {
-		return err
-	}
-
-	defer srcF.Close()
-
-	var importedCollection models.ImportedCollection
-
-	err = json.NewDecoder(srcF).Decode(&importedCollection)
-
-	if err != nil {
-		return err
-	}
-
-	if importedCollection.Name == nil || strings.TrimSpace(*importedCollection.Name) == "" {
-		return errors.New("invalid collection name")
-	}
-
-	if importedCollection.Version == nil || strings.TrimSpace(*importedCollection.Version) == "" {
-		return errors.New("invalid collection version")
-	}
-
-	var importedRequests []models.ImportedGurlReq
-
-	err = json.Unmarshal(importedCollection.Requests, &importedRequests)
-
-	if err != nil {
-		return err
-	}
-
-	if len(importedRequests) == 0 {
-		return ex.handleImportEmptyCollection(importedCollection)
-	}
-
-	return ex.handleImportWithRequests(importedCollection, importedRequests)
-
-}
-
-func (ex *Exporter) handleImportEmptyCollection(collection models.ImportedCollection) error {
-
-	cnt, err := gorm.G[db.Collection](ex.db).Where("name = ?", *collection.Name).Count(ex.appCtx, "id")
-
-	if err != nil {
-		return err
-	}
+func (i2 *InternalImporter) handleImportEmptyCollection(ctx context.Context, collection models.ImportedCollection, workspaceId string) error {
 
 	name := *collection.Name
+
+	cnt, err := i2.collectionRepo.FindCollectionCountByName(ctx, name)
+
+	if err != nil {
+		return err
+	}
 
 	if cnt > 0 {
 		name = fmt.Sprintf("%s(%d)", name, cnt)
 	}
 
-	return gorm.G[db.Collection](ex.db).Create(ex.appCtx, &db.Collection{
-		BaseEntity: db.BaseEntity{
-			Id: nanoid.Must(),
-		},
-		Name: name,
+	return i2.collectionRepo.AddCollection(ctx, models.CreateCollectionDTO{
+		Id:        nanoid.Must(),
+		Name:      name,
+		Workspace: workspaceId,
 	})
 }
 
-func (ex *Exporter) handleImportWithRequests(collection models.ImportedCollection, requests []models.ImportedGurlReq) error {
+func (i2 *InternalImporter) handleImportWithRequests(ctx context.Context, collection models.ImportedCollection, requests []models.ImportedGurlReq, workspaceId string) error {
 
-	cnt, err := gorm.G[db.Collection](ex.db).Where("name = ?", *collection.Name).Count(ex.appCtx, "id")
+	name := *collection.Name
+
+	cnt, err := i2.collectionRepo.FindCollectionCountByName(ctx, name)
 
 	if err != nil {
 		return err
 	}
-
-	name := *collection.Name
 
 	if cnt > 0 {
 		name = fmt.Sprintf("%s(%d)", name, cnt)
 	}
 
-	newCollection := &db.Collection{
-		BaseEntity: db.BaseEntity{
-			Id: nanoid.Must(),
-		},
-		Name: name,
+	newCollection := models.CreateCollectionDTO{
+		Id:        nanoid.Must(),
+		Name:      name,
+		Workspace: workspaceId,
 	}
 
-	err = gorm.G[db.Collection](ex.db).Create(ex.appCtx, newCollection)
+	err = i2.collectionRepo.AddCollection(ctx, newCollection)
 
 	if err != nil {
 		return err
 	}
 
-	var newRequests []db.Request
+	var newRequests []dbPkg.Request
 
 	for _, req := range requests {
-		newReq, err := toDbRequestFromImported(req, newCollection.Id)
+		newReq, err := toDbRequestFromImported(req, newCollection.Id, workspaceId)
 
 		if err != nil {
 			continue
@@ -381,32 +333,12 @@ func (ex *Exporter) handleImportWithRequests(collection models.ImportedCollectio
 		newRequests = append(newRequests, *newReq)
 	}
 
-	return gorm.G[db.Request](ex.db).CreateInBatches(ex.appCtx, &newRequests, 20)
+	return i2.reqRepo.CreateRequestsInBatch(ctx, newRequests)
 }
 
-func (ex *Exporter) ImportEnvironment() error {
-	//open save file dialogue and perform io.copy
-	dialogueOptions := runtime.OpenDialogOptions{
-		Title: "Choose environment file to import",
-		Filters: []runtime.FileFilter{
-			{
-				DisplayName: "JSON (*.json)",
-				Pattern:     "*.json",
-			},
-		},
-	}
+func (i2 *InternalImporter) HandleImportEnvironment(ctx context.Context, sourceFile string, workspaceId string) error {
 
-	if dir, err := os.UserHomeDir(); err == nil {
-		dialogueOptions.DefaultDirectory = dir
-	}
-
-	src, err := runtime.OpenFileDialog(ex.appCtx, dialogueOptions)
-
-	if err != nil {
-		return err
-	}
-
-	srcF, err := os.Open(src)
+	srcF, err := os.Open(sourceFile)
 
 	if err != nil {
 		return err
@@ -456,25 +388,63 @@ func (ex *Exporter) ImportEnvironment() error {
 		return err
 	}
 
-	cnt, err := gorm.G[db.Environment](ex.db).Where("name = ?", *importedEnv.Name).Count(ex.appCtx, "id")
+	name := *importedEnv.Name
+
+	cnt, err := i2.envRepo.FindEnvCountByName(ctx, name)
 
 	if err != nil {
 		return err
 	}
 
-	name := *importedEnv.Name
-
 	if cnt > 0 {
 		name = fmt.Sprintf("%s(%d)", name, cnt)
 	}
 
-	var dbEnv = &db.Environment{
-		BaseEntity: db.BaseEntity{
-			Id: nanoid.Must(),
-		},
-		Name: name,
-		Data: datatypes.JSON(bs),
+	return i2.envRepo.AddEnvironment(ctx, models.AddEnvironmentDTO{
+		Id:          nanoid.Must(),
+		Name:        name,
+		WorkspaceId: workspaceId,
+		Data:        string(bs),
+	})
+}
+
+func (i2 *InternalImporter) HandleImportCollection(ctx context.Context, sourceFile string, workspaceId string) error {
+
+	srcF, err := os.Open(sourceFile)
+
+	if err != nil {
+		return err
 	}
 
-	return gorm.G[db.Environment](ex.db).Create(ex.appCtx, dbEnv)
+	defer srcF.Close()
+
+	var importedCollection models.ImportedCollection
+
+	err = json.NewDecoder(srcF).Decode(&importedCollection)
+
+	if err != nil {
+		return err
+	}
+
+	if importedCollection.Name == nil || strings.TrimSpace(*importedCollection.Name) == "" {
+		return errors.New("invalid collection name")
+	}
+
+	if importedCollection.Version == nil || strings.TrimSpace(*importedCollection.Version) == "" {
+		return errors.New("invalid collection version")
+	}
+
+	var importedRequests []models.ImportedGurlReq
+
+	err = json.Unmarshal(importedCollection.Requests, &importedRequests)
+
+	if err != nil {
+		return err
+	}
+
+	if len(importedRequests) == 0 {
+		return i2.handleImportEmptyCollection(ctx, importedCollection, workspaceId)
+	}
+
+	return i2.handleImportWithRequests(ctx, importedCollection, importedRequests, workspaceId)
 }

@@ -1,4 +1,4 @@
-package exporter
+package importexport
 
 import (
 	"cmp"
@@ -138,7 +138,7 @@ func TestToExportedMultipartItem(t *testing.T) {
 
 		t.Run(test.Name, func(t *testing.T) {
 
-			got := toExportedMultipartItem(datatypes.JSON(test.Raw))
+			got := ToExportedMultipartItem(datatypes.JSON(test.Raw))
 
 			if len(got) != len(test.Want) {
 				t.Errorf("expected output %v got %v", test.Want, got)
