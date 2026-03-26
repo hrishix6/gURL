@@ -203,38 +203,54 @@ export interface InputToken {
 }
 
 export interface WorkspaceRepository {
-	getWorkspaces(): Promise<Array<models.WorkspaceLightDTO>>;
+	getWorkspaces(): Promise<Array<models.WorkspaceLightDTO> | undefined | null>;
 	getWorkspaceById(id: string): Promise<models.WorkspaceDTO>;
 	addWorkspace(arg: models.CreateWorkspaceDTO): Promise<void>;
 	updateWorkspace(id: string, arg: models.UpdateWorkspaceDTO): Promise<void>;
 }
 
 export interface CollectionRepository {
-	getAllCollections(workspace: string): Promise<Array<models.CollectionDTO>>;
+	getAllCollections(workspace: string): Promise<Array<models.CollectionDTO> | undefined | null>;
 	addCollection(dto: models.CreateCollectionDTO): Promise<void>;
 	clearCollection(arg1: string): Promise<void>;
 	deleteCollection(arg1: string): Promise<void>;
 	deleteDraftsUnderCollection(arg1: string): Promise<void>;
-	renameCollection(arg1: string, arg2: string): Promise<void>;
+	renameCollection(id: string, newName: string): Promise<void>;
 }
 
 export interface EnvironmentRepository {
 	addFreshEnvDraft(arg1: string): Promise<void>;
 	addEnvironmentDraft(arg1: models.AddEnvironmentDraftDTO): Promise<void>;
-	copyEnvironment(arg1: models.CopyEnvironmentDTO): Promise<void>;
-	getEnvironments(workspace: string): Promise<Array<models.EnvironmentDTO>>;
+	copyEnvironment(
+		sourceId: string,
+		arg1: models.CopyEnvironmentDTO,
+	): Promise<void>;
+	getEnvironments(workspace: string): Promise<Array<models.EnvironmentDTO> | undefined | null>;
 	findEnvDraft(arg1: string): Promise<models.EnvironmentDraftDTO>;
 	removeEnv(arg1: string): Promise<void>;
 	removeEnvDraft(arg1: string): Promise<void>;
-	saveEnvDraftAsEnv(arg1: models.SaveEnvDraftAsEnvDTO): Promise<void>;
-	updateEnvDraftData(arg1: models.UpdateEnvDraftDataDTO): Promise<void>;
+	saveEnvDraftAsEnv(
+		draftId: string,
+		arg1: models.SaveEnvDraftAsEnvDTO,
+	): Promise<void>;
+	updateEnvDraftData(
+		draftId: string,
+		arg1: models.UpdateEnvDraftDataDTO,
+	): Promise<void>;
 	deleteEnvDraftsUnderEnv(arg1: string): Promise<void>;
+}
+
+export interface Exporter {
+	exportCollection(id: string, name: string): Promise<void>;
+	exportEnvironment(id: string, name: string): Promise<void>;
+	importCollection(workspaceId: string, file?: File): Promise<void>;
+	importEnvironment(workspaceId: string, file?: File): Promise<void>;
 }
 
 export interface RequestRepository {
 	addDraft(arg1: models.RequestDraftDTO): Promise<void>;
-	addDraftFromRequest(arg1: models.AddDraftFromRequestDTO): Promise<void>;
-	addFreshDraft(arg1: models.AddFreshDraftDTO): Promise<void>;
+	addDraftFromRequest(id: string, arg1: models.AddDraftDTO): Promise<void>;
+	addFreshDraft(arg1: models.AddDraftDTO): Promise<void>;
 	removeDraft(arg1: string): Promise<void>;
 	addReqExample(
 		arg1: models.ReqExampleDTO,
@@ -244,14 +260,21 @@ export interface RequestRepository {
 	deleteRequestDrafts(arg1: string): Promise<void>;
 	deleteSavedReq(arg1: string): Promise<void>;
 	findDraftById(arg1: string): Promise<models.RequestDraftDTO>;
-	findDraftIdsByCollection(arg1: string): Promise<Array<string>>;
-	findEnvDraft(arg1: string): Promise<models.EnvironmentDraftDTO>;
 	getReqExampleById(arg1: string): Promise<models.ReqExampleDTO>;
-	getReqExamples(workspace: string): Promise<Array<models.ReqExampleLightDTO>>;
-	getSavedRequests(workspace: string): Promise<Array<models.RequestLightDTO>>;
-	saveDraftAsRequest(arg1: models.SaveDraftAsReqDTO): Promise<void>;
-	saveRequestCopy(arg1: models.SaveRequestCopyDTO): Promise<void>;
-	updatereqDraftFields(arg: models.UpdateDraftFieldsDTO): Promise<void>;
+	getReqExamples(workspace: string): Promise<Array<models.ReqExampleLightDTO> | undefined | null>;
+	getSavedRequests(workspace: string): Promise<Array<models.RequestLightDTO> | undefined | null>;
+	saveDraftAsRequest(
+		draftId: string,
+		arg1: models.SaveDraftAsReqDTO,
+	): Promise<void>;
+	saveRequestCopy(
+		requestId: string,
+		arg1: models.SaveRequestCopyDTO,
+	): Promise<void>;
+	updatereqDraftFields(
+		draftId: string,
+		arg: models.UpdateDraftFieldsDTO,
+	): Promise<void>;
 }
 
 export interface UIStateRepository {
@@ -260,8 +283,8 @@ export interface UIStateRepository {
 }
 
 export interface FileRepository {
-	saveFile(arg1: string): Promise<void>;
-	chooseFile(): Promise<models.FileStats>;
+	saveFile(arg1: models.DownloadTmpFileDTO): Promise<void>;
+	chooseFile(file?: File): Promise<models.FileStats>;
 }
 
 export interface HttpExecutor {
@@ -269,4 +292,21 @@ export interface HttpExecutor {
 	getSavedResponsesSrc(arg1: string): Promise<string>;
 	parseCookieRaw(arg1: string): Promise<Array<models.GurlKeyValItem>>;
 	sendHttpReq(arg1: models.GurlReq): Promise<models.GurlRes>;
+}
+
+export interface ApiResponse<T> {
+	data?: T;
+	metadata: {
+		timestamp: string;
+		request_id: string;
+	};
+	error?: {
+		message: string;
+		details: string;
+	};
+}
+
+export interface WebImportDTO {
+	workspace_id: string;
+	file_path: string;
 }

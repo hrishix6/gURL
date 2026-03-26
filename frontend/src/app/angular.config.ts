@@ -4,7 +4,6 @@ import {
 	provideBrowserGlobalErrorListeners,
 } from "@angular/core";
 import { provideRouter } from "@angular/router";
-import { setMode } from "@/services";
 import { getAppConfig, isConfigError, loadConfig } from "./app.config";
 import { routes } from "./app.routes";
 
@@ -21,7 +20,6 @@ async function initializeApp() {
 		throw new Error("Failed to load config, bootstrap failed");
 	}
 
-	setMode(appCfg.mode);
 	//pdfjs
 	window.pdfWorkerSrc = "pdf.worker.min.mjs";
 }

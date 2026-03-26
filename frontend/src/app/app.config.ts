@@ -24,5 +24,9 @@ export function isConfigError() {
 }
 
 export function getAppConfig() {
+	if (appConfig == null) {
+		throw new Error("Invalid app config");
+	}
+
 	return appConfig;
 }
