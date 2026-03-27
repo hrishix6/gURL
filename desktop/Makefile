@@ -22,4 +22,4 @@ build: clean
 		wails build -tags webkit2_41
 
 dev: vet
-		wails dev -tags webkit2_41 -skipbindings
+		wails dev -tags webkit2_41
