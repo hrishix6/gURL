@@ -9,8 +9,6 @@
 gURL is just another fancy cURL. I am building this because I want to learn Go & desktop app development using Wails, plus it's something that is useful in my
 day-to-day work.
 
-> Declaimer: Entire is code is written by me, no LLMs were used to write any of the code, you see only main branch here because this repository is just push mirror of my personal git hosting.
-
 ## Features
 
 It's still in early stage, essential features are implemented. 
