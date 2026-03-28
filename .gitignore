@@ -9,3 +9,8 @@ bin/
 shared/assets/static/
 appData/
 wailsjs/
+.vscode/
+shared/
+web/
+frontend/
+desktop/
