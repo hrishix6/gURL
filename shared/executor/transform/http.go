@@ -447,7 +447,7 @@ func (htf *HttpTransformer) TransformHttpResponse(
 
 	gres.Body = &models.GurlRenderMeta{
 		Html5Element:     html5Tag,
-		Src:              fmt.Sprintf("%s%s", renderBasePath, tmpFileName),
+		Src:              fmt.Sprintf("%s/%s", renderBasePath, tmpFileName),
 		CanRender:        canRender,
 		Filepath:         tempStorageStats.TempFilePath,
 		Filename:         tempStorageStats.TempFileName,

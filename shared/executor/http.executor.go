@@ -6,6 +6,7 @@ import (
 	"gurl/shared/db"
 	"gurl/shared/executor/transform"
 	"gurl/shared/models"
+	"gurl/shared/utils"
 	"log"
 	"net/http"
 	"strings"
@@ -92,7 +93,15 @@ func (e *HttpExecutor) SendHttpReq(ctx context.Context, r models.GurlReq) (*mode
 		return nil, err
 	}
 
-	responsePreviewBaseAddr := fmt.Sprintf("%s%s", e.previewSrvAddr, e.TEMP_RES_PREFIX)
+	responsePreviewBaseAddr := fmt.Sprintf("%s/%s", e.previewSrvAddr, e.TEMP_RES_PREFIX)
+
+	userIdFromCtx := utils.UserIdFromContext(ctx)
+
+	if userIdFromCtx != "" {
+		responsePreviewBaseAddr = fmt.Sprintf("%s/%s/%s", e.previewSrvAddr, userIdFromCtx, e.TEMP_RES_PREFIX)
+	}
+
+	log.Printf("[HttpExecutor] Preview Base Address %s\n", responsePreviewBaseAddr)
 
 	gurlRes := e.httpTransformer.TransformHttpResponse(r.Id, req, res, ttfbMs, tempData, responsePreviewBaseAddr)
 
@@ -147,21 +156,24 @@ func (e *HttpExecutor) GetPreviewHandler() http.HandlerFunc {
 	log.Printf("[Executor] is serving temp responses from : %s, temp prefix %s", e.tmpDir, e.TEMP_RES_PREFIX)
 	log.Printf("[Executor] is serving saved responses from : %s, saved prefix %s", e.savedResDir, e.SAVED_RES_PREFIX)
 
+	savedResEffectivePrefix := fmt.Sprintf("/%s/", e.SAVED_RES_PREFIX)
+	tempResEffectivePrefix := fmt.Sprintf("/%s/", e.TEMP_RES_PREFIX)
+
 	previewHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Println("[Executor] Preview handler hit:", r.URL.Path)
 
-		if !(strings.HasPrefix(r.URL.Path, e.SAVED_RES_PREFIX) || strings.HasPrefix(r.URL.Path, e.TEMP_RES_PREFIX)) {
+		if !(strings.HasPrefix(r.URL.Path, savedResEffectivePrefix) || strings.HasPrefix(r.URL.Path, tempResEffectivePrefix)) {
 			http.NotFound(w, r)
 			return
 		}
 
-		if strings.HasPrefix(r.URL.Path, e.SAVED_RES_PREFIX) {
-			http.StripPrefix(e.SAVED_RES_PREFIX, savedResFileServer).ServeHTTP(w, r)
+		if strings.HasPrefix(r.URL.Path, savedResEffectivePrefix) {
+			http.StripPrefix(savedResEffectivePrefix, savedResFileServer).ServeHTTP(w, r)
 			return
 		}
 
-		if strings.HasPrefix(r.URL.Path, e.TEMP_RES_PREFIX) {
-			http.StripPrefix(e.TEMP_RES_PREFIX, tmpFileServer).ServeHTTP(w, r)
+		if strings.HasPrefix(r.URL.Path, tempResEffectivePrefix) {
+			http.StripPrefix(tempResEffectivePrefix, tmpFileServer).ServeHTTP(w, r)
 			return
 		}
 	})

@@ -5,6 +5,7 @@ type UIStateDTO struct {
 	IsSidebarOpen          bool   `json:"isSidebarOpen"`
 	AlwaysDiscard          bool   `json:"alwaysDiscardDrafts"`
 	AlwaysDiscardEnvDrafts bool   `json:"alwaysDiscardEnvDrafts"`
+	ActiveTheme            string `json:"activeTheme"`
 	ActiveWorkspace        string `json:"activeWorkspace"`
 }
 
@@ -14,6 +15,7 @@ type UpdateUIStateDTO struct {
 	ActiveWorkspace        *string `json:"activeWorkspace"`
 	AlwaysDiscardReqDrafts *bool   `json:"alwaysDiscardReqDrafts"`
 	AlwaysDiscardEnvDrafts *bool   `json:"alwaysDiscardEnvDrafts"`
+	ActiveTheme            *string `json:"activeTheme"`
 }
 
 type UIKeyValueItem struct {

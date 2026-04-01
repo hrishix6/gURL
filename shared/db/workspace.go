@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"gurl/shared/models"
+	"gurl/shared/utils"
 
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
@@ -13,6 +14,7 @@ type Workspace struct {
 	Name      string         `gorm:"column:name"`
 	OpenTabs  datatypes.JSON `gorm:"column:openTabs;default:'[]'"`
 	ActiveTab string         `gorm:"column:activeTab"`
+	UserId    string         `gorm:"column:user_id;default:null"`
 }
 
 type WorkspaceRepository struct {
@@ -27,10 +29,14 @@ func NewWorkspaceRepository(db *gorm.DB) *WorkspaceRepository {
 
 func (wr *WorkspaceRepository) GetAllWorkspaces(ctx context.Context) ([]models.WorkspaceLightDTO, error) {
 
-	workspaces, err := gorm.G[Workspace](wr.db).Find(ctx)
+	var workspaces []Workspace
 
-	if err != nil {
-		return []models.WorkspaceLightDTO{}, err
+	tx := wr.db.Where(&Workspace{
+		UserId: utils.UserIdFromContext(ctx),
+	}).Find(&workspaces)
+
+	if tx.Error != nil {
+		return []models.WorkspaceLightDTO{}, tx.Error
 	}
 
 	var o []models.WorkspaceLightDTO
@@ -46,17 +52,25 @@ func (wr *WorkspaceRepository) GetAllWorkspaces(ctx context.Context) ([]models.W
 }
 
 func (wr *WorkspaceRepository) GetWorkspaceById(ctx context.Context, id string) (*models.WorkspaceDTO, error) {
-	r, err := gorm.G[Workspace](wr.db).Where("id = ?", id).First(ctx)
 
-	if err != nil {
-		return nil, err
+	w := Workspace{}
+
+	tx := wr.db.Where(&Workspace{
+		BaseEntity: BaseEntity{
+			Id: id,
+		},
+		UserId: utils.UserIdFromContext(ctx),
+	}).First(&w)
+
+	if tx.Error != nil {
+		return nil, tx.Error
 	}
 
 	return &models.WorkspaceDTO{
-		Id:           r.Id,
-		Name:         r.Name,
-		OpenTabsJSON: string(r.OpenTabs),
-		ActiveTab:    r.ActiveTab,
+		Id:           w.Id,
+		Name:         w.Name,
+		OpenTabsJSON: string(w.OpenTabs),
+		ActiveTab:    w.ActiveTab,
 	}, nil
 }
 
@@ -65,14 +79,16 @@ func (wr *WorkspaceRepository) CreateWorkspace(ctx context.Context, dto models.C
 		BaseEntity: BaseEntity{
 			Id: dto.Id,
 		},
-		Name: dto.Name,
+		Name:   dto.Name,
+		UserId: utils.UserIdFromContext(ctx),
 	}
 
 	return gorm.G[Workspace](wr.db).Create(ctx, w)
 }
 
-func (wr *WorkspaceRepository) UpdateWorkspace(id string, dto models.UpdateWorkspaceDTO) error {
+func (wr *WorkspaceRepository) UpdateWorkspace(ctx context.Context, id string, dto models.UpdateWorkspaceDTO) error {
 
+	user := utils.UserIdFromContext(ctx)
 	updates := make(map[string]any)
 
 	if dto.OpenTabsJSON != nil {
@@ -91,6 +107,12 @@ func (wr *WorkspaceRepository) UpdateWorkspace(id string, dto models.UpdateWorks
 		return nil
 	}
 
-	tx := wr.db.Model(&Workspace{}).Where("id = ?", id).Updates(updates)
+	tx := wr.db.Model(&Workspace{}).Where(&Workspace{
+		BaseEntity: BaseEntity{
+			Id: id,
+		},
+		UserId: user,
+	}).Updates(updates)
+
 	return tx.Error
 }

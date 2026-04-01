@@ -33,9 +33,10 @@ type WebAppInitParams struct {
 }
 
 type GurlClientConfig struct {
-	Mode       string `json:"mode"`
-	BackendURL string `json:"backend_url"`
-	AppVersion string `json:"appVersion"`
+	Mode        string `json:"mode"`
+	ApiBaseURL  string `json:"api_url"`
+	AuthBaseURL string `json:"auth_url"`
+	AppVersion  string `json:"appVersion"`
 }
 
 type ParseCookieTextDTO struct {
