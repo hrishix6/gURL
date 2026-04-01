@@ -30,7 +30,7 @@ import { FormService } from "@/services";
                             [placeHolder]="'value'"
                             [disabled]="false"
                             [text]="item.val"
-                            (onInput)="f.urlSvc.updatePathParam(item.id, 'val', $event)"
+                            (onInput)="f.updatePathParam(item.id, 'val', $event)"
                             [readonly]="false"
                             >
                             </div>

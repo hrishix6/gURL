@@ -1,21 +1,20 @@
 import type { models } from "@wailsjs/go/models";
-import { getAppConfig } from "@/app.config";
-import type { ApiResponse, RequestRepository } from "@/types";
+import { RestClient } from "@/services";
+import type { RequestRepository } from "@/types";
 
 export class WebReqRepository implements RequestRepository {
-	private _baseUrl: string;
 	private _reqBaseUrl: string;
 	private _reqDraftsBaseUrl: string;
 	private _reqExampleBaseUrl: string;
+	private readonly restClient: RestClient;
 
 	private static webReqRepo: WebReqRepository | null = null;
 
 	private constructor() {
-		const baseUrl = getAppConfig().backend_url;
-		this._baseUrl = baseUrl;
-		this._reqBaseUrl = `${baseUrl}/reqs`;
-		this._reqDraftsBaseUrl = `${baseUrl}/req-drafts`;
-		this._reqExampleBaseUrl = `${baseUrl}/req-examples`;
+		this.restClient = RestClient.getInstance();
+		this._reqBaseUrl = `reqs`;
+		this._reqDraftsBaseUrl = `req-drafts`;
+		this._reqExampleBaseUrl = `req-examples`;
 	}
 
 	static getInstance() {
@@ -29,19 +28,14 @@ export class WebReqRepository implements RequestRepository {
 	//reqs
 	async getSavedRequests(
 		workspace: string,
-	): Promise<Array<models.RequestLightDTO> | null | undefined> {
+	): Promise<Array<models.RequestLightDTO> | undefined> {
 		const query = new URLSearchParams({
 			workspace_id: workspace,
-		}).toString();
-
-		const res = await fetch(`${this._reqBaseUrl}?${query}`);
-
-		if (!res.ok) {
-			throw new Error("failed to load requests state from backend");
-		}
-
-		const { data }: ApiResponse<Array<models.RequestLightDTO>> =
-			await res.json();
+		});
+		const data = await this.restClient.get<Array<models.RequestLightDTO>>(
+			this._reqBaseUrl,
+			query,
+		);
 
 		return data;
 	}
@@ -50,162 +44,66 @@ export class WebReqRepository implements RequestRepository {
 		sourceId: string,
 		arg1: models.SaveRequestCopyDTO,
 	): Promise<void> {
-		const res = await fetch(`${this._reqBaseUrl}/${sourceId}`, {
-			method: "POST",
-			headers: {
-				"Content-type": "application/json",
-			},
-			body: JSON.stringify(arg1),
-		});
-
-		if (!res.ok) {
-			throw new Error("failed to copy req in backend");
-		}
+		return this.restClient.post(`${this._reqBaseUrl}/${sourceId}`, arg1);
 	}
 
 	async deleteSavedReq(id: string): Promise<void> {
-		const res = await fetch(`${this._reqBaseUrl}/${id}`, {
-			method: "DELETE",
-		});
-
-		if (!res.ok) {
-			throw new Error("failed to delete req in backend");
-		}
+		return this.restClient.delete(`${this._reqBaseUrl}/${id}`);
 	}
 
 	async deleteRequestDrafts(id: string): Promise<void> {
-		const res = await fetch(`${this._reqBaseUrl}/${id}/drafts`, {
-			method: "DELETE",
-		});
-
-		if (!res.ok) {
-			throw new Error("failed to delete drafts under req in backend");
-		}
+		return this.restClient.delete(`${this._reqBaseUrl}/${id}/drafts`);
 	}
 
 	async addDraftFromRequest(
 		id: string,
 		arg1: models.AddDraftDTO,
 	): Promise<void> {
-		const res = await fetch(`${this._reqBaseUrl}/${id}/drafts`, {
-			method: "POST",
-			headers: {
-				"Content-type": "application/json",
-			},
-			body: JSON.stringify(arg1),
-		});
-
-		if (!res.ok) {
-			throw new Error("failed to create draft from req in backend");
-		}
+		return this.restClient.post(`${this._reqBaseUrl}/${id}/drafts`, arg1);
 	}
 
 	//req-drafts
 
-	async findDraftById(id: string): Promise<models.RequestDraftDTO> {
-		const res = await fetch(`${this._reqDraftsBaseUrl}/${id}`);
-
-		if (!res.ok) {
-			throw new Error("failed to load req draft from backend");
-		}
-
-		const { data }: ApiResponse<models.RequestDraftDTO> = await res.json();
-
-		if (!data) {
-			throw new Error("received invalid req draft from backend");
-		}
-
-		return data;
+	async findDraftById(id: string): Promise<models.RequestDraftDTO | undefined> {
+		return this.restClient.get<models.RequestDraftDTO>(
+			`${this._reqDraftsBaseUrl}/${id}`,
+		);
 	}
 
 	async addDraft(arg1: models.RequestDraftDTO): Promise<void> {
-		const res = await fetch(`${this._reqDraftsBaseUrl}`, {
-			method: "POST",
-			headers: {
-				"Content-type": "application/json",
-			},
-			body: JSON.stringify(arg1),
-		});
-
-		if (!res.ok) {
-			throw new Error("failed to create draft in backend");
-		}
+		return this.restClient.post(this._reqDraftsBaseUrl, arg1);
 	}
 
 	async addFreshDraft(arg1: models.AddDraftDTO): Promise<void> {
-		const res = await fetch(`${this._baseUrl}/req-drafts-fresh`, {
-			method: "POST",
-			headers: {
-				"Content-type": "application/json",
-			},
-			body: JSON.stringify(arg1),
-		});
-
-		if (!res.ok) {
-			throw new Error("failed to create fresh req draft in backend");
-		}
+		return this.restClient.post(`req-drafts-fresh`, arg1);
 	}
 
 	async removeDraft(id: string): Promise<void> {
-		const res = await fetch(`${this._reqDraftsBaseUrl}/${id}`, {
-			method: "DELETE",
-		});
-
-		if (!res.ok) {
-			throw new Error("failed to delete req draft in backend");
-		}
+		return this.restClient.delete(`${this._reqDraftsBaseUrl}/${id}`);
 	}
 
 	async saveDraftAsRequest(
 		draftId: string,
 		arg1: models.SaveDraftAsReqDTO,
 	): Promise<void> {
-		const res = await fetch(`${this._reqDraftsBaseUrl}/${draftId}`, {
-			method: "POST",
-			headers: {
-				"Content-type": "application/json",
-			},
-			body: JSON.stringify(arg1),
-		});
-
-		if (!res.ok) {
-			throw new Error("failed to create req from draft in backend");
-		}
+		return this.restClient.post(`${this._reqDraftsBaseUrl}/${draftId}`, arg1);
 	}
 
 	async updatereqDraftFields(
 		draftId: string,
 		arg: models.UpdateDraftFieldsDTO,
 	): Promise<void> {
-		const res = await fetch(`${this._reqDraftsBaseUrl}/${draftId}`, {
-			method: "PATCH",
-			headers: {
-				"Content-type": "application/json",
-			},
-			body: JSON.stringify(arg),
-		});
-
-		if (!res.ok) {
-			throw new Error("failed to update req draft fields in backend");
-		}
+		return this.restClient.patch(`${this._reqDraftsBaseUrl}/${draftId}`, arg);
 	}
 
 	//req-examples
 
-	async getReqExampleById(id: string): Promise<models.ReqExampleDTO> {
-		const res = await fetch(`${this._reqExampleBaseUrl}/${id}`);
-
-		if (!res.ok) {
-			throw new Error("failed to load req-example from backend");
-		}
-
-		const { data }: ApiResponse<models.ReqExampleDTO> = await res.json();
-
-		if (!data) {
-			throw new Error("received invalid req-example data from backend");
-		}
-
-		return data;
+	async getReqExampleById(
+		id: string,
+	): Promise<models.ReqExampleDTO | undefined> {
+		return this.restClient.get<models.ReqExampleDTO>(
+			`${this._reqExampleBaseUrl}/${id}`,
+		);
 	}
 
 	async getReqExamples(
@@ -213,47 +111,24 @@ export class WebReqRepository implements RequestRepository {
 	): Promise<Array<models.ReqExampleLightDTO> | null | undefined> {
 		const query = new URLSearchParams({
 			workspace_id: workspace,
-		}).toString();
-
-		const res = await fetch(`${this._reqExampleBaseUrl}?${query}`);
-
-		if (!res.ok) {
-			throw new Error("failed to load request-examples state from backend");
-		}
-
-		const { data }: ApiResponse<Array<models.ReqExampleLightDTO>> =
-			await res.json();
-
-		return data;
+		});
+		return this.restClient.get<Array<models.ReqExampleLightDTO>>(
+			this._reqExampleBaseUrl,
+			query,
+		);
 	}
 
 	async addReqExample(
 		arg1: models.ReqExampleDTO,
 		arg2: models.SavedResponseRenderMeta,
 	): Promise<void> {
-		const res = await fetch(`${this._reqExampleBaseUrl}`, {
-			method: "POST",
-			headers: {
-				"Content-type": "application/json",
-			},
-			body: JSON.stringify({
-				example: arg1,
-				metadata: arg2,
-			}),
+		return this.restClient.post(this._reqExampleBaseUrl, {
+			example: arg1,
+			metadata: arg2,
 		});
-
-		if (!res.ok) {
-			throw new Error("failed to create req-example in backend");
-		}
 	}
 
 	async deleteReqExample(id: string): Promise<void> {
-		const res = await fetch(`${this._reqExampleBaseUrl}/${id}`, {
-			method: "DELETE",
-		});
-
-		if (!res.ok) {
-			throw new Error("failed to delete req-example in backend");
-		}
+		return this.restClient.delete(`${this._reqExampleBaseUrl}/${id}`);
 	}
 }

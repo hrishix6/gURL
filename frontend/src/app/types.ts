@@ -189,8 +189,9 @@ export interface Alert {
 export type GlobalEnvMap = Record<string, Record<string, string>>;
 
 export interface AppConfig {
-	mode: string;
-	backend_url: string;
+	mode: "desktop" | "web";
+	api_url: string;
+	auth_url: string;
 	appVersion: string;
 }
 
@@ -204,7 +205,7 @@ export interface InputToken {
 
 export interface WorkspaceRepository {
 	getWorkspaces(): Promise<Array<models.WorkspaceLightDTO> | undefined | null>;
-	getWorkspaceById(id: string): Promise<models.WorkspaceDTO>;
+	getWorkspaceById(id: string): Promise<models.WorkspaceDTO | undefined>;
 	addWorkspace(arg: models.CreateWorkspaceDTO): Promise<void>;
 	updateWorkspace(id: string, arg: models.UpdateWorkspaceDTO): Promise<void>;
 }
@@ -230,7 +231,7 @@ export interface EnvironmentRepository {
 	getEnvironments(
 		workspace: string,
 	): Promise<Array<models.EnvironmentDTO> | undefined | null>;
-	findEnvDraft(arg1: string): Promise<models.EnvironmentDraftDTO>;
+	findEnvDraft(arg1: string): Promise<models.EnvironmentDraftDTO | undefined>;
 	removeEnv(arg1: string): Promise<void>;
 	removeEnvDraft(arg1: string): Promise<void>;
 	saveEnvDraftAsEnv(
@@ -263,8 +264,8 @@ export interface RequestRepository {
 	deleteReqExample(arg1: string): Promise<void>;
 	deleteRequestDrafts(arg1: string): Promise<void>;
 	deleteSavedReq(arg1: string): Promise<void>;
-	findDraftById(arg1: string): Promise<models.RequestDraftDTO>;
-	getReqExampleById(arg1: string): Promise<models.ReqExampleDTO>;
+	findDraftById(arg1: string): Promise<models.RequestDraftDTO | undefined>;
+	getReqExampleById(arg1: string): Promise<models.ReqExampleDTO | undefined>;
 	getReqExamples(
 		workspace: string,
 	): Promise<Array<models.ReqExampleLightDTO> | undefined | null>;
@@ -317,4 +318,15 @@ export interface ApiResponse<T> {
 export interface WebImportDTO {
 	workspace_id: string;
 	file_path: string;
+}
+
+export interface LoginRequestDTO {
+	username: string;
+	password: string;
+}
+
+export interface RegisterDTO {
+	username: string;
+	email: string;
+	password: string;
 }

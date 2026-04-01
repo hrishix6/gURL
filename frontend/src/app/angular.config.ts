@@ -4,8 +4,8 @@ import {
 	provideBrowserGlobalErrorListeners,
 } from "@angular/core";
 import { provideRouter } from "@angular/router";
+import { routes } from "../main.router";
 import { getAppConfig, isConfigError, loadConfig } from "./app.config";
-import { routes } from "./app.routes";
 
 async function initializeApp() {
 	await loadConfig();

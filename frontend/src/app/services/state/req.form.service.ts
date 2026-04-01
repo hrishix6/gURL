@@ -319,6 +319,15 @@ export class FormService {
 		this._tabSvc.updateModifiedStatus(true);
 	}
 
+	public updatePathParam(
+		id: string,
+		prop: Exclude<keyof models.GurlKeyValItem, "id">,
+		v: string,
+	) {
+		this.urlSvc.updatePathParam(id, prop, v);
+		this._tabSvc.updateModifiedStatus(true);
+	}
+
 	public updateQueryParam(
 		id: string,
 		prop: Exclude<keyof models.GurlKeyValItem, "id">,

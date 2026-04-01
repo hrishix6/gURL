@@ -5,7 +5,7 @@ import {
 	type OnInit,
 	signal,
 } from "@angular/core";
-import { getAppConfig } from "@/app.config";
+import { RestClient } from "@/services";
 
 @Component({
 	selector: "gurl-status-beacon",
@@ -25,14 +25,10 @@ import { getAppConfig } from "@/app.config";
 export class GurlStatusBeacon implements OnInit, OnDestroy {
 	@HostBinding("class")
 	def = "flex items-center gap-2";
-
-	private backendUrl: string = "";
 	protected status = signal<"on" | "off">("on");
 	protected intervalId: number | null = null;
 
-	constructor() {
-		this.backendUrl = getAppConfig().backend_url;
-	}
+	private readonly restClient = RestClient.getInstance();
 
 	ngOnInit(): void {
 		this.intervalId = setInterval(() => {
@@ -48,10 +44,7 @@ export class GurlStatusBeacon implements OnInit, OnDestroy {
 
 	private async healthCheck() {
 		try {
-			const res = await fetch(`${this.backendUrl}/health`);
-			if (!res.ok) {
-				throw new Error("health check failed");
-			}
+			await this.restClient.get("health");
 			this.status.set("on");
 		} catch (error) {
 			console.error(error);

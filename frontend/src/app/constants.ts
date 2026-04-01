@@ -89,10 +89,6 @@ export const RES_DETAILS_TABS: readonly TabItem<ResTabId>[] = [
 		id: "res_cookies",
 		Name: "Cookies",
 	},
-	// {
-	// 	id: "res_console",
-	// 	Name: "Trace",
-	// },
 ];
 
 export const REQ_BODY_TYPES: readonly DropDownItem<ReqBodyType>[] = [
