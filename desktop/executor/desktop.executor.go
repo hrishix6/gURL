@@ -158,5 +158,5 @@ func (e *DesktopExecutor) ParseCookieRaw(text string) ([]models.GurlKeyValItem, 
 
 func (e *DesktopExecutor) GetSavedResponsesSrc(savedResPath string) string {
 	filename := filepath.Base(savedResPath)
-	return fmt.Sprintf("%s%s%s", e.previewSrvAddr, internal.SAVED_RESPONSES_PREFIX, filename)
+	return fmt.Sprintf("%s/%s/%s", e.previewSrvAddr, internal.SAVED_RESPONSES_PREFIX, filename)
 }

@@ -17,5 +17,5 @@ func (s *DesktopStorage) CreateWorkspace(dto models.CreateWorkspaceDTO) error {
 }
 
 func (s *DesktopStorage) UpdateWorkspace(id string, dto models.UpdateWorkspaceDTO) error {
-	return s.workspaceRepo.UpdateWorkspace(id, dto)
+	return s.workspaceRepo.UpdateWorkspace(s.appCtx, id, dto)
 }
