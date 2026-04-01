@@ -215,9 +215,10 @@ func (we *WebExecutor) ParseCookieRaw(text string) ([]models.GurlKeyValItem, err
 	return we.httpExecutor.ParseCookieRaw(text)
 }
 
-func (we *WebExecutor) GetSavedResponsesSrc(savedResPath string) string {
+func (we *WebExecutor) GetSavedResponsesSrc(ctx context.Context, savedResPath string) string {
 	filename := filepath.Base(savedResPath)
-	return fmt.Sprintf("%s%s%s", we.previewSrvAddr, internal.SAVED_RESPONSES_PREFIX, filename)
+	userId := utils.UserIdFromContext(ctx)
+	return fmt.Sprintf("%s/%s/%s/%s", we.previewSrvAddr, userId, internal.SAVED_RESPONSES_PREFIX, filename)
 }
 
 func (we *WebExecutor) UploadWebTempFile(id string, data []byte) models.UploadWebTempFileRes {

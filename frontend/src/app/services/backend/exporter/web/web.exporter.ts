@@ -1,15 +1,15 @@
-import { getAppConfig } from "@/app.config";
+import { RestClient } from "@/services";
 import type { Exporter, FileRepository, WebImportDTO } from "@/types";
 import { WebFileRepository } from "../../repository/web/web.file.repo";
 
 export class WebExporter implements Exporter {
-	private _baseURL: string;
 	private static webExporter: WebExporter | null = null;
+	private readonly restClient: RestClient;
 	private _fileRepo: FileRepository;
 
 	private constructor() {
-		this._baseURL = getAppConfig().backend_url;
 		this._fileRepo = WebFileRepository.getInstance();
+		this.restClient = RestClient.getInstance();
 	}
 
 	static getInstance() {
@@ -21,13 +21,7 @@ export class WebExporter implements Exporter {
 	}
 
 	async exportCollection(id: string, name: string): Promise<void> {
-		const res = await fetch(`${this._baseURL}/export/collection/${id}`);
-
-		if (!res.ok) {
-			throw new Error("Unable to download collection export file");
-		}
-
-		const blob = await res.blob();
+		const blob = await this.restClient.downloadFile(`export/collection/${id}`);
 
 		const downloadURL = window.URL.createObjectURL(blob);
 
@@ -39,13 +33,7 @@ export class WebExporter implements Exporter {
 		window.URL.revokeObjectURL(downloadURL);
 	}
 	async exportEnvironment(id: string, name: string): Promise<void> {
-		const res = await fetch(`${this._baseURL}/export/env/${id}`);
-
-		if (!res.ok) {
-			throw new Error("Unable to download environment export file");
-		}
-
-		const blob = await res.blob();
+		const blob = await this.restClient.downloadFile(`export/env/${id}`);
 
 		const downloadURL = window.URL.createObjectURL(blob);
 
@@ -59,22 +47,13 @@ export class WebExporter implements Exporter {
 
 	async importCollection(workspaceId: string, file: File): Promise<void> {
 		const { path } = await this._fileRepo.chooseFile(file);
+
 		const payload: WebImportDTO = {
 			file_path: path,
 			workspace_id: workspaceId,
 		};
 
-		const res = await fetch(`${this._baseURL}/import/collection`, {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-			},
-			body: JSON.stringify(payload),
-		});
-
-		if (!res.ok) {
-			throw new Error("server error: failed to import collection");
-		}
+		await this.restClient.post("import/collection", payload);
 	}
 
 	async importEnvironment(workspaceId: string, file: File): Promise<void> {
@@ -85,16 +64,6 @@ export class WebExporter implements Exporter {
 			workspace_id: workspaceId,
 		};
 
-		const res = await fetch(`${this._baseURL}/import/env`, {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-			},
-			body: JSON.stringify(payload),
-		});
-
-		if (!res.ok) {
-			throw new Error("server error: failed to import environment");
-		}
+		await this.restClient.post("import/env", payload);
 	}
 }

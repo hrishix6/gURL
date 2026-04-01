@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"gurl/shared/models"
+	"gurl/shared/utils"
 	"io"
 	"log"
 	"os"
@@ -37,6 +38,7 @@ type RequestExample struct {
 	ResponseCookies datatypes.JSON `gorm:"column:responseCookies;default:'[]'"`
 	ResponseBody    datatypes.JSON `gorm:"column:responseBody"`
 	WorkspaceId     string         `gorm:"column:workspace_id;default:null"`
+	UserId          string         `gorm:"column:user_id;default:null"`
 }
 
 func (r *RequestExample) ToReqExampleDTO() *models.ReqExampleDTO {
@@ -103,6 +105,7 @@ func (rer *ReqExampleRepository) AddReqExample(ctx context.Context,
 		RequestId:    dto.RequestId,
 		CollectionId: dto.CollectionId,
 		WorkspaceId:  dto.WorkspaceId,
+		UserId:       utils.UserIdFromContext(ctx),
 		Name:         dto.Name,
 
 		//Response data
@@ -164,10 +167,17 @@ func (rer *ReqExampleRepository) AddReqExample(ctx context.Context,
 
 func (rer *ReqExampleRepository) GetReqExampleById(ctx context.Context, id string) (*models.ReqExampleDTO, error) {
 
-	example, err := gorm.G[RequestExample](rer.db).Where("id = ?", id).First(ctx)
+	var example RequestExample
 
-	if err != nil {
-		return nil, err
+	tx := rer.db.Where(&RequestExample{
+		BaseEntity: BaseEntity{
+			Id: id,
+		},
+		UserId: utils.UserIdFromContext(ctx),
+	}).First(&example)
+
+	if tx.Error != nil {
+		return nil, tx.Error
 	}
 
 	return example.ToReqExampleDTO(), nil
@@ -175,10 +185,15 @@ func (rer *ReqExampleRepository) GetReqExampleById(ctx context.Context, id strin
 
 func (rer *ReqExampleRepository) GetReqExamples(ctx context.Context, workspaceId string) ([]models.ReqExampleLightDTO, error) {
 
-	records, err := gorm.G[RequestExample](rer.db).Where("workspace_id = ?", workspaceId).Find(ctx)
+	var records []RequestExample
 
-	if err != nil {
-		return []models.ReqExampleLightDTO{}, err
+	tx := rer.db.Where(&RequestExample{
+		WorkspaceId: workspaceId,
+		UserId:      utils.UserIdFromContext(ctx),
+	}).Find(&records)
+
+	if tx.Error != nil {
+		return []models.ReqExampleLightDTO{}, tx.Error
 	}
 
 	var results []models.ReqExampleLightDTO
@@ -195,15 +210,23 @@ func (rer *ReqExampleRepository) GetReqExamples(ctx context.Context, workspaceId
 }
 
 func (rer *ReqExampleRepository) DeleteReqExample(ctx context.Context, id string) error {
-	example, err := gorm.G[RequestExample](rer.db).Where("id = ?", id).First(ctx)
 
-	if err != nil {
-		return err
+	var example RequestExample
+
+	tx := rer.db.Where(&RequestExample{
+		BaseEntity: BaseEntity{
+			Id: id,
+		},
+		UserId: utils.UserIdFromContext(ctx),
+	}).First(&example)
+
+	if tx.Error != nil {
+		return tx.Error
 	}
 
 	var renderMeta models.SavedResponseRenderMeta
 
-	err = json.Unmarshal(example.ResponseBody, &renderMeta)
+	err := json.Unmarshal(example.ResponseBody, &renderMeta)
 
 	if err != nil {
 		return err
@@ -217,7 +240,7 @@ func (rer *ReqExampleRepository) DeleteReqExample(ctx context.Context, id string
 		}
 	}
 
-	_, err = gorm.G[RequestExample](rer.db).Where("id = ?", id).Delete(ctx)
+	_, err = gorm.G[RequestExample](rer.db).Where("id = ?", example.Id).Delete(ctx)
 
 	if err != nil {
 		return err

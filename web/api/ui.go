@@ -3,16 +3,17 @@ package api
 import (
 	"encoding/json"
 	"gurl/shared/models"
+	webModels "gurl/web/internal/models"
 	"log"
 	"net/http"
 )
 
 func (api *Api) GetUIState(w http.ResponseWriter, r *http.Request) {
-	uiState, err := api.storage.UiStateRepo.GetUIState(r.Context())
+	uiState, err := api.storage.UiStateRepo.GetUIStateForUser(r.Context())
 
 	if err != nil {
 		log.Printf("[api/GetUIState] error:%v \n", err)
-		wrappedErrResponse := api.WrapErrorResponse(r, &RequestError{
+		wrappedErrResponse := api.WrapErrorResponse(r, &webModels.RequestError{
 			Message: "failed to load ui state from db",
 			Details: err.Error(),
 		})
@@ -33,7 +34,7 @@ func (api *Api) UpdateUIState(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Printf("[api/UpdateUIState] error:%v \n", err)
-		wrappedErrResponse := api.WrapErrorResponse(r, &RequestError{
+		wrappedErrResponse := api.WrapErrorResponse(r, &webModels.RequestError{
 			Message: "unable to parse body",
 			Details: err.Error(),
 		})
@@ -42,11 +43,11 @@ func (api *Api) UpdateUIState(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = api.storage.UiStateRepo.UpdateUIState(dto)
+	err = api.storage.UiStateRepo.UpdateUIStateForUser(r.Context(), dto)
 
 	if err != nil {
 		log.Printf("[api/UpdateUIState] error:%v \n", err)
-		wrappedErrResponse := api.WrapErrorResponse(r, &RequestError{
+		wrappedErrResponse := api.WrapErrorResponse(r, &webModels.RequestError{
 			Message: "failed to update ui state in db",
 			Details: err.Error(),
 		})

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"gurl/shared/models"
+	webModels "gurl/web/internal/models"
 	"log"
 	"net/http"
 )
@@ -16,7 +17,7 @@ func (api *Api) ImportCollection(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Printf("[api/ImportCollection] error:%v \n", err)
-		wrappedErrResponse := api.WrapErrorResponse(r, &RequestError{
+		wrappedErrResponse := api.WrapErrorResponse(r, &webModels.RequestError{
 			Message: "unable to parse body",
 			Details: err.Error(),
 		})
@@ -29,7 +30,7 @@ func (api *Api) ImportCollection(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Printf("[api/ImportCollection] error:%v \n", err)
-		wrappedErrResponse := api.WrapErrorResponse(r, &RequestError{
+		wrappedErrResponse := api.WrapErrorResponse(r, &webModels.RequestError{
 			Message: "failed to import environment",
 			Details: err.Error(),
 		})
@@ -49,7 +50,7 @@ func (api *Api) ImportEnvironment(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Printf("[api/ImportEnvironment] error:%v \n", err)
-		wrappedErrResponse := api.WrapErrorResponse(r, &RequestError{
+		wrappedErrResponse := api.WrapErrorResponse(r, &webModels.RequestError{
 			Message: "unable to parse body",
 			Details: err.Error(),
 		})
@@ -62,7 +63,7 @@ func (api *Api) ImportEnvironment(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Printf("[api/ImportEnvironment] error:%v \n", err)
-		wrappedErrResponse := api.WrapErrorResponse(r, &RequestError{
+		wrappedErrResponse := api.WrapErrorResponse(r, &webModels.RequestError{
 			Message: "failed to import environment",
 			Details: err.Error(),
 		})
@@ -82,7 +83,7 @@ func (api *Api) DownloadCollectionExport(w http.ResponseWriter, r *http.Request)
 
 	if err != nil {
 		log.Printf("[api/DownloadCollectionExport] error:%v \n", err)
-		wrappedErrResponse := api.WrapErrorResponse(r, &RequestError{
+		wrappedErrResponse := api.WrapErrorResponse(r, &webModels.RequestError{
 			Message: "failed to export collection",
 			Details: err.Error(),
 		})
@@ -107,7 +108,7 @@ func (api *Api) DownloadEnvironmentExport(w http.ResponseWriter, r *http.Request
 
 	if err != nil {
 		log.Printf("[api/DownloadEnvironmentExport] error:%v \n", err)
-		wrappedErrResponse := api.WrapErrorResponse(r, &RequestError{
+		wrappedErrResponse := api.WrapErrorResponse(r, &webModels.RequestError{
 			Message: "failed to export environment",
 			Details: err.Error(),
 		})

@@ -1,7 +1,8 @@
 package db
 
 import (
-	"gorm.io/driver/sqlite"
+	"github.com/glebarez/sqlite"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
@@ -16,7 +17,7 @@ type BaseEntity struct {
 	UpdatedAt int    `gorm:"autoUpdateTime;column:updated"`
 }
 
-func InitDb(dsn string) (*gorm.DB, error) {
+func InitDesktopDb(dsn string) (*gorm.DB, error) {
 
 	db, err := gorm.Open(sqlite.Open(dsn), &gorm.Config{})
 
@@ -25,4 +26,16 @@ func InitDb(dsn string) (*gorm.DB, error) {
 	}
 
 	return db, nil
+}
+
+func InitWebDb(dsn string) (*gorm.DB, error) {
+
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return db, nil
+
 }

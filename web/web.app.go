@@ -8,6 +8,7 @@ import (
 	"gurl/shared/assets"
 	"gurl/shared/models"
 	"gurl/web/api"
+	"gurl/web/auth"
 	"gurl/web/executor"
 	"gurl/web/exporter"
 	"gurl/web/internal"
@@ -17,6 +18,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -52,15 +54,14 @@ func withCORS(next http.Handler, gurlUrl string) http.Handler {
 
 		origin := r.Header.Get("Origin")
 
-		log.Printf("[Web/CORS]: requesting origin %s\n", origin)
-
 		if strings.HasPrefix(origin, "http://localhost") || origin == gurlUrl {
 			w.Header().Set("Access-Control-Allow-Origin", origin)
 			w.Header().Set("Vary", "Origin")
 		}
 
-		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS, HEAD")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		w.Header().Set("Access-Control-Allow-Methods", "GET,OPTIONS,HEAD,POST,PUT,PATCH,DELETE")
+		w.Header().Set("Access-Control-Allow-Headers", "Authorization,Content-Type")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
 
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusNoContent)
@@ -74,6 +75,12 @@ func withCORS(next http.Handler, gurlUrl string) http.Handler {
 func InitializeWebApp(
 	params models.WebAppInitParams,
 ) {
+
+	jwtSecret, ok := os.LookupEnv("JWT_SECRET")
+
+	if !ok {
+		log.Fatalf("JWT_SECRET environment variable must be provided")
+	}
 
 	webApp := NewGurlWebApp(
 		params.AppName,
@@ -109,27 +116,19 @@ func InitializeWebApp(
 		log.Fatalf("unable to initialize executor %v", err)
 	}
 
-	api := api.NewApi(webApp.storage, webApp.executor, webApp.exporter)
+	authSvc := auth.NewAuthService(params.AppName, jwtSecret, webApp.storage.UserRepo, webApp.storage.UiStateRepo)
 
-	apiHandler := api.Routes()
-
-	mux := http.NewServeMux()
-
-	mux.Handle("/api/v1/", http.StripPrefix("/api/v1", apiHandler))
-
-	subFs, err := fs.Sub(assets.Assets, filepath.Join("static", "browser"))
-
-	if err != nil {
-		log.Fatalf("unable to get sub filesystem: %v", err)
-	}
-
-	webAssetServer := http.FileServer(http.FS(subFs))
+	apiRouter := api.NewApi(params.AppName, webApp.storage, webApp.executor, webApp.exporter, authSvc)
+	authRouter := auth.NewAuthRouter(authSvc, params.Env == "PROD")
 
 	webAppConfig := models.GurlClientConfig{
-		Mode:       "web",
-		BackendURL: "/api/v1",
-		AppVersion: internal.VERSION,
+		Mode:        "web",
+		ApiBaseURL:  "/api/v1",
+		AuthBaseURL: "/auth",
+		AppVersion:  internal.VERSION,
 	}
+
+	mux := http.NewServeMux()
 
 	//intercepts calls to config.json and serves web app config, by default config.json in build is for desktop mode
 	mux.HandleFunc("/config.json", func(w http.ResponseWriter, r *http.Request) {
@@ -137,11 +136,31 @@ func InitializeWebApp(
 		json.NewEncoder(w).Encode(webAppConfig)
 	})
 
+	mux.Handle("/auth/", http.StripPrefix("/auth", authRouter.Routes()))
+
+	mux.Handle("/api/v1/", http.StripPrefix("/api/v1", apiRouter.Routes()))
+
+	subFs, err := fs.Sub(assets.Assets, filepath.Join("static", "browser"))
+
+	if err != nil {
+		log.Fatalf("unable to get sub filesystem: %v", err)
+	}
+
 	previewHandler := webApp.executor.GetPreviewHandler()
 
-	mux.Handle("/preview/", http.StripPrefix("/preview", previewHandler))
+	// mux.Handle("/preview/", http.StripPrefix("/preview", previewHandler))
+	mux.Handle("/preview/{id}/", apiRouter.ProtectedRoute(apiRouter.PreviewHandler(previewHandler)))
 
-	mux.Handle("/", webAssetServer)
+	webAssetServer := http.FileServer(http.FS(subFs))
+
+	mux.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, err := subFs.Open(strings.TrimPrefix(path.Clean(r.URL.Path), "/"))
+		if err != nil {
+			log.Println("didn't find file serving index.html")
+			r.URL.Path = "/"
+		}
+		webAssetServer.ServeHTTP(w, r)
+	}))
 
 	srv := &http.Server{
 		Addr:    srvAddr,

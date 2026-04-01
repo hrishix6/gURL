@@ -1,129 +1,105 @@
 package api
 
 import (
-	"encoding/json"
+	"gurl/shared/utils"
+	"gurl/web/auth"
 	"gurl/web/executor"
 	"gurl/web/exporter"
+	"gurl/web/internal/httpx"
+	"gurl/web/internal/models"
 	"gurl/web/storage"
 	"net/http"
-	"time"
 )
 
-type ReqMetadata struct {
-	Timestamp time.Time `json:"timestamp,omitempty"`
-	RequestId string    `json:"request_id,omitempty"`
-}
-
-type RequestError struct {
-	Message string `json:"message"`
-	Details any    `json:"details"`
-}
-
-type ApiResponse struct {
-	Data     any           `json:"data,omitempty"`
-	MetaData *ReqMetadata  `json:"metadata"`
-	Error    *RequestError `json:"error,omitempty"`
-}
-
 type Api struct {
+	httpx.BaseController
 	version  string
 	storage  *storage.WebStorage
 	executor *executor.WebExecutor
 	exporter *exporter.WebExporter
+	authSvc  *auth.AuthService
 }
 
-func NewApi(store *storage.WebStorage,
+func NewApi(appName string, store *storage.WebStorage,
 	exec *executor.WebExecutor,
-	export *exporter.WebExporter) *Api {
+	export *exporter.WebExporter,
+	authSvc *auth.AuthService,
+) *Api {
 	return &Api{
 		storage:  store,
 		executor: exec,
 		exporter: export,
+		version:  "v1",
+		authSvc:  authSvc,
 	}
 }
 
-func (a *Api) json(v any) []byte {
-	bytes, err := json.Marshal(v)
+func (api *Api) ProtectedRoute(next http.Handler) http.Handler {
 
-	if err != nil {
-		panic(err)
-	}
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-	return bytes
-}
+		sessionCookie, err := api.authSvc.ExtractSessionCookie(r)
 
-func (a *Api) Ok(w http.ResponseWriter, payload any) {
-	w.Header().Set("content-type", "application/json; charset=utf-8")
-	w.WriteHeader(http.StatusOK)
-	w.Write(a.json(payload))
-}
+		if err != nil {
+			api.WhoAreYou(w, api.WrapErrorResponse(r, &models.RequestError{
+				Message: "unauthorized",
+				Details: "missing session cookie",
+			}))
 
-func (a *Api) Bad(w http.ResponseWriter, payload any) {
-	w.Header().Set("content-type", "application/json; charset=utf-8")
-	w.WriteHeader(http.StatusBadRequest)
-	w.Write(a.json(payload))
-}
+			return
+		}
 
-func (a *Api) Created(w http.ResponseWriter, payload any) {
-	w.Header().Set("content-type", "application/json; charset=utf-8")
-	w.WriteHeader(http.StatusCreated)
-	w.Write(a.json(payload))
-}
+		// authHeader := r.Header.Get("Authorization")
 
-func (a *Api) NoEntry(w http.ResponseWriter, payload any) {
-	w.Header().Set("content-type", "application/json; charset=utf-8")
-	w.WriteHeader(http.StatusForbidden)
-	w.Write(a.json(payload))
-}
+		// if authHeader == "" {
+		// 	api.WhoAreYou(w, api.WrapErrorResponse(r, &models.RequestError{
+		// 		Message: "unauthorized",
+		// 		Details: "missing auth header",
+		// 	}))
 
-func (a *Api) NotFound(w http.ResponseWriter, payload any) {
-	w.Header().Set("content-type", "application/json; charset=utf-8")
-	w.WriteHeader(http.StatusNotFound)
-	w.Write(a.json(payload))
-}
+		// 	return
+		// }
 
-func (a *Api) WhoAreYou(w http.ResponseWriter, payload any) {
-	w.Header().Set("content-type", "application/json; charset=utf-8")
-	w.WriteHeader(http.StatusUnauthorized)
-	w.Write(a.json(payload))
-}
+		// parts := strings.Split(authHeader, " ")
 
-func (a *Api) ServerCooked(w http.ResponseWriter, payload any) {
-	w.Header().Set("content-type", "application/json; charset=utf-8")
-	w.WriteHeader(http.StatusInternalServerError)
-	w.Write(a.json(payload))
-}
+		// if len(parts) < 2 {
+		// 	api.WhoAreYou(w, api.WrapErrorResponse(r, &models.RequestError{
+		// 		Message: "unauthorized",
+		// 		Details: "invalid auth scheme",
+		// 	}))
 
-func (a *Api) WrapSuccessResponse(r *http.Request, payload any) *ApiResponse {
+		// 	return
+		// }
 
-	reqId, _ := ReqIdFromCtx(r.Context())
+		// if parts[0] != "Bearer" || strings.TrimSpace(parts[1]) == "" {
+		// 	api.WhoAreYou(w, api.WrapErrorResponse(r, &models.RequestError{
+		// 		Message: "unauthorized",
+		// 		Details: "invalid auth scheme or token",
+		// 	}))
 
-	return &ApiResponse{
-		Data: payload,
-		MetaData: &ReqMetadata{
-			Timestamp: time.Now(),
-			RequestId: reqId,
-		},
-	}
-}
+		// 	return
+		// }
 
-func (a *Api) WrapErrorResponse(r *http.Request, error *RequestError) *ApiResponse {
+		userid, err := api.authSvc.ParseToken(sessionCookie.Value)
 
-	reqId, _ := ReqIdFromCtx(r.Context())
+		if err != nil {
+			api.WhoAreYou(w, api.WrapErrorResponse(r, &models.RequestError{
+				Message: "unauthorized",
+				Details: "invalid or expired token",
+			}))
 
-	return &ApiResponse{
-		Error: error,
-		MetaData: &ReqMetadata{
-			Timestamp: time.Now(),
-			RequestId: reqId,
-		},
-	}
+			return
+		}
 
+		r = r.WithContext(utils.ContextWithUserId(r.Context(), userid))
+
+		next.ServeHTTP(w, r)
+	})
 }
 
 func (api *Api) Routes() http.Handler {
 
-	apiMux := NewGurlWebRouter("")
+	apiMux := httpx.NewGurlWebRouter("")
 
 	apiMux.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 
@@ -204,5 +180,5 @@ func (api *Api) Routes() http.Handler {
 	apiMux.Get("/export/env/{id}", api.DownloadEnvironmentExport)
 	apiMux.Get("/export/collection/{id}", api.DownloadCollectionExport)
 
-	return RequestContext(RequestLogger(apiMux))
+	return httpx.RequestContext(httpx.RequestLogger(api.ProtectedRoute(apiMux)))
 }

@@ -20,7 +20,7 @@ RUN pnpm run web-prod
 
 FROM golang:1.25-alpine AS backend
 
-RUN apk add --no-cache build-base musl-dev ca-certificates
+RUN apk add --no-cache ca-certificates
 
 WORKDIR /app
 
@@ -38,7 +38,7 @@ RUN go work use ./web ./shared
 
 COPY --from=frontend /home/node/app/dist/gurl/ ./shared/assets/static/
 
-RUN CGO_ENABLED=1 go build -ldflags '-linkmode external -extldflags "-static" -s -w' -o bin/gurl-web ./web
+RUN CGO_ENABLED=0 go build -ldflags '-s -w' -o bin/gurl-web ./web
 
 FROM scratch
 

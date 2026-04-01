@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"gurl/shared/models"
+	"gurl/shared/utils"
 
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
@@ -15,6 +16,7 @@ type Environment struct {
 	Name        string         `gorm:"column:name"`
 	Data        datatypes.JSON `gorm:"column:data;default:'[]'"`
 	WorkspaceId string         `gorm:"column:workspace_id;default:null"`
+	UserId      string         `gorm:"column:user_id;default:null"`
 }
 
 func (e *Environment) ToEnvironmentDTO() models.EnvironmentDTO {
@@ -26,7 +28,7 @@ func (e *Environment) ToEnvironmentDTO() models.EnvironmentDTO {
 	}
 }
 
-func (e *Environment) FromEnvironmentDraft(dto *models.SaveEnvDraftAsEnvDTO, env *EnvironmentDraft) {
+func (e *Environment) FromEnvironmentDraft(ctx context.Context, dto *models.SaveEnvDraftAsEnvDTO, env *EnvironmentDraft) {
 
 	if e == nil {
 		e = &Environment{}
@@ -36,6 +38,7 @@ func (e *Environment) FromEnvironmentDraft(dto *models.SaveEnvDraftAsEnvDTO, env
 	e.Name = dto.Name
 	e.Data = env.Data
 	e.WorkspaceId = dto.WorkspaceId
+	e.UserId = utils.UserIdFromContext(ctx)
 }
 
 type EnvironmentRepository struct {
@@ -50,10 +53,17 @@ func NewEnvironmentRepository(db *gorm.DB) *EnvironmentRepository {
 
 func (er *EnvironmentRepository) GetEnvironments(ctx context.Context, workspaceId string) ([]models.EnvironmentDTO, error) {
 
-	envs, err := gorm.G[Environment](er.db).Where("workspace_id = ?", workspaceId).Find(ctx)
+	user := utils.UserIdFromContext(ctx)
 
-	if err != nil {
-		return []models.EnvironmentDTO{}, err
+	var envs []Environment
+
+	tx := er.db.Where(&Environment{
+		WorkspaceId: workspaceId,
+		UserId:      user,
+	}).Find(&envs)
+
+	if tx.Error != nil {
+		return []models.EnvironmentDTO{}, tx.Error
 	}
 
 	var results = []models.EnvironmentDTO{}
@@ -70,7 +80,6 @@ func (er *EnvironmentRepository) addEnv(ctx context.Context, r *Environment) err
 	return gorm.G[Environment](er.db).Create(ctx, r)
 }
 
-// TODO: REMOVE AS NOT BEING USED
 func (er *EnvironmentRepository) AddEnvironment(ctx context.Context, dto models.AddEnvironmentDTO) error {
 
 	envdata := []byte("[]")
@@ -88,6 +97,7 @@ func (er *EnvironmentRepository) AddEnvironment(ctx context.Context, dto models.
 			Name:        dto.Name,
 			WorkspaceId: dto.WorkspaceId,
 			Data:        datatypes.JSON(envdata),
+			UserId:      utils.UserIdFromContext(ctx),
 		})
 }
 
@@ -112,10 +122,19 @@ func (er *EnvironmentRepository) AddFreshEnvDraft(ctx context.Context, id string
 
 func (er *EnvironmentRepository) CopyEnvironment(ctx context.Context, id string, dto models.CopyEnvironmentDTO) error {
 
-	env, err := gorm.G[Environment](er.db).Where("id = ?", id).First(ctx)
+	user := utils.UserIdFromContext(ctx)
 
-	if err != nil {
-		return err
+	var env = new(Environment)
+
+	tx := er.db.Where(&Environment{
+		BaseEntity: BaseEntity{
+			Id: id,
+		},
+		UserId: user,
+	}).First(env)
+
+	if tx.Error != nil {
+		return tx.Error
 	}
 
 	copyEnv := &Environment{
@@ -125,6 +144,7 @@ func (er *EnvironmentRepository) CopyEnvironment(ctx context.Context, id string,
 		Data:        env.Data,
 		Name:        fmt.Sprintf("%s-copy", env.Name),
 		WorkspaceId: env.WorkspaceId,
+		UserId:      user,
 	}
 
 	return er.addEnv(ctx, copyEnv)
@@ -156,10 +176,16 @@ func (er *EnvironmentRepository) RemoveEnvDraft(ctx context.Context, id string) 
 }
 
 func (er *EnvironmentRepository) RemoveEnv(ctx context.Context, id string) error {
-	_, err := gorm.G[Environment](er.db).Where("id = ?", id).Delete(ctx)
 
-	if err != nil {
-		return err
+	tx := er.db.Where(&Environment{
+		BaseEntity: BaseEntity{
+			Id: id,
+		},
+		UserId: utils.UserIdFromContext(ctx),
+	}).Delete(&Environment{})
+
+	if tx.Error != nil {
+		return tx.Error
 	}
 
 	return nil
@@ -206,14 +232,23 @@ func (er *EnvironmentRepository) SaveEnvDraftAsEnv(ctx context.Context, id strin
 		return err
 	}
 
-	existing, err := gorm.G[Environment](er.db).Where("id = ?", dto.EnvId).First(ctx)
+	user := utils.UserIdFromContext(ctx)
 
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
+	var existing = new(Environment)
+
+	// existing, err := gorm.G[Environment](er.db).Where("id = ?", dto.EnvId).First(ctx)
+	tx := er.db.Where(&Environment{
+		BaseEntity: BaseEntity{
+			Id: dto.EnvId,
+		},
+		UserId: user,
+	}).First(existing)
+
+	if tx.Error != nil {
+
+		if errors.Is(tx.Error, gorm.ErrRecordNotFound) {
 			env := &Environment{}
-
-			env.FromEnvironmentDraft(&dto, &draft)
-
+			env.FromEnvironmentDraft(ctx, &dto, &draft)
 			createErr := er.addEnv(ctx, env)
 
 			if createErr != nil {
@@ -221,9 +256,9 @@ func (er *EnvironmentRepository) SaveEnvDraftAsEnv(ctx context.Context, id strin
 			}
 
 			return nil
-		} else {
-			return err
 		}
+
+		return tx.Error
 	}
 
 	//delete existing env and instead create new record.
@@ -236,7 +271,7 @@ func (er *EnvironmentRepository) SaveEnvDraftAsEnv(ctx context.Context, id strin
 	//create new env with same id and new data
 	env := &Environment{}
 
-	env.FromEnvironmentDraft(&dto, &draft)
+	env.FromEnvironmentDraft(ctx, &dto, &draft)
 
 	createErr := er.addEnv(ctx, env)
 
@@ -261,7 +296,17 @@ func (er *EnvironmentRepository) DeleteEnvDraftsUnderEnv(ctx context.Context, en
 }
 
 func (er *EnvironmentRepository) FindSavedEnvById(ctx context.Context, id string) (Environment, error) {
-	return gorm.G[Environment](er.db).Where("id = ?", id).First(ctx)
+
+	env := new(Environment)
+
+	tx := er.db.Where(&Environment{
+		BaseEntity: BaseEntity{
+			Id: id,
+		},
+		UserId: utils.UserIdFromContext(ctx),
+	}).First(env)
+
+	return *env, tx.Error
 }
 
 func (er *EnvironmentRepository) FindEnvCountByName(ctx context.Context, name string) (int64, error) {

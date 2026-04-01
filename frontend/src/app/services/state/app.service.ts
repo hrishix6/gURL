@@ -416,12 +416,15 @@ export class AppService {
 	private _activeTheme = signal<AppTheme | null>(null);
 	public activeTheme = computed(() => this._activeTheme());
 
+	private themeDbSync$ = new Subject<AppTheme>();
+
 	private isAppTheme(theme: unknown): theme is AppTheme {
 		return SUPPORTED_THEMES.some((x) => x.id === theme);
 	}
 
 	public setActiveTheme(theme: AppTheme) {
 		this._activeTheme.set(theme);
+		this.themeDbSync$.next(theme);
 	}
 	//#endregion theme
 
@@ -582,6 +585,18 @@ export class AppService {
 					})
 					.then(() => {
 						console.log(`updated layout to ${v} in db`);
+					});
+			},
+		});
+
+		this.themeDbSync$.pipe(takeUntilDestroyed(this.destoyRef)).subscribe({
+			next: (v) => {
+				this.uiStateRepo
+					.updateUIState({
+						activeTheme: v,
+					})
+					.then(() => {
+						console.log(`updated theme to ${v} in db`);
 					});
 			},
 		});
@@ -772,8 +787,10 @@ export class AppService {
 	}
 
 	async initializeUIState(): Promise<string> {
-		this.initializeAppPreferences();
 		const uiState = await this.uiStateRepo.getUIState();
+		if (this.isAppTheme(uiState.activeTheme)) {
+			this._activeTheme.set(uiState.activeTheme);
+		}
 		this._formLayout.set(
 			(uiState.layout as FormLayout) || FormLayout.Responsive,
 		);
@@ -812,12 +829,37 @@ export class AppService {
 			const activeWorkspace = await this.initializeUIState();
 			await this.initializeWorkspaces(activeWorkspace);
 			this._appState.set("loaded");
-			this.alertSvc.addAlert("App initialized.", "success");
 		} catch (_error) {
 			console.log(_error);
 			this._appError.set("Failed to initialize the workspace.");
 			this._appState.set("error");
 		}
+	}
+
+	public clean() {
+		// history
+		this.globalHistory = {};
+		this._historyItems.set([]);
+		this._searchHistoryKey.set("");
+
+		// environments
+		this._environments.set([]);
+		this._envSearchKey.set("");
+		this._activeEnvironment.set(NO_ENV_ID);
+
+		// workspaces
+		this._workspaces.set([]);
+		this._activeWorkspace.set("");
+
+		// requests
+		this._savedRequests.set([]);
+		this._savedExamples.set([]);
+
+		// collections
+		this._collections.set([]);
+		this._collectionSearchKey.set("");
+
+		this.tabSvc.clean();
 	}
 
 	//#endregion init

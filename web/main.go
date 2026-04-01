@@ -87,7 +87,7 @@ func main() {
 	log.Printf("[Gurl] database connection string - %s\n", dsn)
 
 	//initialize DB connection
-	dbConn, err := db.InitDb(dsn)
+	dbConn, err := db.InitDesktopDb(dsn)
 
 	if err != nil {
 		log.Fatalf("unable to establish sqlite connection %v", err)

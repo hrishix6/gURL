@@ -8,6 +8,7 @@ import (
 	dbPkg "gurl/shared/db"
 	"gurl/shared/models"
 	"gurl/shared/nanoid"
+	"gurl/shared/utils"
 	"os"
 	"strings"
 
@@ -153,7 +154,7 @@ func toImportedKeyValItems(raw json.RawMessage) (datatypes.JSON, error) {
 	return datatypes.JSON(bs), nil
 }
 
-func toDbRequestFromImported(importedReq models.ImportedGurlReq, collectionId string, workspaceId string) (*dbPkg.Request, error) {
+func toDbRequestFromImported(ctx context.Context, importedReq models.ImportedGurlReq, collectionId string, workspaceId string) (*dbPkg.Request, error) {
 
 	newReq := &dbPkg.Request{
 		BaseEntity: dbPkg.BaseEntity{
@@ -161,6 +162,7 @@ func toDbRequestFromImported(importedReq models.ImportedGurlReq, collectionId st
 		},
 		CollectionId: collectionId,
 		WorkspaceId:  workspaceId,
+		UserId:       utils.UserIdFromContext(ctx),
 	}
 
 	if importedReq.Name == nil || strings.TrimSpace(*importedReq.Name) == "" {
@@ -316,7 +318,7 @@ func (i2 *InternalImporter) handleImportWithRequests(ctx context.Context, collec
 	var newRequests []dbPkg.Request
 
 	for _, req := range requests {
-		newReq, err := toDbRequestFromImported(req, newCollection.Id, workspaceId)
+		newReq, err := toDbRequestFromImported(ctx, req, newCollection.Id, workspaceId)
 
 		if err != nil {
 			continue

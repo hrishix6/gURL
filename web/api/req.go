@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"gurl/shared/models"
+	webModels "gurl/web/internal/models"
 	"log"
 	"net/http"
 
@@ -22,7 +23,7 @@ func (api *Api) GetRequests(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Printf("[api/GetRequests] error:%v \n", err)
-		wrappedErrResponse := api.WrapErrorResponse(r, &RequestError{
+		wrappedErrResponse := api.WrapErrorResponse(r, &webModels.RequestError{
 			Message: "failed to load requests from db",
 			Details: err.Error(),
 		})
@@ -43,7 +44,7 @@ func (api *Api) CopyRequest(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Printf("[api/CopyRequest] error:%v \n", err)
-		wrappedErrResponse := api.WrapErrorResponse(r, &RequestError{
+		wrappedErrResponse := api.WrapErrorResponse(r, &webModels.RequestError{
 			Message: "unable to parse body",
 			Details: err.Error(),
 		})
@@ -56,7 +57,7 @@ func (api *Api) CopyRequest(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Printf("[api/CopyRequest] error:%v \n", err)
-		wrappedErrResponse := api.WrapErrorResponse(r, &RequestError{
+		wrappedErrResponse := api.WrapErrorResponse(r, &webModels.RequestError{
 			Message: fmt.Sprintf("failed to copy request in db with id %s", id),
 			Details: err.Error(),
 		})
@@ -75,7 +76,7 @@ func (api *Api) DeleteReq(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Printf("[api/DeleteReq] error:%v \n", err)
-		wrappedErrResponse := api.WrapErrorResponse(r, &RequestError{
+		wrappedErrResponse := api.WrapErrorResponse(r, &webModels.RequestError{
 			Message: fmt.Sprintf("failed to delete req with id: %s", id),
 			Details: err.Error(),
 		})
@@ -97,7 +98,7 @@ func (api *Api) CreateDraftFromRequest(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Printf("[api/CreateDraftFromRequest] error:%v \n", err)
-		wrappedErrResponse := api.WrapErrorResponse(r, &RequestError{
+		wrappedErrResponse := api.WrapErrorResponse(r, &webModels.RequestError{
 			Message: "unable to parse body",
 			Details: err.Error(),
 		})
@@ -110,7 +111,7 @@ func (api *Api) CreateDraftFromRequest(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Printf("[api/CreateDraftFromRequest] error:%v \n", err)
-		wrappedErrResponse := api.WrapErrorResponse(r, &RequestError{
+		wrappedErrResponse := api.WrapErrorResponse(r, &webModels.RequestError{
 			Message: "failed to create draft from req in db",
 			Details: err.Error(),
 		})
@@ -129,7 +130,7 @@ func (api *Api) SoftDeleteReqDraftsUnderReq(w http.ResponseWriter, r *http.Reque
 
 	if err != nil {
 		log.Printf("[api/SoftDeleteReqDraftsUnderReq] error:%v \n", err)
-		wrappedErrResponse := api.WrapErrorResponse(r, &RequestError{
+		wrappedErrResponse := api.WrapErrorResponse(r, &webModels.RequestError{
 			Message: "failed to soft delete req-drafts in db",
 			Details: err.Error(),
 		})
@@ -151,7 +152,7 @@ func (api *Api) GetReqDraftById(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Printf("[api/GetReqDraftById] error:%v \n", err)
 
-		wrappedErr := &RequestError{
+		wrappedErr := &webModels.RequestError{
 			Message: fmt.Sprintf("failed to req-draft with id %s from db", id),
 			Details: err.Error(),
 		}
@@ -179,7 +180,7 @@ func (api *Api) CreateReqDraft(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Printf("[api/CreateReqDraft] error:%v \n", err)
-		wrappedErrResponse := api.WrapErrorResponse(r, &RequestError{
+		wrappedErrResponse := api.WrapErrorResponse(r, &webModels.RequestError{
 			Message: "unable to parse body",
 			Details: err.Error(),
 		})
@@ -192,7 +193,7 @@ func (api *Api) CreateReqDraft(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Printf("[api/CreateReqDraft] error:%v \n", err)
-		wrappedErrResponse := api.WrapErrorResponse(r, &RequestError{
+		wrappedErrResponse := api.WrapErrorResponse(r, &webModels.RequestError{
 			Message: "failed to create req-draft in db",
 			Details: err.Error(),
 		})
@@ -212,7 +213,7 @@ func (api *Api) DeleteReqDraft(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Printf("[api/DeleteReqDraft] error:%v \n", err)
-		wrappedErrResponse := api.WrapErrorResponse(r, &RequestError{
+		wrappedErrResponse := api.WrapErrorResponse(r, &webModels.RequestError{
 			Message: fmt.Sprintf("failed to delete req-draft with id: %s", id),
 			Details: err.Error(),
 		})
@@ -232,7 +233,7 @@ func (api *Api) CreateFreshReqDraft(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Printf("[api/CreateFreshDraft] error:%v \n", err)
-		wrappedErrResponse := api.WrapErrorResponse(r, &RequestError{
+		wrappedErrResponse := api.WrapErrorResponse(r, &webModels.RequestError{
 			Message: "unable to parse body",
 			Details: err.Error(),
 		})
@@ -245,7 +246,7 @@ func (api *Api) CreateFreshReqDraft(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Printf("[api/CreateFreshDraft] error:%v \n", err)
-		wrappedErrResponse := api.WrapErrorResponse(r, &RequestError{
+		wrappedErrResponse := api.WrapErrorResponse(r, &webModels.RequestError{
 			Message: "failed to create fresh req-draft in db",
 			Details: err.Error(),
 		})
@@ -268,7 +269,7 @@ func (api *Api) UpdateReqDraftFields(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Printf("[api/UpdateReqDraftFields] error:%v \n", err)
-		wrappedErrResponse := api.WrapErrorResponse(r, &RequestError{
+		wrappedErrResponse := api.WrapErrorResponse(r, &webModels.RequestError{
 			Message: "unable to parse body",
 			Details: err.Error(),
 		})
@@ -281,7 +282,7 @@ func (api *Api) UpdateReqDraftFields(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Printf("[api/UpdateReqDraftFields] error:%v \n", err)
-		wrappedErrResponse := api.WrapErrorResponse(r, &RequestError{
+		wrappedErrResponse := api.WrapErrorResponse(r, &webModels.RequestError{
 			Message: "failed to update req-draft in db",
 			Details: err.Error(),
 		})
@@ -303,7 +304,7 @@ func (api *Api) SaveDraftAsRequest(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Printf("[api/SaveDraftAsRequest] error:%v \n", err)
-		wrappedErrResponse := api.WrapErrorResponse(r, &RequestError{
+		wrappedErrResponse := api.WrapErrorResponse(r, &webModels.RequestError{
 			Message: "unable to parse body",
 			Details: err.Error(),
 		})
@@ -316,7 +317,7 @@ func (api *Api) SaveDraftAsRequest(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Printf("[api/SaveDraftAsRequest] error:%v \n", err)
-		wrappedErrResponse := api.WrapErrorResponse(r, &RequestError{
+		wrappedErrResponse := api.WrapErrorResponse(r, &webModels.RequestError{
 			Message: "failed to save req-draft as req in db",
 			Details: err.Error(),
 		})

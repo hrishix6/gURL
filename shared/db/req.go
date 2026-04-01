@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"gurl/shared/models"
+	"gurl/shared/utils"
 
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
@@ -16,6 +17,7 @@ type Request struct {
 	CollectionId string     `gorm:"not null"`
 	Collection   Collection `gorm:"constraint:OnDelete:CASCADE;"`
 	WorkspaceId  string     `gorm:"column:workspace_id;default:null"`
+	UserId       string     `gorm:"column:user_id;default:null"`
 }
 
 func (r *Request) ToRequestDTO() *models.RequestDTO {
@@ -29,7 +31,7 @@ func (r *Request) ToRequestDTO() *models.RequestDTO {
 	return o
 }
 
-func (r *Request) FromRequestDraft(payload *models.SaveDraftAsReqDTO, dto *RequestDraft) {
+func (r *Request) FromRequestDraft(ctx context.Context, payload *models.SaveDraftAsReqDTO, dto *RequestDraft) {
 	if r == nil {
 		r = &Request{}
 	}
@@ -39,6 +41,7 @@ func (r *Request) FromRequestDraft(payload *models.SaveDraftAsReqDTO, dto *Reque
 	r.WorkspaceId = payload.WorkspaceId
 	r.Name = payload.Name
 	r.RequestCore = dto.RequestCore
+	r.UserId = utils.UserIdFromContext(ctx)
 }
 
 type RequestRepository struct {
@@ -56,12 +59,29 @@ func (rr *RequestRepository) addSavedReq(ctx context.Context, r *Request) error 
 }
 
 func (rr *RequestRepository) findSavedReq(ctx context.Context, id string) (Request, error) {
-	return gorm.G[Request](rr.db).Where("id = ?", id).First(ctx)
+
+	var req Request
+
+	tx := rr.db.Where(&Request{
+		BaseEntity: BaseEntity{
+			Id: id,
+		},
+		UserId: utils.UserIdFromContext(ctx),
+	}).First(&req)
+
+	return req, tx.Error
 }
 
 func (rr *RequestRepository) DeleteSavedReq(ctx context.Context, id string) error {
-	_, err := gorm.G[Request](rr.db).Where("id = ?", id).Delete(ctx)
-	return err
+
+	tx := rr.db.Where(&Request{
+		BaseEntity: BaseEntity{
+			Id: id,
+		},
+		UserId: utils.UserIdFromContext(ctx),
+	}).Delete(&Request{})
+
+	return tx.Error
 }
 
 func (rr *RequestRepository) findDraft(ctx context.Context, id string) (RequestDraft, error) {
@@ -80,10 +100,15 @@ func (rr *RequestRepository) RemoveDraft(ctx context.Context, id string) error {
 
 func (rr *RequestRepository) GetSavedRequests(ctx context.Context, workspaceId string) ([]models.RequestLightDTO, error) {
 
-	records, err := gorm.G[Request](rr.db).Where("workspace_id = ?", workspaceId).Find(ctx)
+	var records []Request
 
-	if err != nil {
-		return []models.RequestLightDTO{}, err
+	tx := rr.db.Where(&Request{
+		WorkspaceId: workspaceId,
+		UserId:      utils.UserIdFromContext(ctx),
+	}).Find(&records)
+
+	if tx.Error != nil {
+		return []models.RequestLightDTO{}, tx.Error
 	}
 
 	var results []models.RequestLightDTO
@@ -204,7 +229,7 @@ func (rr *RequestRepository) SaveDraftAsRequest(ctx context.Context, id string, 
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			req := &Request{}
-			req.FromRequestDraft(&dto, &draft)
+			req.FromRequestDraft(ctx, &dto, &draft)
 
 			createErr := rr.addSavedReq(ctx, req)
 
@@ -213,9 +238,9 @@ func (rr *RequestRepository) SaveDraftAsRequest(ctx context.Context, id string, 
 			}
 
 			return nil
-		} else {
-			return err
 		}
+
+		return err
 	}
 
 	//delete existing req and instead create new record.
@@ -228,7 +253,7 @@ func (rr *RequestRepository) SaveDraftAsRequest(ctx context.Context, id string, 
 	//create new saved request with same id and new data
 	req := &Request{}
 
-	req.FromRequestDraft(&dto, &draft)
+	req.FromRequestDraft(ctx, &dto, &draft)
 
 	createErr := rr.addSavedReq(ctx, req)
 
@@ -335,7 +360,14 @@ func (rr *RequestRepository) UpdateDraftFields(ctx context.Context, id string, d
 }
 
 func (rr *RequestRepository) FindSavedReqByCollectionId(ctx context.Context, collectionId string) ([]Request, error) {
-	return gorm.G[Request](rr.db).Where("collection_id = ?", collectionId).Order("created desc").Find(ctx)
+	var requests []Request
+
+	tx := rr.db.Where(&Request{
+		CollectionId: collectionId,
+		UserId:       utils.UserIdFromContext(ctx),
+	}).Find(&requests)
+
+	return requests, tx.Error
 }
 
 func (rr *RequestRepository) CreateRequestsInBatch(ctx context.Context, newRequests []Request) error {

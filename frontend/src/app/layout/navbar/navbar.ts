@@ -6,19 +6,7 @@ import { WorkspaceOptions } from "@/workspaces/workspace.options";
 @Component({
 	selector: "gurl-navbar",
 	template: `
-        @switch (appConfig.mode) {
-            @case("desktop") {
-                <nav class="flex p-2 items-center justify-between bg-base-300 shadow-md">
-                    <nav class="flex gap-2 items-center">
-                        <gurl-workspace [align]="'start'" />
-                    </nav>
-                    <nav class="flex items-center gap-2">
-                        <div gurl-entity-creation></div>
-                    </nav>
-              </nav>
-            }
-            @case("web") {
-                <nav class="flex p-2 items-center justify-between bg-base-300 shadow-md">
+        <nav class="flex p-2 items-center justify-between bg-base-300 shadow-md">
                     <nav class="flex items-center gap-2">
                         <h2 class="text-primary text-xl mx-2 font-medium">
                             gURL
@@ -26,12 +14,10 @@ import { WorkspaceOptions } from "@/workspaces/workspace.options";
                         </h2>
                     </nav>
                     <nav class="flex gap-2 items-center">
-                        <gurl-workspace [align]="'end'" />
                         <div gurl-entity-creation></div>
+                        <gurl-workspace [align]="'end'" />
                     </nav>
-              </nav>
-            }
-        }
+        </nav>
     `,
 	imports: [WorkspaceOptions, EntityCreationButton],
 })

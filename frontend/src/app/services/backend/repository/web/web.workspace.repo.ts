@@ -1,13 +1,13 @@
 import type { models } from "@wailsjs/go/models";
-import { getAppConfig } from "@/app.config";
-import type { ApiResponse, WorkspaceRepository } from "@/types";
+import { RestClient } from "@/services";
+import type { WorkspaceRepository } from "@/types";
 
 export class WebWorkspaceRepository implements WorkspaceRepository {
-	private _baseURL: string;
+	private readonly restClient: RestClient;
 	private static webWorkspaceRepo: WebWorkspaceRepository | null = null;
 
 	private constructor() {
-		this._baseURL = getAppConfig().backend_url;
+		this.restClient = RestClient.getInstance();
 	}
 
 	static getInstance() {
@@ -21,60 +21,19 @@ export class WebWorkspaceRepository implements WorkspaceRepository {
 	async getWorkspaces(): Promise<
 		Array<models.WorkspaceLightDTO> | null | undefined
 	> {
-		const res = await fetch(`${this._baseURL}/workspaces`);
-
-		if (!res.ok) {
-			throw new Error("failed to load workspaces from backend");
-		}
-
-		const { data }: ApiResponse<Array<models.WorkspaceLightDTO>> =
-			await res.json();
-
-		return data;
+		return this.restClient.get<Array<models.WorkspaceLightDTO>>("workspaces");
 	}
-	async getWorkspaceById(id: string): Promise<models.WorkspaceDTO> {
-		const res = await fetch(`${this._baseURL}/workspaces/${id}`);
-
-		if (!res.ok) {
-			throw new Error("failed to load workspace from backend");
-		}
-
-		const { data }: ApiResponse<models.WorkspaceDTO> = await res.json();
-
-		if (!data) {
-			throw new Error("received invalid workspace from backend");
-		}
-
-		return data;
+	async getWorkspaceById(id: string): Promise<models.WorkspaceDTO | undefined> {
+		return this.restClient.get<models.WorkspaceDTO>(`workspaces/${id}`);
 	}
 
 	async addWorkspace(arg: models.CreateWorkspaceDTO): Promise<void> {
-		const res = await fetch(`${this._baseURL}/workspaces`, {
-			method: "POST",
-			headers: {
-				"Content-type": "application/json",
-			},
-			body: JSON.stringify(arg),
-		});
-
-		if (!res.ok) {
-			throw new Error("failed to create workspace in backend");
-		}
+		return this.restClient.post("workspaces", arg);
 	}
 	async updateWorkspace(
 		id: string,
 		arg: models.UpdateWorkspaceDTO,
 	): Promise<void> {
-		const res = await fetch(`${this._baseURL}/workspaces/${id}`, {
-			method: "PATCH",
-			headers: {
-				"Content-type": "application/json",
-			},
-			body: JSON.stringify(arg),
-		});
-
-		if (!res.ok) {
-			throw new Error("failed to create workspace in backend");
-		}
+		return this.restClient.patch(`workspaces/${id}`, arg);
 	}
 }

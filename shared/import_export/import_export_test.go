@@ -26,7 +26,7 @@ func TestMain(m *testing.M) {
 
 	os.Remove(dsn)
 
-	d, err := db.InitDb(dsn)
+	d, err := db.InitDesktopDb(dsn)
 
 	if err != nil {
 		panic(err)

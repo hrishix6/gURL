@@ -435,6 +435,9 @@ export class TabsService {
 	async init(workspaceId: string) {
 		try {
 			const workspace = await this.workspaceRepo.getWorkspaceById(workspaceId);
+			if (!workspace) {
+				throw new Error("failed to find workspace");
+			}
 			this.setWorkspaceId(workspaceId);
 			const { openTabsJSON, activeTab } = workspace;
 			const parsedTabs: ApplicationTab[] = JSON.parse(openTabsJSON);
@@ -455,5 +458,11 @@ export class TabsService {
 			console.error(error);
 			this.alertSvc.addAlert("Failed to load tabs", "error");
 		}
+	}
+
+	clean() {
+		this._openTabs.set([]);
+		this._workspaceId.set("");
+		this._activeTab.set("");
 	}
 }
