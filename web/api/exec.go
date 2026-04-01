@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"gurl/shared/models"
 	"gurl/web/internal"
+	webModels "gurl/web/internal/models"
 	"io"
 	"log"
 	"net/http"
@@ -18,7 +19,7 @@ func (api *Api) SendHttpReq(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Printf("[api/SendHttpReq] error:%v \n", err)
-		wrappedErrResponse := api.WrapErrorResponse(r, &RequestError{
+		wrappedErrResponse := api.WrapErrorResponse(r, &webModels.RequestError{
 			Message: "failed to parse request config",
 			Details: err.Error(),
 		})
@@ -31,7 +32,7 @@ func (api *Api) SendHttpReq(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Printf("[api/SendHttpReq] error:%v \n", err)
-		wrappedErrResponse := api.WrapErrorResponse(r, &RequestError{
+		wrappedErrResponse := api.WrapErrorResponse(r, &webModels.RequestError{
 			Message: "failed to execute http request",
 			Details: err.Error(),
 		})
@@ -57,7 +58,7 @@ func (api *Api) ParseCookieRaw(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Printf("[api/ParseCookieRaw] error:%v \n", err)
-		wrappedErrResponse := api.WrapErrorResponse(r, &RequestError{
+		wrappedErrResponse := api.WrapErrorResponse(r, &webModels.RequestError{
 			Message: "failed to parse cookie request",
 			Details: err.Error(),
 		})
@@ -70,7 +71,7 @@ func (api *Api) ParseCookieRaw(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Printf("[api/ParseCookieRaw] error:%v \n", err)
-		wrappedErrResponse := api.WrapErrorResponse(r, &RequestError{
+		wrappedErrResponse := api.WrapErrorResponse(r, &webModels.RequestError{
 			Message: "failed to parse http cookie text",
 			Details: err.Error(),
 		})
@@ -89,7 +90,7 @@ func (api *Api) GetSavedResponsesSrc(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Printf("[api/GetSavedResponsesSrc] error:%v \n", err)
-		wrappedErrResponse := api.WrapErrorResponse(r, &RequestError{
+		wrappedErrResponse := api.WrapErrorResponse(r, &webModels.RequestError{
 			Message: "failed to request",
 			Details: err.Error(),
 		})
@@ -98,7 +99,7 @@ func (api *Api) GetSavedResponsesSrc(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	src := api.executor.GetSavedResponsesSrc(dto.SavedResPath)
+	src := api.executor.GetSavedResponsesSrc(r.Context(), dto.SavedResPath)
 	api.Ok(w, api.WrapSuccessResponse(r, src))
 }
 
@@ -114,7 +115,7 @@ func (api *Api) UploadTempFormFile(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Printf("[api/UploadTempFormFile] error:%v \n", err)
-		wrappedErrResponse := api.WrapErrorResponse(r, &RequestError{
+		wrappedErrResponse := api.WrapErrorResponse(r, &webModels.RequestError{
 			Message: "exeeded limit for temp file",
 			Details: err.Error(),
 		})
@@ -127,7 +128,7 @@ func (api *Api) UploadTempFormFile(w http.ResponseWriter, r *http.Request) {
 
 	if !uploadResult.Success {
 		log.Printf("[api/UploadTempFormFile] error:%v \n", err)
-		wrappedErrResponse := api.WrapErrorResponse(r, &RequestError{
+		wrappedErrResponse := api.WrapErrorResponse(r, &webModels.RequestError{
 			Message: uploadResult.ErrMsg,
 			Details: "",
 		})
@@ -147,7 +148,7 @@ func (api *Api) DownloadTempFile(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Printf("[api/SendHttpReq] error:%v \n", err)
-		wrappedErrResponse := api.WrapErrorResponse(r, &RequestError{
+		wrappedErrResponse := api.WrapErrorResponse(r, &webModels.RequestError{
 			Message: "failed to parse request config",
 			Details: err.Error(),
 		})

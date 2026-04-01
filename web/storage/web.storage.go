@@ -20,6 +20,7 @@ type WebStorage struct {
 	ReqExampleRepo    *dbPkg.ReqExampleRepository
 	UiStateRepo       *dbPkg.UiStateRepository
 	WorkspaceRepo     *dbPkg.WorkspaceRepository
+	UserRepo          *dbPkg.UserRepository
 }
 
 func NewWebStorage(db *gorm.DB, savedResponsesDir string) *WebStorage {
@@ -32,6 +33,7 @@ func NewWebStorage(db *gorm.DB, savedResponsesDir string) *WebStorage {
 		ReqExampleRepo:    dbPkg.NewReqExampleRepository(db),
 		UiStateRepo:       dbPkg.NewUiStateRepository(db),
 		WorkspaceRepo:     dbPkg.NewWorkspaceRepository(db),
+		UserRepo:          dbPkg.NewUserRepository(db),
 	}
 }
 
@@ -41,6 +43,7 @@ func (ws *WebStorage) Startup(ctx context.Context) error {
 	ws.db.Exec("PRAGMA foreign_keys = ON;")
 
 	err := ws.db.AutoMigrate(
+		&dbPkg.User{},
 		&dbPkg.MimeRecord{},
 		&dbPkg.UIState{},
 		&dbPkg.Workspace{},
