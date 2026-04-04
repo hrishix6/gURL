@@ -20,10 +20,16 @@ func main() {
 		env = "PROD"
 	}
 
-	gurl_url, ok := os.LookupEnv("GURL_URL")
+	gurl_fe_url, ok := os.LookupEnv("GURL_FRONTEND_URL")
 
 	if !ok {
-		log.Printf("GURL_URL not set, using localhost. This might not work correctly you want if app is running behind any kind of proxy")
+		log.Printf("GURL_FRONTEND_URL not set, using localhost. This might not work correctly you want if app is running behind any kind of proxy")
+	}
+
+	gurl_be_url, ok := os.LookupEnv("GURL_BACKEND_URL")
+
+	if !ok {
+		log.Printf("GURL_BACKEND_URL not set, using localhost. This might not work correctly you want if app is running behind any kind of proxy")
 	}
 
 	portStr, ok := os.LookupEnv("PORT")
@@ -37,8 +43,6 @@ func main() {
 	}
 
 	appName := fmt.Sprintf("%s_%s", internal.APP_NAME, internal.VERSION)
-
-	var dsn string
 
 	log.Printf("[Gurl] env is %s\n", env)
 
@@ -82,15 +86,18 @@ func main() {
 
 	log.Printf("[Gurl] saved responses location: %s \n", savedResponsesDir)
 
-	dsn = filepath.Join(baseDataDir, db.DB_NAME)
+	dsn := ""
 
-	log.Printf("[Gurl] database connection string - %s\n", dsn)
+	if d, ok := os.LookupEnv("DATABASE_URL"); !ok || d == "" {
+		log.Fatalf("DATABASE_URL environment variable not configured")
+	} else {
+		dsn = d
+	}
 
-	//initialize DB connection
-	dbConn, err := db.InitDesktopDb(dsn)
+	dbConn, err := db.InitWebDb(dsn)
 
 	if err != nil {
-		log.Fatalf("unable to establish sqlite connection %v", err)
+		log.Fatalf("unable to establish postgres connection %v", err)
 	}
 
 	log.Println("[Gurl] Db connection established")
@@ -103,9 +110,10 @@ func main() {
 			TempDir:           tmpDir,
 			Env:               env,
 		},
-		WebTempDir: webTmpDir,
-		BaseURL:    gurl_url,
-		Port:       port,
+		WebTempDir:  webTmpDir,
+		BackendURL:  gurl_be_url,
+		FrontendURL: gurl_fe_url,
+		Port:        port,
 	}
 
 	InitializeWebApp(appInitParams)

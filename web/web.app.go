@@ -2,16 +2,17 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"gurl/shared/assets"
 	"gurl/shared/models"
 	"gurl/web/api"
 	"gurl/web/auth"
+	"gurl/web/config"
 	"gurl/web/executor"
 	"gurl/web/exporter"
 	"gurl/web/internal"
+	"gurl/web/internal/emailx"
 	"gurl/web/storage"
 	"io/fs"
 	"log"
@@ -49,12 +50,12 @@ func NewGurlWebApp(
 	}
 }
 
-func withCORS(next http.Handler, gurlUrl string) http.Handler {
+func withCORS(next http.Handler, frontendURL, backendURL string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		origin := r.Header.Get("Origin")
 
-		if strings.HasPrefix(origin, "http://localhost") || origin == gurlUrl {
+		if strings.HasPrefix(origin, "http://localhost") || origin == frontendURL || origin == backendURL {
 			w.Header().Set("Access-Control-Allow-Origin", origin)
 			w.Header().Set("Vary", "Origin")
 		}
@@ -82,6 +83,14 @@ func InitializeWebApp(
 		log.Fatalf("JWT_SECRET environment variable must be provided")
 	}
 
+	mailerConfig, err := emailx.ReadMailConfig()
+
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	mailer := emailx.NewMailer(mailerConfig)
+
 	webApp := NewGurlWebApp(
 		params.AppName,
 		params.Db,
@@ -94,17 +103,24 @@ func InitializeWebApp(
 
 	srvAddr := fmt.Sprintf(":%d", params.Port)
 
-	baseUrl := ""
+	backendURL := ""
+	frontendURL := ""
 
-	if params.BaseURL != "" {
-		baseUrl = params.BaseURL
+	if params.BackendURL != "" {
+		backendURL = params.BackendURL
 	} else {
-		baseUrl = fmt.Sprintf("http://localhost:%d", params.Port)
+		backendURL = fmt.Sprintf("http://localhost:%d", params.Port)
 	}
 
-	previewSrvAddr := fmt.Sprintf("%s/preview", baseUrl)
+	if params.FrontendURL != "" {
+		frontendURL = params.FrontendURL
+	} else {
+		frontendURL = backendURL
+	}
 
-	err := webApp.storage.Startup(ctx)
+	previewSrvAddr := fmt.Sprintf("%s/preview", frontendURL)
+
+	err = webApp.storage.Startup(ctx)
 
 	if err != nil {
 		log.Fatalf("unable to initialize storage %v", err)
@@ -116,55 +132,47 @@ func InitializeWebApp(
 		log.Fatalf("unable to initialize executor %v", err)
 	}
 
-	authSvc := auth.NewAuthService(params.AppName, jwtSecret, webApp.storage.UserRepo, webApp.storage.UiStateRepo)
+	authSvc := auth.NewAuthService(params.AppName, jwtSecret, webApp.storage.UserRepo, webApp.storage.UiStateRepo, webApp.storage.AppSetupRepo, mailer)
 
-	apiRouter := api.NewApi(params.AppName, webApp.storage, webApp.executor, webApp.exporter, authSvc)
-	authRouter := auth.NewAuthRouter(authSvc, params.Env == "PROD")
-
-	webAppConfig := models.GurlClientConfig{
-		Mode:        "web",
-		ApiBaseURL:  "/api/v1",
-		AuthBaseURL: "/auth",
-		AppVersion:  internal.VERSION,
-	}
+	apiRouter := api.NewApi(params.AppName, frontendURL, webApp.storage, webApp.executor, webApp.exporter, authSvc)
+	authRouter := auth.NewAuthRouter(frontendURL, backendURL, authSvc, params.Env == "PROD")
 
 	mux := http.NewServeMux()
 
-	//intercepts calls to config.json and serves web app config, by default config.json in build is for desktop mode
-	mux.HandleFunc("/config.json", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(webAppConfig)
-	})
+	appConfigRouter := config.NewAppConfigController(internal.VERSION, "/api/v1", "/auth", webApp.storage)
+
+	mux.Handle("/config.json", appConfigRouter.Routes())
 
 	mux.Handle("/auth/", http.StripPrefix("/auth", authRouter.Routes()))
 
 	mux.Handle("/api/v1/", http.StripPrefix("/api/v1", apiRouter.Routes()))
 
-	subFs, err := fs.Sub(assets.Assets, filepath.Join("static", "browser"))
-
-	if err != nil {
-		log.Fatalf("unable to get sub filesystem: %v", err)
-	}
-
 	previewHandler := webApp.executor.GetPreviewHandler()
 
-	// mux.Handle("/preview/", http.StripPrefix("/preview", previewHandler))
 	mux.Handle("/preview/{id}/", apiRouter.ProtectedRoute(apiRouter.PreviewHandler(previewHandler)))
 
-	webAssetServer := http.FileServer(http.FS(subFs))
+	if params.Env == "PROD" {
+		subFs, err := fs.Sub(assets.Assets, filepath.Join("static", "browser"))
 
-	mux.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, err := subFs.Open(strings.TrimPrefix(path.Clean(r.URL.Path), "/"))
 		if err != nil {
-			log.Println("didn't find file serving index.html")
-			r.URL.Path = "/"
+			log.Fatalf("unable to get sub filesystem: %v", err)
 		}
-		webAssetServer.ServeHTTP(w, r)
-	}))
+
+		webAssetServer := http.FileServer(http.FS(subFs))
+
+		mux.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			_, err := subFs.Open(strings.TrimPrefix(path.Clean(r.URL.Path), "/"))
+			if err != nil {
+				log.Println("didn't find file serving index.html")
+				r.URL.Path = "/"
+			}
+			webAssetServer.ServeHTTP(w, r)
+		}))
+	}
 
 	srv := &http.Server{
 		Addr:    srvAddr,
-		Handler: withCORS(mux, baseUrl),
+		Handler: withCORS(mux, frontendURL, backendURL),
 	}
 
 	webApp.cleanupWG.Add(1)

@@ -19,7 +19,7 @@ func (api *Api) GetAllCollections(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Printf("[api/GetAllCollections] error:%v \n", err)
-		wrappedErrResponse := api.WrapErrorResponse(r, &webModels.RequestError{
+		wrappedErrResponse := api.WrapErrorResponse(r, webModels.RequestError{
 			Message: "failed to load collections from db",
 			Details: err.Error(),
 		})
@@ -39,7 +39,7 @@ func (api *Api) CreateCollection(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Printf("[api/CreateCollection] error:%v \n", err)
-		wrappedErrResponse := api.WrapErrorResponse(r, &webModels.RequestError{
+		wrappedErrResponse := api.WrapErrorResponse(r, webModels.RequestError{
 			Message: "unable to parse body",
 			Details: err.Error(),
 		})
@@ -52,7 +52,7 @@ func (api *Api) CreateCollection(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Printf("[api/CreateCollection] error:%v \n", err)
-		wrappedErrResponse := api.WrapErrorResponse(r, &webModels.RequestError{
+		wrappedErrResponse := api.WrapErrorResponse(r, webModels.RequestError{
 			Message: "failed to create collection in db",
 			Details: err.Error(),
 		})
@@ -74,7 +74,7 @@ func (api *Api) RenameCollection(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Printf("[api/RenameCollection] error:%v \n", err)
-		wrappedErrResponse := api.WrapErrorResponse(r, &webModels.RequestError{
+		wrappedErrResponse := api.WrapErrorResponse(r, webModels.RequestError{
 			Message: "unable to parse body",
 			Details: err.Error(),
 		})
@@ -87,7 +87,7 @@ func (api *Api) RenameCollection(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Printf("[api/RenameCollection] error:%v \n", err)
-		wrappedErrResponse := api.WrapErrorResponse(r, &webModels.RequestError{
+		wrappedErrResponse := api.WrapErrorResponse(r, webModels.RequestError{
 			Message: fmt.Sprintf("failed to rename collection with id: %s", id),
 			Details: err.Error(),
 		})
@@ -105,7 +105,7 @@ func (api *Api) DeleteCollection(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Printf("[api/DeleteCollection] error:%v \n", err)
-		wrappedErrResponse := api.WrapErrorResponse(r, &webModels.RequestError{
+		wrappedErrResponse := api.WrapErrorResponse(r, webModels.RequestError{
 			Message: fmt.Sprintf("failed to delete collection with id: %s", id),
 			Details: err.Error(),
 		})
@@ -124,7 +124,7 @@ func (api *Api) ClearCollection(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Printf("[api/ClearCollection] error:%v \n", err)
-		wrappedErrResponse := api.WrapErrorResponse(r, &webModels.RequestError{
+		wrappedErrResponse := api.WrapErrorResponse(r, webModels.RequestError{
 			Message: fmt.Sprintf("failed to clear collection with id: %s", id),
 			Details: err.Error(),
 		})
@@ -144,7 +144,7 @@ func (api *Api) SoftDeleteReqDraftsUnderCollection(w http.ResponseWriter, r *htt
 
 	if err != nil {
 		log.Printf("[api/SoftDeleteReqDraftsUnderCollection] error:%v \n", err)
-		wrappedErrResponse := api.WrapErrorResponse(r, &webModels.RequestError{
+		wrappedErrResponse := api.WrapErrorResponse(r, webModels.RequestError{
 			Message: "failed to delete req-draft under collection in db",
 			Details: err.Error(),
 		})

@@ -8,29 +8,40 @@ import (
 	"gurl/web/internal/httpx"
 	"gurl/web/internal/models"
 	"gurl/web/storage"
+	"log"
 	"net/http"
+	"net/url"
 )
 
 type Api struct {
 	httpx.BaseController
-	version  string
-	storage  *storage.WebStorage
-	executor *executor.WebExecutor
-	exporter *exporter.WebExporter
-	authSvc  *auth.AuthService
+	domainURL *url.URL
+	version   string
+	storage   *storage.WebStorage
+	executor  *executor.WebExecutor
+	exporter  *exporter.WebExporter
+	authSvc   *auth.AuthService
 }
 
-func NewApi(appName string, store *storage.WebStorage,
+func NewApi(appName string, domainURL string, store *storage.WebStorage,
 	exec *executor.WebExecutor,
 	export *exporter.WebExporter,
 	authSvc *auth.AuthService,
 ) *Api {
+
+	d, err := url.Parse(domainURL)
+
+	if err != nil {
+		log.Fatalf("expected valid domain url: %v", err)
+	}
+
 	return &Api{
-		storage:  store,
-		executor: exec,
-		exporter: export,
-		version:  "v1",
-		authSvc:  authSvc,
+		domainURL: d,
+		storage:   store,
+		executor:  exec,
+		exporter:  export,
+		version:   "v1",
+		authSvc:   authSvc,
 	}
 }
 
@@ -41,7 +52,7 @@ func (api *Api) ProtectedRoute(next http.Handler) http.Handler {
 		sessionCookie, err := api.authSvc.ExtractSessionCookie(r)
 
 		if err != nil {
-			api.WhoAreYou(w, api.WrapErrorResponse(r, &models.RequestError{
+			api.WhoAreYou(w, api.WrapErrorResponse(r, models.RequestError{
 				Message: "unauthorized",
 				Details: "missing session cookie",
 			}))
@@ -49,41 +60,10 @@ func (api *Api) ProtectedRoute(next http.Handler) http.Handler {
 			return
 		}
 
-		// authHeader := r.Header.Get("Authorization")
-
-		// if authHeader == "" {
-		// 	api.WhoAreYou(w, api.WrapErrorResponse(r, &models.RequestError{
-		// 		Message: "unauthorized",
-		// 		Details: "missing auth header",
-		// 	}))
-
-		// 	return
-		// }
-
-		// parts := strings.Split(authHeader, " ")
-
-		// if len(parts) < 2 {
-		// 	api.WhoAreYou(w, api.WrapErrorResponse(r, &models.RequestError{
-		// 		Message: "unauthorized",
-		// 		Details: "invalid auth scheme",
-		// 	}))
-
-		// 	return
-		// }
-
-		// if parts[0] != "Bearer" || strings.TrimSpace(parts[1]) == "" {
-		// 	api.WhoAreYou(w, api.WrapErrorResponse(r, &models.RequestError{
-		// 		Message: "unauthorized",
-		// 		Details: "invalid auth scheme or token",
-		// 	}))
-
-		// 	return
-		// }
-
 		userid, err := api.authSvc.ParseToken(sessionCookie.Value)
 
 		if err != nil {
-			api.WhoAreYou(w, api.WrapErrorResponse(r, &models.RequestError{
+			api.WhoAreYou(w, api.WrapErrorResponse(r, models.RequestError{
 				Message: "unauthorized",
 				Details: "invalid or expired token",
 			}))
@@ -179,6 +159,9 @@ func (api *Api) Routes() http.Handler {
 	apiMux.Post("/import/collection", api.ImportCollection)
 	apiMux.Get("/export/env/{id}", api.DownloadEnvironmentExport)
 	apiMux.Get("/export/collection/{id}", api.DownloadCollectionExport)
+
+	// admin
+	apiMux.Post("/admin/invite", api.AdminGuard(api.InviteUser))
 
 	return httpx.RequestContext(httpx.RequestLogger(api.ProtectedRoute(apiMux)))
 }
