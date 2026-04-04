@@ -7,7 +7,6 @@ services:
     volumes:
       - gurl-web-db-volume:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
-    restart: unless-stopped
     env_file:
       - .env.local
     networks:
@@ -20,7 +19,6 @@ services:
     build: .
     env_file:
       - web.env.prod
-    restart: unless-stopped
     networks:
       -  gurl-web-prod-network
     volumes:
