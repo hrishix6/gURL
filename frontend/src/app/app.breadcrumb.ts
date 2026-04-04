@@ -34,20 +34,20 @@ enum CrumbType {
         @if (crumbs().length > 0) {
             <ul>
                 @for (crumb of crumbs(); track $index) {
-                    <li>
+                    <li class="text-lg">
                         <a class="flex items-center hover:decoration-0 hover:cursor-default">
                             @switch (crumb.type) {
                                 @case ("Collection") {
-                                    <lucide-angular [img]="CollectionsIcon" class="size-4" />
+                                    <lucide-angular [img]="CollectionsIcon" class="size-4 mt-1" />
                                 }
                                 @case ("Environment") {
-                                    <lucide-angular [img]="EnvironmentIcon" class="size-4" />
+                                    <lucide-angular [img]="EnvironmentIcon" class="size-4 mt-1" />
                                 }
                                 @case ("Request") {
-                                    <lucide-angular [img]="RequestsIcon" class="size-4" />
+                                    <lucide-angular [img]="RequestsIcon" class="size-4 mt-1" />
                                 }
 								@case ("Request_Example") {
-									<lucide-angular [img]="ExampleIcon" class="size-4" />
+									<lucide-angular [img]="ExampleIcon" class="size-4 mt-1" />
 								}
                             }
                             <span>{{crumb.name}}</span>
