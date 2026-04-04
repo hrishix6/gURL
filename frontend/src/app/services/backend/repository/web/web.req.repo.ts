@@ -32,68 +32,153 @@ export class WebReqRepository implements RequestRepository {
 		const query = new URLSearchParams({
 			workspace_id: workspace,
 		});
-		const data = await this.restClient.get<Array<models.RequestLightDTO>>(
+		const result = await this.restClient.get<Array<models.RequestLightDTO>>(
 			this._reqBaseUrl,
 			query,
 		);
 
-		return data;
+		if (!result.success) {
+			throw new Error("Failed to get saved requests");
+		}
+
+		return result.data;
 	}
 
 	async saveRequestCopy(
 		sourceId: string,
 		arg1: models.SaveRequestCopyDTO,
 	): Promise<void> {
-		return this.restClient.post(`${this._reqBaseUrl}/${sourceId}`, arg1);
+		const result = await this.restClient.post<void>(
+			`${this._reqBaseUrl}/${sourceId}`,
+			arg1,
+		);
+
+		if (!result.success) {
+			throw new Error("Failed to save request copy");
+		}
+
+		return result.data;
 	}
 
 	async deleteSavedReq(id: string): Promise<void> {
-		return this.restClient.delete(`${this._reqBaseUrl}/${id}`);
+		const result = await this.restClient.delete<void>(
+			`${this._reqBaseUrl}/${id}`,
+		);
+
+		if (!result.success) {
+			throw new Error("Failed to delete request");
+		}
+
+		return result.data;
 	}
 
 	async deleteRequestDrafts(id: string): Promise<void> {
-		return this.restClient.delete(`${this._reqBaseUrl}/${id}/drafts`);
+		const result = await this.restClient.delete<void>(
+			`${this._reqBaseUrl}/${id}/drafts`,
+		);
+
+		if (!result.success) {
+			throw new Error("Failed to delete request drafts");
+		}
+
+		return result.data;
 	}
 
 	async addDraftFromRequest(
 		id: string,
 		arg1: models.AddDraftDTO,
 	): Promise<void> {
-		return this.restClient.post(`${this._reqBaseUrl}/${id}/drafts`, arg1);
+		const result = await this.restClient.post<void>(
+			`${this._reqBaseUrl}/${id}/drafts`,
+			arg1,
+		);
+
+		if (!result.success) {
+			throw new Error("Failed to create draft");
+		}
+
+		return result.data;
 	}
 
 	//req-drafts
 
 	async findDraftById(id: string): Promise<models.RequestDraftDTO | undefined> {
-		return this.restClient.get<models.RequestDraftDTO>(
+		const result = await this.restClient.get<models.RequestDraftDTO>(
 			`${this._reqDraftsBaseUrl}/${id}`,
 		);
+
+		if (!result.success) {
+			throw new Error("Failed to find draft by id");
+		}
+
+		return result.data;
 	}
 
 	async addDraft(arg1: models.RequestDraftDTO): Promise<void> {
-		return this.restClient.post(this._reqDraftsBaseUrl, arg1);
+		const result = await this.restClient.post<void>(
+			this._reqDraftsBaseUrl,
+			arg1,
+		);
+
+		if (!result.success) {
+			throw new Error("Failed to add draft");
+		}
+
+		return result.data;
 	}
 
 	async addFreshDraft(arg1: models.AddDraftDTO): Promise<void> {
-		return this.restClient.post(`req-drafts-fresh`, arg1);
+		const result = await this.restClient.post<void>(`req-drafts-fresh`, arg1);
+
+		if (!result.success) {
+			throw new Error("Failed to add fresh draft");
+		}
+
+		return result.data;
 	}
 
 	async removeDraft(id: string): Promise<void> {
-		return this.restClient.delete(`${this._reqDraftsBaseUrl}/${id}`);
+		const result = await this.restClient.delete<void>(
+			`${this._reqDraftsBaseUrl}/${id}`,
+		);
+
+		if (!result.success) {
+			throw new Error("Failed to delete draft");
+		}
+
+		return result.data;
 	}
 
 	async saveDraftAsRequest(
 		draftId: string,
 		arg1: models.SaveDraftAsReqDTO,
 	): Promise<void> {
-		return this.restClient.post(`${this._reqDraftsBaseUrl}/${draftId}`, arg1);
+		const result = await this.restClient.post<void>(
+			`${this._reqDraftsBaseUrl}/${draftId}`,
+			arg1,
+		);
+
+		if (!result.success) {
+			throw new Error("Failed to save draft as request");
+		}
+
+		return result.data;
 	}
 
 	async updatereqDraftFields(
 		draftId: string,
 		arg: models.UpdateDraftFieldsDTO,
 	): Promise<void> {
-		return this.restClient.patch(`${this._reqDraftsBaseUrl}/${draftId}`, arg);
+		const result = await this.restClient.patch<void>(
+			`${this._reqDraftsBaseUrl}/${draftId}`,
+			arg,
+		);
+
+		if (!result.success) {
+			throw new Error("Failed to update draft fields");
+		}
+
+		return result.data;
 	}
 
 	//req-examples
@@ -101,9 +186,15 @@ export class WebReqRepository implements RequestRepository {
 	async getReqExampleById(
 		id: string,
 	): Promise<models.ReqExampleDTO | undefined> {
-		return this.restClient.get<models.ReqExampleDTO>(
+		const result = await this.restClient.get<models.ReqExampleDTO>(
 			`${this._reqExampleBaseUrl}/${id}`,
 		);
+
+		if (!result.success) {
+			throw new Error("Failed to get request example by id");
+		}
+
+		return result.data;
 	}
 
 	async getReqExamples(
@@ -112,23 +203,43 @@ export class WebReqRepository implements RequestRepository {
 		const query = new URLSearchParams({
 			workspace_id: workspace,
 		});
-		return this.restClient.get<Array<models.ReqExampleLightDTO>>(
+		const result = await this.restClient.get<Array<models.ReqExampleLightDTO>>(
 			this._reqExampleBaseUrl,
 			query,
 		);
+
+		if (!result.success) {
+			throw new Error("Failed to get request examples");
+		}
+
+		return result.data;
 	}
 
 	async addReqExample(
 		arg1: models.ReqExampleDTO,
 		arg2: models.SavedResponseRenderMeta,
 	): Promise<void> {
-		return this.restClient.post(this._reqExampleBaseUrl, {
+		const result = await this.restClient.post<void>(this._reqExampleBaseUrl, {
 			example: arg1,
 			metadata: arg2,
 		});
+
+		if (!result.success) {
+			throw new Error("Failed to add request example");
+		}
+
+		return result.data;
 	}
 
 	async deleteReqExample(id: string): Promise<void> {
-		return this.restClient.delete(`${this._reqExampleBaseUrl}/${id}`);
+		const result = await this.restClient.delete<void>(
+			`${this._reqExampleBaseUrl}/${id}`,
+		);
+
+		if (!result.success) {
+			throw new Error("Failed to delete request example");
+		}
+
+		return result.data;
 	}
 }

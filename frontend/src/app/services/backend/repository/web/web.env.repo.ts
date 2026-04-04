@@ -30,60 +30,140 @@ export class WebEnvRepository implements EnvironmentRepository {
 			workspace_id: workspace,
 		});
 
-		return this.restClient.get<Array<models.EnvironmentDTO>>(
+		const result = await this.restClient.get<Array<models.EnvironmentDTO>>(
 			this._envBaseUrl,
 			query,
 		);
+
+		if (!result.success) {
+			throw new Error("Failed to get environments");
+		}
+
+		return result.data;
 	}
 
 	async copyEnvironment(
 		sourceId: string,
 		arg1: models.CopyEnvironmentDTO,
 	): Promise<void> {
-		return this.restClient.post(`${this._envBaseUrl}/${sourceId}`, arg1);
+		const result = await this.restClient.post<void>(
+			`${this._envBaseUrl}/${sourceId}`,
+			arg1,
+		);
+
+		if (!result.success) {
+			throw new Error("Failed to copy environment");
+		}
+
+		return result.data;
 	}
 
 	async removeEnv(id: string): Promise<void> {
-		return this.restClient.delete(`${this._envBaseUrl}/${id}`);
+		const result = await this.restClient.delete<void>(
+			`${this._envBaseUrl}/${id}`,
+		);
+
+		if (!result.success) {
+			throw new Error("Failed to delete environment");
+		}
+
+		return result.data;
 	}
 
 	async deleteEnvDraftsUnderEnv(id: string): Promise<void> {
-		return this.restClient.delete(`${this._envBaseUrl}/${id}/drafts`);
+		const result = await this.restClient.delete<void>(
+			`${this._envBaseUrl}/${id}/drafts`,
+		);
+
+		if (!result.success) {
+			throw new Error("Failed to delete environment drafts");
+		}
+
+		return result.data;
 	}
 
 	async findEnvDraft(
 		id: string,
 	): Promise<models.EnvironmentDraftDTO | undefined> {
-		return this.restClient.get<models.EnvironmentDraftDTO>(
+		const result = await this.restClient.get<models.EnvironmentDraftDTO>(
 			`${this._envDraftsBaseUrl}/${id}`,
 		);
+
+		if (!result.success) {
+			throw new Error("Failed to get environment draft by id");
+		}
+
+		return result.data;
 	}
 
 	async addEnvironmentDraft(
 		arg1: models.AddEnvironmentDraftDTO,
 	): Promise<void> {
-		return this.restClient.post(this._envDraftsBaseUrl, arg1);
+		const result = await this.restClient.post<void>(
+			this._envDraftsBaseUrl,
+			arg1,
+		);
+
+		if (!result.success) {
+			throw new Error("Failed to add environment draft");
+		}
+
+		return result.data;
 	}
 
 	async addFreshEnvDraft(draftId: string): Promise<void> {
-		return this.restClient.post("env-drafts-fresh", { draftId });
+		const result = await this.restClient.post<void>("env-drafts-fresh", {
+			draftId,
+		});
+
+		if (!result.success) {
+			throw new Error("Failed to get environment draft by id");
+		}
+
+		return result.data;
 	}
 
 	async removeEnvDraft(draftId: string): Promise<void> {
-		return this.restClient.delete(`${this._envDraftsBaseUrl}/${draftId}`);
+		const result = await this.restClient.delete<void>(
+			`${this._envDraftsBaseUrl}/${draftId}`,
+		);
+
+		if (!result.success) {
+			throw new Error("Failed to delete environment draft by id");
+		}
+
+		return result.data;
 	}
 
 	async saveEnvDraftAsEnv(
 		draftId: string,
 		arg1: models.SaveEnvDraftAsEnvDTO,
 	): Promise<void> {
-		return this.restClient.post(`${this._envDraftsBaseUrl}/${draftId}`, arg1);
+		const result = await this.restClient.post<void>(
+			`${this._envDraftsBaseUrl}/${draftId}`,
+			arg1,
+		);
+
+		if (!result.success) {
+			throw new Error("Failed to save environment draft as env");
+		}
+
+		return result.data;
 	}
 
 	async updateEnvDraftData(
 		draftId: string,
 		arg1: models.UpdateEnvDraftDataDTO,
 	): Promise<void> {
-		return this.restClient.patch(`${this._envDraftsBaseUrl}/${draftId}`, arg1);
+		const result = await this.restClient.patch<void>(
+			`${this._envDraftsBaseUrl}/${draftId}`,
+			arg1,
+		);
+
+		if (!result.success) {
+			throw new Error("Failed to update environment draft data");
+		}
+
+		return result.data;
 	}
 }

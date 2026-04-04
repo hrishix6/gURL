@@ -33,7 +33,7 @@ export class GurlStatusBeacon implements OnInit, OnDestroy {
 	ngOnInit(): void {
 		this.intervalId = setInterval(() => {
 			this.healthCheck();
-		}, 5000);
+		}, 10000);
 	}
 
 	ngOnDestroy(): void {

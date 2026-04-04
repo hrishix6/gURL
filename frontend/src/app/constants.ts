@@ -219,3 +219,13 @@ export const ROOT_USER = "gurl-default-user";
 export const DL_LIMIT_BYTES = 300_000_000;
 export const MIME_JSON_FILE = "/mime.db.json";
 export const CONFIG_FILE_PATH = "/config.json";
+
+
+export const LOGIN_CODES_MSGS: Record<string, string> = {
+	"err_link_invalid": "Magic Link is invalid, try requesting a new one.",
+	"err_link_expired": "Magic Link has expired, request a new one.",
+	"ok_setup": "Setup was successful, please login.",
+	"err_setup": "Setup was not successful",
+	"ok_magic_link": "If account exists you will receive magic link in your inbox.",
+	"err_magic_link": "Failed to send magic link, try again later"
+}

@@ -1,5 +1,6 @@
 import { getAppConfig } from "@/app.config";
-import type { ApiResponse } from "@/types";
+import type { ApiResponse, UserInfo } from "@/types";
+import {environment} from "../../../environments/environment";
 
 export class RestClient {
 	private readonly apiBaseURL: string;
@@ -24,32 +25,38 @@ export class RestClient {
 		return RestClient.restClient;
 	}
 
-	async get<T>(path: string, query?: URLSearchParams): Promise<T | undefined> {
-		return this.getOrDelete("GET", path, query);
+	async checkIfLoggedIn(): Promise<ApiResponse<UserInfo>> {
+		const response = await fetch(`${this.authBaseURL}/check`, {
+			signal: AbortSignal.timeout(this.timeoutMS),
+		});
+
+		const json: ApiResponse<UserInfo> = await response.json();
+		return json;
+	}
+
+	async get<T>(path: string, query?: URLSearchParams, ignoreTimeout = false) {
+		return this.getOrDelete<T>("GET", path, query, ignoreTimeout);
 	}
 
 	private async getOrDelete<T>(
 		method: "GET" | "DELETE",
 		path: string,
 		query?: URLSearchParams,
-	): Promise<T | undefined> {
+		ignoreTimeout = false,
+	): Promise<ApiResponse<T>> {
 		const response = await fetch(
 			`${this.apiBaseURL}/${path}${query ? `?${query.toString()}` : ""}`,
 			{
 				method,
-				signal: AbortSignal.timeout(this.timeoutMS),
-				credentials: "same-origin",
+				...(ignoreTimeout
+					? {}
+					: { signal: AbortSignal.timeout(this.timeoutMS) }),
+				...(environment.origin === "same"? {credentials: "same-origin"}: { credentials: "include"}),
 			},
 		);
 
-		if (!response.ok) {
-			throw new Error(
-				`received failure status from backend: ${response.status}`,
-			);
-		}
-
-		const { data }: ApiResponse<T> = await response.json();
-		return data;
+		const json: ApiResponse<T> = await response.json();
+		return json;
 	}
 
 	private async postOrPutOrPatch<T>(
@@ -57,7 +64,8 @@ export class RestClient {
 		path: string,
 		body: any,
 		query?: URLSearchParams,
-	): Promise<T | undefined> {
+		ignoreTimeout = false,
+	): Promise<ApiResponse<T>> {
 		const response = await fetch(
 			`${this.apiBaseURL}/${path}${query ? `?${query.toString()}` : ""}`,
 			{
@@ -66,57 +74,57 @@ export class RestClient {
 					"Content-Type": "application/json",
 				},
 				body: JSON.stringify(body),
-				signal: AbortSignal.timeout(this.timeoutMS),
-				credentials: "same-origin",
+				...(ignoreTimeout
+					? {}
+					: { signal: AbortSignal.timeout(this.timeoutMS) }),
+				...(environment.origin === "same"? {credentials: "same-origin"}: { credentials: "include"}),
 			},
 		);
 
-		if (!response.ok) {
-			throw new Error(
-				`received failure status from backend: ${response.status}`,
-			);
-		}
-
-		const { data }: ApiResponse<T> = await response.json();
-		return data;
+		const json = await response.json();
+		return json;
 	}
 
 	async post<T>(
 		path: string,
 		body: any,
 		query?: URLSearchParams,
-	): Promise<T | undefined> {
-		return this.postOrPutOrPatch("POST", path, body, query);
+		ignoreTimeout = false,
+	) {
+		return this.postOrPutOrPatch<T>("POST", path, body, query, ignoreTimeout);
 	}
 
 	async patch<T>(
 		path: string,
 		body: any,
 		query?: URLSearchParams,
-	): Promise<T | undefined> {
-		return this.postOrPutOrPatch("PATCH", path, body, query);
+		ignoreTimeout = false,
+	) {
+		return this.postOrPutOrPatch<T>("PATCH", path, body, query, ignoreTimeout);
 	}
 
 	async put<T>(
 		path: string,
 		body: any,
 		query?: URLSearchParams,
-	): Promise<T | undefined> {
-		return this.postOrPutOrPatch("PUT", path, body, query);
+		ignoreTimeout = false,
+	) {
+		return this.postOrPutOrPatch<T>("PUT", path, body, query, ignoreTimeout);
 	}
 
 	async delete<T>(
 		path: string,
 		query?: URLSearchParams,
-	): Promise<T | undefined> {
-		return this.getOrDelete("DELETE", path, query);
+		ignoreTimeout = false,
+	) {
+		return this.getOrDelete<T>("DELETE", path, query, ignoreTimeout);
 	}
 
 	async authPost<T>(
 		path: string,
 		body: any,
 		query?: URLSearchParams,
-	): Promise<T | undefined> {
+	): Promise<ApiResponse<T>> {
 		const response = await fetch(
 			`${this.authBaseURL}/${path}${query ? `?${query.toString()}` : ""}`,
 			{
@@ -129,50 +137,44 @@ export class RestClient {
 			},
 		);
 
-		if (!response.ok) {
-			throw new Error(
-				`received failure status from backend: ${response.status}`,
-			);
-		}
-
-		const { data }: ApiResponse<T> = await response.json();
-		return data;
+		const json: ApiResponse<T> = await response.json();
+		return json;
 	}
 
 	async uploadFile<T>(
 		path: string,
 		file: File,
 		query?: URLSearchParams,
-	): Promise<T> {
+		ignoreTimeout = false,
+	): Promise<ApiResponse<T>> {
 		const res = await fetch(
 			`${this.apiBaseURL}/${path}${query ? `?${query.toString()}` : ""}`,
 			{
 				method: "PUT",
 				body: file,
-				signal: AbortSignal.timeout(this.fileULTimeoutMS),
-				credentials: "same-origin",
+				...(ignoreTimeout
+					? {}
+					: { signal: AbortSignal.timeout(this.fileULTimeoutMS) }),
+				...(environment.origin === "same"? {credentials: "same-origin"}: { credentials: "include"}),
 			},
 		);
 
-		if (!res.ok) {
-			throw new Error("Unable to upload tmp file");
-		}
-
-		const { data }: ApiResponse<T> = await res.json();
-
-		if (!data) {
-			throw new Error("Unable to receive upload metadata");
-		}
-
-		return data;
+		const json: ApiResponse<T> = await res.json();
+		return json;
 	}
 
-	async downloadFile(path: string, query?: URLSearchParams): Promise<Blob> {
+	async downloadFile(
+		path: string,
+		query?: URLSearchParams,
+		ignoreTimeout = false,
+	): Promise<Blob> {
 		const res = await fetch(
 			`${this.apiBaseURL}/${path}${query ? `?${query.toString()}` : ""}`,
 			{
-				signal: AbortSignal.timeout(this.fileDlTimeoutMS),
-				credentials: "same-origin",
+				...(ignoreTimeout
+					? {}
+					: { signal: AbortSignal.timeout(this.fileDlTimeoutMS) }),
+				...(environment.origin === "same"? {credentials: "same-origin"}: { credentials: "include"}),
 			},
 		);
 
@@ -187,6 +189,7 @@ export class RestClient {
 		path: string,
 		body: any,
 		query?: URLSearchParams,
+		ignoreTimeout = false,
 	): Promise<Blob> {
 		const res = await fetch(
 			`${this.apiBaseURL}/${path}${query ? `?${query.toString()}` : ""}`,
@@ -196,8 +199,10 @@ export class RestClient {
 					"Content-Type": "application/json",
 				},
 				body: JSON.stringify(body),
-				signal: AbortSignal.timeout(this.fileDlTimeoutMS),
-				credentials: "same-origin",
+				...(ignoreTimeout
+					? {}
+					: { signal: AbortSignal.timeout(this.fileDlTimeoutMS) }),
+				...(environment.origin === "same"? {credentials: "same-origin"}: { credentials: "include"}),
 			},
 		);
 

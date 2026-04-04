@@ -8,10 +8,20 @@ import { DeleteConfirmationModal } from "./delete.confirmation";
 import { NewCollectionModal } from "./new.collection";
 import { DefaultWorkspaceModal } from "./new.workspace";
 import { RenameCollectionModal } from "./rename.collection";
+import { InviteUsersDialogue } from "./invite.users";
 
 @Component({
 	selector: "gurl-global-modals-host",
 	template: `<ng-content>
+
+    <!-- invite user -->
+    @if(modalsSvc.inviteUserModalOpen()){
+      <dialog gurl-invite-users-modal  
+      [isOpen]="modalsSvc.inviteUserModalOpen()"
+      (onInvite)="modalsSvc.handleInviteUser($event)"
+      (onCancel)="modalsSvc.closeInviteUserModal()"
+      ></dialog>
+    }
 
     <!-- Workspace modals -->
       @if(modalsSvc.isCreateDefaultWorkspaceModalOpen()){
@@ -156,15 +166,16 @@ import { RenameCollectionModal } from "./rename.collection";
       }
     </ng-content>`,
 	imports: [
-		CreateEnvironmentModal,
-		CreateCollectionModal,
-		NewCollectionModal,
-		CreateRequestModal,
-		DeleteConfirmationModal,
-		RenameCollectionModal,
-		CopyRequestModal,
-		DefaultWorkspaceModal,
-	],
+    CreateEnvironmentModal,
+    CreateCollectionModal,
+    NewCollectionModal,
+    CreateRequestModal,
+    DeleteConfirmationModal,
+    RenameCollectionModal,
+    CopyRequestModal,
+    DefaultWorkspaceModal,
+    InviteUsersDialogue
+],
 })
 export class GlobalModalsHost {
 	protected readonly modalsSvc = inject(GlobalModalsService);

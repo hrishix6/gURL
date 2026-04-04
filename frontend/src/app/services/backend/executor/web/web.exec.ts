@@ -21,48 +21,67 @@ export class WebHttpExecutor implements HttpExecutor {
 	}
 
 	async cancelReq(id: string): Promise<void> {
-		return this.restClient.put(`${this._execBasePath}/${id}/cancel`, undefined);
+		const result = await this.restClient.put<void>(
+			`${this._execBasePath}/${id}/cancel`,
+			undefined,
+		);
+
+		if (!result.success) {
+			throw new Error("Failed to cancel request");
+		}
+
+		return result.data;
 	}
 	async getSavedResponsesSrc(filePath: string): Promise<string> {
-		const data = await this.restClient.post<string>(
+		const result = await this.restClient.post<string>(
 			`${this._execBasePath}/src_path`,
 			{
 				saved_res_path: filePath,
 			},
 		);
 
-		if (!data) {
+		if (!result.success) {
+			throw new Error("failed to retrive saved response src");
+		}
+
+		if (result.data) {
 			throw new Error("received invalid response src from backend");
 		}
 
-		return data;
+		return result.data;
 	}
 
 	async parseCookieRaw(text: string): Promise<Array<models.GurlKeyValItem>> {
-		const data = await this.restClient.post<Array<models.GurlKeyValItem>>(
+		const result = await this.restClient.post<Array<models.GurlKeyValItem>>(
 			`${this._execBasePath}/parse_cookie`,
 			{ cookie: text },
 		);
 
-		if (!data) {
+		if (!result.success) {
+			throw new Error("failed to retrive parsed cookies");
+		}
+
+		if (!result.data) {
 			throw new Error("received invalid parse cookie response from backend");
 		}
 
-		return data;
+		return result.data;
 	}
 
 	async sendHttpReq(arg1: models.GurlReq): Promise<models.GurlRes> {
-		const data = await this.restClient.post<models.GurlRes>(
+		const result = await this.restClient.post<models.GurlRes>(
 			this._execBasePath,
 			arg1,
+			undefined,
+			true,
 		);
 
-		if (!data) {
+		if (!result.success) {
 			throw new Error(
 				"received invalid execute http req response from backend",
 			);
 		}
 
-		return data;
+		return result.data;
 	}
 }
