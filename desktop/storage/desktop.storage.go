@@ -58,8 +58,6 @@ func Startup(s *DesktopStorage, appCtx context.Context) error {
 
 	s.appCtx = appCtx
 
-	s.db.Exec("PRAGMA foreign_keys = ON;")
-
 	err := s.db.AutoMigrate(
 		&dbPkg.MimeRecord{},
 		&dbPkg.UIState{},

@@ -1,6 +1,8 @@
 package db
 
 import (
+	"net/url"
+
 	"github.com/glebarez/sqlite"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -25,17 +27,30 @@ func InitDesktopDb(dsn string) (*gorm.DB, error) {
 		return nil, err
 	}
 
+	db.Exec("PRAGMA foreign_keys = ON;")
 	return db, nil
 }
 
 func InitWebDb(dsn string) (*gorm.DB, error) {
 
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	parsed, err := url.Parse(dsn)
 
 	if err != nil {
 		return nil, err
 	}
 
-	return db, nil
+	db, err := gorm.Open(postgres.Open(parsed.String()), &gorm.Config{})
 
+	if err != nil {
+		return nil, err
+	}
+
+	_lowDb, err := db.DB()
+
+	if err != nil {
+		return nil, err
+	}
+
+	_lowDb.SetMaxOpenConns(25)
+	return db, nil
 }
