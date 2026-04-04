@@ -27,16 +27,18 @@ type AppInitParams struct {
 
 type WebAppInitParams struct {
 	AppInitParams
-	WebTempDir string
-	BaseURL    string
-	Port       int
+	WebTempDir  string
+	BackendURL  string
+	FrontendURL string
+	Port        int
 }
 
 type GurlClientConfig struct {
-	Mode        string `json:"mode"`
-	ApiBaseURL  string `json:"api_url"`
-	AuthBaseURL string `json:"auth_url"`
-	AppVersion  string `json:"appVersion"`
+	Mode          string `json:"mode"`
+	ApiBaseURL    string `json:"api_url"`
+	AuthBaseURL   string `json:"auth_url"`
+	AppVersion    string `json:"appVersion"`
+	SetupRequired bool   `json:"setup_required"`
 }
 
 type ParseCookieTextDTO struct {

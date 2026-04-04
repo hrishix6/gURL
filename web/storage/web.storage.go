@@ -12,7 +12,6 @@ import (
 
 type WebStorage struct {
 	db                *gorm.DB
-	appCtx            context.Context
 	SavedResponsesDir string
 	EnvRepo           *dbPkg.EnvironmentRepository
 	CollectionRepo    *dbPkg.CollectionRepository
@@ -21,6 +20,7 @@ type WebStorage struct {
 	UiStateRepo       *dbPkg.UiStateRepository
 	WorkspaceRepo     *dbPkg.WorkspaceRepository
 	UserRepo          *dbPkg.UserRepository
+	AppSetupRepo      *dbPkg.AppSetupRepo
 }
 
 func NewWebStorage(db *gorm.DB, savedResponsesDir string) *WebStorage {
@@ -34,15 +34,15 @@ func NewWebStorage(db *gorm.DB, savedResponsesDir string) *WebStorage {
 		UiStateRepo:       dbPkg.NewUiStateRepository(db),
 		WorkspaceRepo:     dbPkg.NewWorkspaceRepository(db),
 		UserRepo:          dbPkg.NewUserRepository(db),
+		AppSetupRepo:      dbPkg.NewAppSetupRepo(db),
 	}
 }
 
 func (ws *WebStorage) Startup(ctx context.Context) error {
 	log.Println("[WebStorage] Initialization Started")
 
-	ws.db.Exec("PRAGMA foreign_keys = ON;")
-
 	err := ws.db.AutoMigrate(
+		&dbPkg.AppSetup{},
 		&dbPkg.User{},
 		&dbPkg.MimeRecord{},
 		&dbPkg.UIState{},
@@ -61,18 +61,17 @@ func (ws *WebStorage) Startup(ctx context.Context) error {
 
 	log.Println("[WebStorage] Db Migrated")
 
-	//add default UI state record if not exists
-	_, err = ws.UiStateRepo.GetUIState(ctx)
+	_, err = ws.AppSetupRepo.GetAppSetup(ctx)
 
 	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
 
-		addErr := ws.UiStateRepo.InitializeUIState(ctx)
+		addErr := ws.AppSetupRepo.InitAppSetup(ctx)
 
 		if addErr != nil {
-			return fmt.Errorf("unable to add default UIState")
+			return fmt.Errorf("unable to add default app setup entry")
 		}
 
-		log.Println("[WebStorage] Default UIState is created")
+		log.Println("[WebStorage] App initial setup entry created")
 	}
 
 	log.Println("[WebStorage] Initialization Completed")

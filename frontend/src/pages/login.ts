@@ -1,16 +1,21 @@
 import {
 	Component,
+	DestroyRef,
 	type ElementRef,
 	HostBinding,
 	inject,
+	OnInit,
 	signal,
 	viewChild,
 } from "@angular/core";
-import { Router, RouterLink } from "@angular/router";
-import { CircleX, Key, LucideAngularModule, User } from "lucide-angular";
+import { ActivatedRoute, Router } from "@angular/router";
+import { CircleCheck, CircleX, Key, LucideAngularModule, User } from "lucide-angular";
 import { getAppConfig } from "@/app.config";
 import { UserAuthService } from "@/services";
 import type { LoginRequestDTO } from "@/types";
+import { LOGIN_CODES_MSGS } from "@/constants";
+import { takeUntilDestroyed, toSignal } from "@angular/core/rxjs-interop";
+import { map } from "rxjs";
 
 @Component({
 	selector: `gurl-login`,
@@ -20,78 +25,73 @@ import type { LoginRequestDTO } from "@/types";
             <span class="text-sm">{{ appConfig.appVersion }}</span>
         </h2>
         <form class="flex flex-col gap-4 w-sm" (submit)="handleFormSubmission($event)">
-            @if(loginErr()){
-               <div class="alert alert-soft alert-error">
-                    <lucide-angular [img]="FailedIcon" class="size-4" />
-                     <span>{{loginErr()}}</span>
+            @if(loginMessage()){
+               <div class="alert alert-soft alert-{{loginMessageKind()}}">
+                    <lucide-angular [img]="loginMessageKind() == 'error' ? FailedIcon: PassIcon "class="size-4" />
+                     <span>{{loginMessage()}}</span>
                 </div>
             }
             <div>
                 <label class="input w-full">
                 <lucide-angular [img]="UserIcon" class="size-4" />
                 <input
-                    type="text"
-                    placeholder="Username"
+                    type="email"
+                    placeholder="example@email.com"
                     title="Please fill out this field"
                     required
-                    #username
-                />
-                </label>
-            </div>
-            <div>
-                <label class="input w-full">
-                <lucide-angular [img]="PassIcon" class="size-4" />
-                <input
-                    type="password"
-                    required
-                    placeholder="Password"
-                    title="Please fill out this field"
-                    #password
+                    #email
                 />
                 </label>
             </div>
             <input type="submit" class="btn btn-block btn-primary" value="Login" />
         </form>
-        <p class="text-sm">
-          New to the app? <a routerLink="/register" class="mx-1 underline hover:text-primary hover:cursor-pointer">Sign up</a>  
-        </p>
     `,
-	imports: [LucideAngularModule, RouterLink],
+	imports: [LucideAngularModule],
 })
 export class LoginPage {
 	protected readonly appConfig = getAppConfig();
 	private readonly userAuthSvc = inject(UserAuthService);
-	private readonly router = inject(Router);
+    private readonly destroyRef = inject(DestroyRef);
+
+	private readonly activatedRoute = inject(ActivatedRoute);
 
 	protected readonly UserIcon = User;
-	protected readonly PassIcon = Key;
+	protected readonly PassIcon = CircleCheck;
 	protected readonly FailedIcon = CircleX;
 
-	protected loginErr = signal<string | null>(null);
+	protected loginMessage = signal<string | null>(null);
+    protected loginMessageKind = signal<"error" | "success" | null>("success")
 
 	@HostBinding("class")
 	def = "h-screen flex flex-col gap-4 items-center justify-center";
 
-	protected usernameRef =
-		viewChild.required<ElementRef<HTMLInputElement>>("username");
-	protected passwordRef =
-		viewChild.required<ElementRef<HTMLInputElement>>("password");
+    constructor() {
+        this.activatedRoute.queryParamMap
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+            next: (v)=> {
+                const code = v.get("code");
+                if(code) {
+                    const failure = code.startsWith("err");
+                    const message = LOGIN_CODES_MSGS[code]
+                    this.loginMessageKind.set(failure? "error": "success");
+                    this.loginMessage.set(message);
+                }
+            }
+        });
+    }
 
+	protected emailRef =
+		viewChild.required<ElementRef<HTMLInputElement>>("email");
+
+    
 	async handleFormSubmission(e: Event) {
 		e.preventDefault();
 
 		const payload: LoginRequestDTO = {
-			username: this.usernameRef().nativeElement.value,
-			password: this.passwordRef().nativeElement.value,
+			email: this.emailRef().nativeElement.value,
 		};
 
-		const success = await this.userAuthSvc.tryLogin(payload);
-
-		if (!success) {
-			this.loginErr.set("Invalid credentials");
-			return;
-		}
-
-		this.router.navigate(["/"], { replaceUrl: true });
+		await this.userAuthSvc.tryLogin(payload);
 	}
 }

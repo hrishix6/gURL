@@ -41,16 +41,20 @@ export class WebFileRepository implements FileRepository {
 			file_id: nanoid(),
 		});
 
-		const data = await this.restClient.uploadFile<string>(
+		const result = await this.restClient.uploadFile<string>(
 			"exec/tmp/upload",
 			file,
 			q,
 		);
 
+		if (!result.success) {
+			throw new Error("failed to upload file");
+		}
+
 		return {
 			name: file.name,
 			size: file.size,
-			path: data || "",
+			path: result.data,
 		};
 	}
 }

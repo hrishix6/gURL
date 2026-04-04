@@ -27,26 +27,69 @@ export class WebCollectionRepository implements CollectionRepository {
 			workspace_id: workspace,
 		});
 
-		return this.restClient.get<Array<models.CollectionDTO>>(
-			this._baseURL,
-			query,
-		);
+		const collectionsResponse = await this.restClient.get<
+			Array<models.CollectionDTO>
+		>(this._baseURL, query);
+
+		if (!collectionsResponse.success) {
+			throw new Error("failed to get collections");
+		}
+
+		return collectionsResponse.data;
 	}
 
 	async addCollection(dto: models.CreateCollectionDTO): Promise<void> {
-		return this.restClient.post(this._baseURL, dto);
+		const result = await this.restClient.post<void>(this._baseURL, dto);
+
+		if (!result.success) {
+			throw new Error("Failed to add collection");
+		}
+
+		return result.data;
 	}
 
 	async clearCollection(id: string): Promise<void> {
-		return this.restClient.post(`${this._baseURL}/${id}/clear`, undefined);
+		const result = await this.restClient.post<void>(
+			`${this._baseURL}/${id}/clear`,
+			undefined,
+		);
+
+		if (!result.success) {
+			throw new Error("Failed to clear collection");
+		}
+
+		return result.data;
 	}
 	async deleteCollection(id: string): Promise<void> {
-		return this.restClient.delete(`${this._baseURL}/${id}`);
+		const result = await this.restClient.delete<void>(`${this._baseURL}/${id}`);
+
+		if (!result.success) {
+			throw new Error("Failed to delete collection");
+		}
+
+		return result.data;
 	}
 	async deleteDraftsUnderCollection(id: string): Promise<void> {
-		return this.restClient.delete(`${this._baseURL}/${id}/drafts`);
+		const result = await this.restClient.delete<void>(
+			`${this._baseURL}/${id}/drafts`,
+		);
+
+		if (!result.success) {
+			throw new Error("Failed to delete drafts under collection");
+		}
+
+		return result.data;
 	}
 	async renameCollection(id: string, name: string): Promise<void> {
-		return this.restClient.post(`${this._baseURL}/${id}/rename`, { name });
+		const result = await this.restClient.post<void>(
+			`${this._baseURL}/${id}/rename`,
+			{ name },
+		);
+
+		if (!result.success) {
+			throw new Error("Failed to rename collection");
+		}
+
+		return result.data;
 	}
 }

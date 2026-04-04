@@ -19,16 +19,26 @@ export class WebUIStateRepository implements UIStateRepository {
 	}
 
 	async getUIState(): Promise<models.UIStateDTO> {
-		const data = await this.restClient.get<models.UIStateDTO>("ui");
+		const result = await this.restClient.get<models.UIStateDTO>("ui");
 
-		if (!data) {
+		if (!result.success) {
+			throw new Error("failed to retrieve ui state");
+		}
+
+		if (!result.data) {
 			throw new Error("received null UI state from backend");
 		}
 
-		return data;
+		return result.data;
 	}
 
 	async updateUIState(arg: models.UpdateUIStateDTO): Promise<void> {
-		await this.restClient.patch(`ui`, arg);
+		const result = await this.restClient.patch<void>(`ui`, arg);
+
+		if (!result.success) {
+			throw new Error("failed to update ui state");
+		}
+
+		return result.data;
 	}
 }

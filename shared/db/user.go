@@ -10,12 +10,8 @@ import (
 
 type User struct {
 	BaseEntity
-	Username     string `gorm:"column:username;unique"`
-	Email        string `gorm:"email;not null"`
-	PasswordHash string `gorm:"column:password_hash;not null"`
-	IsAdmin      bool   `gorm:"column:is_admin;default:false"`
-	IsApproved   bool   `gorm:"column:is_approved;default:false"`
-	IsVerified   bool   `gorm:"column:is_verified;default:false"`
+	Email   string `gorm:"email;unique;not null"`
+	IsAdmin bool   `gorm:"column:is_admin;default:false"`
 }
 
 type UserRepository struct {
@@ -36,9 +32,7 @@ func (usr *UserRepository) CreateUser(ctx context.Context, dto models.CreateUser
 		BaseEntity: BaseEntity{
 			Id: newUserId,
 		},
-		Username:     dto.Username,
-		Email:        dto.Email,
-		PasswordHash: dto.PasswordHash,
+		Email: dto.Email,
 	})
 
 	if err != nil {
@@ -48,31 +42,29 @@ func (usr *UserRepository) CreateUser(ctx context.Context, dto models.CreateUser
 	return newUserId, nil
 }
 
-func (usr *UserRepository) FindUserByUsername(ctx context.Context, username string) (User, error) {
-	return gorm.G[User](usr.db).Where("username = ?", username).First(ctx)
+func (usr *UserRepository) CreateAdminUser(ctx context.Context, dto models.CreateUserDTO) (string, error) {
+
+	newUserId := nanoid.Must()
+
+	err := gorm.G[User](usr.db).Create(ctx, &User{
+		BaseEntity: BaseEntity{
+			Id: newUserId,
+		},
+		Email:   dto.Email,
+		IsAdmin: true,
+	})
+
+	if err != nil {
+		return "", err
+	}
+
+	return newUserId, nil
 }
 
-func (usr *UserRepository) UpdateUser(ctx context.Context, id string, payload models.UpdateUserDTO) error {
+func (usr *UserRepository) FindUserById(ctx context.Context, id string) (User, error) {
+	return gorm.G[User](usr.db).Where("id = ?", id).First(ctx)
+}
 
-	updates := make(map[string]any)
-
-	if payload.IsAdmin != nil {
-		updates["is_admin"] = *payload.IsAdmin
-	}
-
-	if payload.IsApproved != nil {
-		updates["is_approved"] = *payload.IsApproved
-	}
-
-	if payload.IsVerified != nil {
-		updates["is_verified"] = *payload.IsVerified
-	}
-
-	if len(updates) == 0 {
-		return nil
-	}
-
-	tx := usr.db.Model(&User{}).Where("id = ?", id).Updates(updates)
-
-	return tx.Error
+func (usr *UserRepository) FindUserByEmail(ctx context.Context, email string) (User, error) {
+	return gorm.G[User](usr.db).Where("email = ?", email).First(ctx)
 }

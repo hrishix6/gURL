@@ -3,14 +3,11 @@ package models
 import "time"
 
 type LoginRequestDTO struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
+	Email string `json:"email"`
 }
 
 type RegisterDTO struct {
-	Username string `json:"username"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Email string `json:"email"`
 }
 
 type ReqMetadata struct {
@@ -23,8 +20,19 @@ type RequestError struct {
 	Details any    `json:"details"`
 }
 
-type ApiResponse struct {
-	Data     any           `json:"data,omitempty"`
-	MetaData *ReqMetadata  `json:"metadata"`
-	Error    *RequestError `json:"error,omitempty"`
+type ApiSuccessResponse struct {
+	Success  bool        `json:"success"`
+	Data     any         `json:"data,omitempty"`
+	MetaData ReqMetadata `json:"metadata"`
+}
+
+type ApiErrorResponse struct {
+	Success  bool         `json:"success"`
+	MetaData ReqMetadata  `json:"metadata"`
+	Error    RequestError `json:"error"`
+}
+
+type UserInfo struct {
+	Email   string `json:"email"`
+	IsAdmin bool   `json:"isAdmin"`
 }

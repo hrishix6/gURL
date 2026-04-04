@@ -30,6 +30,12 @@
 					"configurations": {
 						"web-production": {
 							"outputPath": "dist/gurl",
+							"fileReplacements": [
+								{
+									"replace": "src/environments/environment.ts",
+									"with": "src/environments/environment.web.prod.ts"
+								}
+							],
 							"budgets": [
 								{
 									"type": "initial",
@@ -46,6 +52,12 @@
 						},
 						"production": {
 							"outputPath": "../shared/assets/static",
+							"fileReplacements": [
+								{
+									"replace": "src/environments/environment.ts",
+									"with": "src/environments/environment.desktop.ts"
+								}
+							],
 							"budgets": [
 								{
 									"type": "initial",
@@ -61,23 +73,23 @@
 							"outputHashing": "all"
 						},
 						"web-dev": {
-							"outputPath": "../shared/assets/static",
-							"budgets": [
+							"fileReplacements": [
 								{
-									"type": "initial",
-									"maximumWarning": "2MB",
-									"maximumError": "5MB"
-								},
-								{
-									"type": "anyComponentStyle",
-									"maximumWarning": "4kB",
-									"maximumError": "8kB"
+									"replace": "src/environments/environment.ts",
+									"with": "src/environments/environment.web.dev.ts"
 								}
 							],
-							"outputHashing": "all",
+							"optimization": false,
+							"extractLicenses": false,
 							"sourceMap": true
 						},
 						"development": {
+							"fileReplacements": [
+								{
+									"replace": "src/environments/environment.ts",
+									"with": "src/environments/environment.desktop.ts"
+								}
+							],
 							"optimization": false,
 							"extractLicenses": false,
 							"sourceMap": true,
@@ -94,6 +106,10 @@
 						},
 						"development": {
 							"buildTarget": "gurl:build:development"
+						},
+						"web-dev": {
+							"buildTarget": "gurl:build:web-dev",
+							"proxyConfig": "src/proxy.conf.json"
 						}
 					},
 					"defaultConfiguration": "development"

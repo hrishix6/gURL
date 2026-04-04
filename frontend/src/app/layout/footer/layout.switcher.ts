@@ -15,7 +15,7 @@ import { FormLayout } from "@/types";
 	selector: "div[gurl-layout-switcher]",
 	template: `
       <div class="dropdown dropdown-top dropdown-end">
-        <div tabindex="0" role="button" class="btn btn-sm btn-square btn-ghost">
+        <div tabindex="0" role="button" class="btn btn-square btn-sm">
              <lucide-angular [img]="layoutSwithcerIcon()" class="size-5"/>
         </div>
         <ul

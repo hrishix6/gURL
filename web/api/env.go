@@ -23,7 +23,7 @@ func (api *Api) GetEnvironments(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Printf("[api/GetEnvironments] error:%v \n", err)
-		wrappedErrResponse := api.WrapErrorResponse(r, &webModels.RequestError{
+		wrappedErrResponse := api.WrapErrorResponse(r, webModels.RequestError{
 			Message: "failed to load environments from db",
 			Details: err.Error(),
 		})
@@ -44,7 +44,7 @@ func (api *Api) CreateEnvironment(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Printf("[api/CreateEnvironment] error:%v \n", err)
-		wrappedErrResponse := api.WrapErrorResponse(r, &webModels.RequestError{
+		wrappedErrResponse := api.WrapErrorResponse(r, webModels.RequestError{
 			Message: "unable to parse body",
 			Details: err.Error(),
 		})
@@ -57,7 +57,7 @@ func (api *Api) CreateEnvironment(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Printf("[api/CreateEnvironment] error:%v \n", err)
-		wrappedErrResponse := api.WrapErrorResponse(r, &webModels.RequestError{
+		wrappedErrResponse := api.WrapErrorResponse(r, webModels.RequestError{
 			Message: "failed to create environment in db",
 			Details: err.Error(),
 		})
@@ -79,7 +79,7 @@ func (api *Api) CopyEnvironment(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Printf("[api/CopyEnvironment] error:%v \n", err)
-		wrappedErrResponse := api.WrapErrorResponse(r, &webModels.RequestError{
+		wrappedErrResponse := api.WrapErrorResponse(r, webModels.RequestError{
 			Message: "unable to parse body",
 			Details: err.Error(),
 		})
@@ -92,7 +92,7 @@ func (api *Api) CopyEnvironment(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Printf("[api/CopyEnvironment] error:%v \n", err)
-		wrappedErrResponse := api.WrapErrorResponse(r, &webModels.RequestError{
+		wrappedErrResponse := api.WrapErrorResponse(r, webModels.RequestError{
 			Message: fmt.Sprintf("failed to copy environment in db with id %s", id),
 			Details: err.Error(),
 		})
@@ -112,7 +112,7 @@ func (api *Api) DeleteEnvironment(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Printf("[api/DeleteEnvironment] error:%v \n", err)
-		wrappedErrResponse := api.WrapErrorResponse(r, &webModels.RequestError{
+		wrappedErrResponse := api.WrapErrorResponse(r, webModels.RequestError{
 			Message: fmt.Sprintf("failed to delete environment with id: %s", id),
 			Details: err.Error(),
 		})
@@ -132,7 +132,7 @@ func (api *Api) DeleteEnvDraftsUnderEnv(w http.ResponseWriter, r *http.Request) 
 
 	if err != nil {
 		log.Printf("[api/DeleteEnvDraftsUnderEnv] error:%v \n", err)
-		wrappedErrResponse := api.WrapErrorResponse(r, &webModels.RequestError{
+		wrappedErrResponse := api.WrapErrorResponse(r, webModels.RequestError{
 			Message: fmt.Sprintf("failed to delete env-drafts under env with id: %s", id),
 			Details: err.Error(),
 		})
@@ -152,7 +152,7 @@ func (api *Api) GetEnvDraftbyId(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Printf("[api/GetEnvDraftbyId] error:%v \n", err)
 
-		wrappedErr := &webModels.RequestError{
+		wrappedErr := webModels.RequestError{
 			Message: fmt.Sprintf("failed to env-draft with id %s from db", id),
 			Details: err.Error(),
 		}
@@ -180,7 +180,7 @@ func (api *Api) CreateFreshEnvDraft(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Printf("[api/CreateFreshEnvDraft] error:%v \n", err)
-		wrappedErrResponse := api.WrapErrorResponse(r, &webModels.RequestError{
+		wrappedErrResponse := api.WrapErrorResponse(r, webModels.RequestError{
 			Message: "unable to parse body",
 			Details: err.Error(),
 		})
@@ -193,7 +193,7 @@ func (api *Api) CreateFreshEnvDraft(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Printf("[api/CreateFreshEnvDraft] error:%v \n", err)
-		wrappedErrResponse := api.WrapErrorResponse(r, &webModels.RequestError{
+		wrappedErrResponse := api.WrapErrorResponse(r, webModels.RequestError{
 			Message: "failed to create fresh env-draft in db",
 			Details: err.Error(),
 		})
@@ -216,7 +216,7 @@ func (api *Api) SaveEnvDraftAsEnv(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Printf("[api/SaveEnvDraftAsEnv] error:%v \n", err)
-		wrappedErrResponse := api.WrapErrorResponse(r, &webModels.RequestError{
+		wrappedErrResponse := api.WrapErrorResponse(r, webModels.RequestError{
 			Message: "unable to parse body",
 			Details: err.Error(),
 		})
@@ -229,7 +229,7 @@ func (api *Api) SaveEnvDraftAsEnv(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Printf("[api/SaveEnvDraftAsEnv] error:%v \n", err)
-		wrappedErrResponse := api.WrapErrorResponse(r, &webModels.RequestError{
+		wrappedErrResponse := api.WrapErrorResponse(r, webModels.RequestError{
 			Message: "failed to save env-draft as env in db",
 			Details: err.Error(),
 		})
@@ -250,7 +250,7 @@ func (api *Api) CreateEnvDraft(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Printf("[api/CreateEnvDraft] error:%v \n", err)
-		wrappedErrResponse := api.WrapErrorResponse(r, &webModels.RequestError{
+		wrappedErrResponse := api.WrapErrorResponse(r, webModels.RequestError{
 			Message: "unable to parse body",
 			Details: err.Error(),
 		})
@@ -263,7 +263,7 @@ func (api *Api) CreateEnvDraft(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Printf("[api/CreateEnvDraft] error:%v \n", err)
-		wrappedErrResponse := api.WrapErrorResponse(r, &webModels.RequestError{
+		wrappedErrResponse := api.WrapErrorResponse(r, webModels.RequestError{
 			Message: "failed to create env-draft in db",
 			Details: err.Error(),
 		})
@@ -282,7 +282,7 @@ func (api *Api) DeleteEnvDraft(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Printf("[api/DeleteEnvDraft] error:%v \n", err)
-		wrappedErrResponse := api.WrapErrorResponse(r, &webModels.RequestError{
+		wrappedErrResponse := api.WrapErrorResponse(r, webModels.RequestError{
 			Message: fmt.Sprintf("failed to delete env-draft with id: %s", id),
 			Details: err.Error(),
 		})
@@ -304,7 +304,7 @@ func (api *Api) UpdateEnvDraft(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Printf("[api/UpdateEnvDraft] error:%v \n", err)
-		wrappedErrResponse := api.WrapErrorResponse(r, &webModels.RequestError{
+		wrappedErrResponse := api.WrapErrorResponse(r, webModels.RequestError{
 			Message: "unable to parse body",
 			Details: err.Error(),
 		})
@@ -317,7 +317,7 @@ func (api *Api) UpdateEnvDraft(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Printf("[api/UpdateEnvDraft] error:%v \n", err)
-		wrappedErrResponse := api.WrapErrorResponse(r, &webModels.RequestError{
+		wrappedErrResponse := api.WrapErrorResponse(r, webModels.RequestError{
 			Message: "failed to update env-draft in db",
 			Details: err.Error(),
 		})

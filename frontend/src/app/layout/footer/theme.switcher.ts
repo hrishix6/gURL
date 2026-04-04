@@ -9,7 +9,7 @@ import type { AppTheme } from "@/types";
 	selector: "div[gurl-theme-switcher]",
 	template: `
       <div class="dropdown dropdown-top dropdown-end">
-        <div tabindex="0" role="button" class="btn btn-ghost btn-square btn-sm">
+        <div tabindex="0" role="button" class="btn btn-square btn-sm">
           <lucide-angular [img]="ThemeSwitcherIcon" class="size-5" />
         </div>
         <ul

@@ -1,13 +1,37 @@
 version: '3'
 
 services:
-  gurl:
-    container_name: gurl-web-container
-    image: gurl-web
-    env_file:
-      - ./web/web.env.prod
+  db:
+    container_name: gurl-web-db
+    image: ${POSTGRES_IMAGE}
+    volumes:
+      - gurl-web-db-volume:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     restart: unless-stopped
+    env_file:
+      - .env.local
+    networks:
+      - gurl-web-prod-network
+  gurl:
+    depends_on:
+      - db
+    container_name: gurl-web-container
+    image: gurl-web 
+    build: .
+    env_file:
+      - web.env.prod
+    restart: unless-stopped
+    networks:
+      -  gurl-web-prod-network
     volumes:
       - ./appData:/usr/local/src/gURL
     ports:
       - "8080:80"
+
+volumes:
+  gurl-web-db-volume:
+    driver: local
+
+networks:
+  gurl-web-prod-network:
+    driver: bridge

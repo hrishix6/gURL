@@ -6,19 +6,22 @@ import {
 	signal,
 	viewChild,
 } from "@angular/core";
-import { Router, RouterLink } from "@angular/router";
+import { Router } from "@angular/router";
 import { CircleX, Key, LucideAngularModule, Mail, User } from "lucide-angular";
 import { getAppConfig } from "@/app.config";
 import { UserAuthService } from "@/services";
 import type { RegisterDTO } from "@/types";
 
 @Component({
-	selector: `gurl-register`,
+	selector: `gurl-first-time-setup`,
 	template: `
         <h2 class="text-primary text-2xl font-medium">
             gURL
             <span class="text-sm">{{ appConfig.appVersion }}</span>
         </h2>
+        <p class="text-sm">
+            Create an admin user
+        </p>
         <form class="flex flex-col gap-4 w-96" (submit)="handleFormSubmission($event)">
             @if(loginErr()){
                <div class="alert alert-soft alert-error">
@@ -38,44 +41,12 @@ import type { RegisterDTO } from "@/types";
                 />
                 </label>
             </div>
-            <div>
-                <label class="input w-full">
-                <lucide-angular [img]="UserIcon" class="size-4" />
-                <input
-                    type="text"
-                    required
-                    placeholder="Username"
-                    pattern="[a-z0-9]*"
-                    minlength="3"
-                    maxlength="15"
-                    title="Only lower case letters & numbers"
-                    #username
-                />
-                </label>
-            </div>
-            <div>
-                <label class="input w-full">
-                <lucide-angular [img]="PassIcon" class="size-4" />
-                <input
-                    type="password"
-                    required
-                    placeholder="Password"
-                    minlength="3"
-                    maxlength="100"
-                    title="must be within 3-100 characters"
-                    #password
-                />
-                </label>
-            </div>
-            <input type="submit" class="btn btn-block btn-primary" value="Register" />
+            <input type="submit" class="btn btn-block btn-primary" value="Create" />
         </form>
-        <p class="text-sm">
-          Already have account? <a routerLink="/login" class="mx-1 underline hover:text-primary hover:cursor-pointer">Login</a>  
-        </p>
     `,
-	imports: [RouterLink, LucideAngularModule],
+	imports: [LucideAngularModule],
 })
-export class RegisterPage {
+export class FirstTimeSetupPage {
 	@HostBinding("class")
 	def = "h-screen flex flex-col gap-4 items-center justify-center";
 
@@ -89,10 +60,6 @@ export class RegisterPage {
 
 	protected emailRef =
 		viewChild.required<ElementRef<HTMLInputElement>>("email");
-	protected usernameRef =
-		viewChild.required<ElementRef<HTMLInputElement>>("username");
-	protected passwordRef =
-		viewChild.required<ElementRef<HTMLInputElement>>("password");
 
 	private readonly userAuthSvc = inject(UserAuthService);
 	private readonly router = inject(Router);
@@ -101,18 +68,9 @@ export class RegisterPage {
 		e.preventDefault();
 
 		const payload: RegisterDTO = {
-			username: this.usernameRef().nativeElement.value,
-			password: this.passwordRef().nativeElement.value,
 			email: this.emailRef().nativeElement.value,
 		};
 
-		const success = await this.userAuthSvc.tryRegister(payload);
-
-		if (!success) {
-			this.loginErr.set("failed to sign up");
-			return;
-		}
-
-		this.router.navigate(["/login"], { replaceUrl: true });
+		await this.userAuthSvc.tryAdminUserSetup(payload);
 	}
 }

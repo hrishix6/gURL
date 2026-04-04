@@ -16,7 +16,7 @@ func (api *Api) PreviewHandler(next http.Handler) http.Handler {
 
 		if userIdFromToken != userIdFromPath {
 
-			api.NoEntry(w, api.WrapErrorResponse(r, &models.RequestError{
+			api.NoEntry(w, api.WrapErrorResponse(r, models.RequestError{
 				Message: "forbidden",
 				Details: "you don't have permission to preview this content",
 			}))

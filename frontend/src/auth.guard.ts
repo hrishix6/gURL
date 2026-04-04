@@ -8,14 +8,21 @@ export class AuthGuard implements CanActivate {
 	private router = inject(Router);
 	private userAuthSvc = inject(UserAuthService);
 
-	canActivate(): boolean {
+	async canActivate() {
 		const appConfig = getAppConfig();
 
 		if (appConfig.mode === "desktop") {
 			return true;
 		}
 
-		if (this.userAuthSvc.isLoggedIn()) {
+		if (appConfig.setup_required) {
+			this.router.navigate(["/setup"], { replaceUrl: true });
+			return false;
+		}
+
+		const checkGood = await this.userAuthSvc.checkLogin();
+
+		if (checkGood) {
 			return true;
 		}
 

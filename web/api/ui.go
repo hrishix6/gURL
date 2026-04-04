@@ -13,7 +13,7 @@ func (api *Api) GetUIState(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Printf("[api/GetUIState] error:%v \n", err)
-		wrappedErrResponse := api.WrapErrorResponse(r, &webModels.RequestError{
+		wrappedErrResponse := api.WrapErrorResponse(r, webModels.RequestError{
 			Message: "failed to load ui state from db",
 			Details: err.Error(),
 		})
@@ -34,7 +34,7 @@ func (api *Api) UpdateUIState(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Printf("[api/UpdateUIState] error:%v \n", err)
-		wrappedErrResponse := api.WrapErrorResponse(r, &webModels.RequestError{
+		wrappedErrResponse := api.WrapErrorResponse(r, webModels.RequestError{
 			Message: "unable to parse body",
 			Details: err.Error(),
 		})
@@ -47,7 +47,7 @@ func (api *Api) UpdateUIState(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Printf("[api/UpdateUIState] error:%v \n", err)
-		wrappedErrResponse := api.WrapErrorResponse(r, &webModels.RequestError{
+		wrappedErrResponse := api.WrapErrorResponse(r, webModels.RequestError{
 			Message: "failed to update ui state in db",
 			Details: err.Error(),
 		})

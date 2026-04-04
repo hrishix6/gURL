@@ -15,7 +15,7 @@ func (api *Api) GetAllWorkspaces(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Printf("[api/GetAllWorkspaces] error:%v \n", err)
-		wrappedErrResponse := api.WrapErrorResponse(r, &webModels.RequestError{
+		wrappedErrResponse := api.WrapErrorResponse(r, webModels.RequestError{
 			Message: "failed to load workspaces from db",
 			Details: err.Error(),
 		})
@@ -35,7 +35,7 @@ func (api *Api) GetWorkspaceById(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Printf("[api/GetWorkspaceById] error:%v \n", err)
-		wrappedErrResponse := api.WrapErrorResponse(r, &webModels.RequestError{
+		wrappedErrResponse := api.WrapErrorResponse(r, webModels.RequestError{
 			Message: fmt.Sprintf("failed to load workspace from db for id %s", id),
 			Details: err.Error(),
 		})
@@ -55,7 +55,7 @@ func (api *Api) CreateWorkspace(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Printf("[api/CreateWorkspace] error:%v \n", err)
-		wrappedErrResponse := api.WrapErrorResponse(r, &webModels.RequestError{
+		wrappedErrResponse := api.WrapErrorResponse(r, webModels.RequestError{
 			Message: "unable to parse body",
 			Details: err.Error(),
 		})
@@ -68,7 +68,7 @@ func (api *Api) CreateWorkspace(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Printf("[api/CreateWorkspace] error:%v \n", err)
-		wrappedErrResponse := api.WrapErrorResponse(r, &webModels.RequestError{
+		wrappedErrResponse := api.WrapErrorResponse(r, webModels.RequestError{
 			Message: "failed to create workspaces in db",
 			Details: err.Error(),
 		})
@@ -90,7 +90,7 @@ func (api *Api) UpdateWorkspace(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Printf("[api/UpdateWorkspace] error:%v \n", err)
-		wrappedErrResponse := api.WrapErrorResponse(r, &webModels.RequestError{
+		wrappedErrResponse := api.WrapErrorResponse(r, webModels.RequestError{
 			Message: "unable to parse body",
 			Details: err.Error(),
 		})
@@ -103,7 +103,7 @@ func (api *Api) UpdateWorkspace(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Printf("[api/UpdateWorkspace] error:%v \n", err)
-		wrappedErrResponse := api.WrapErrorResponse(r, &webModels.RequestError{
+		wrappedErrResponse := api.WrapErrorResponse(r, webModels.RequestError{
 			Message: "failed to update workspaces in db",
 			Details: err.Error(),
 		})

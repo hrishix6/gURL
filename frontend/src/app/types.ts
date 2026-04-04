@@ -193,6 +193,7 @@ export interface AppConfig {
 	api_url: string;
 	auth_url: string;
 	appVersion: string;
+	setup_required: boolean;
 }
 
 export interface InputToken {
@@ -303,17 +304,27 @@ export interface HttpExecutor {
 	sendHttpReq(arg1: models.GurlReq): Promise<models.GurlRes>;
 }
 
-export interface ApiResponse<T> {
-	data?: T;
-	metadata: {
-		timestamp: string;
-		request_id: string;
-	};
-	error?: {
+export type ApiRequestMeta = {
+	timestamp: string;
+	request_id: string;
+};
+
+export type ApiErrorResponse = {
+	success: false;
+	metadata: ApiRequestMeta;
+	error: {
 		message: string;
-		details: string;
+		details: unknown;
 	};
-}
+};
+
+export type ApiSuccessResponse<T> = {
+	success: true;
+	metadata: ApiRequestMeta;
+	data: T;
+};
+
+export type ApiResponse<T> = ApiSuccessResponse<T> | ApiErrorResponse;
 
 export interface WebImportDTO {
 	workspace_id: string;
@@ -321,12 +332,14 @@ export interface WebImportDTO {
 }
 
 export interface LoginRequestDTO {
-	username: string;
-	password: string;
+	email: string
 }
 
 export interface RegisterDTO {
-	username: string;
 	email: string;
-	password: string;
+}
+
+export interface UserInfo {
+	email: string;
+	isAdmin: boolean;
 }

@@ -1,5 +1,6 @@
 import { CONFIG_FILE_PATH } from "./constants";
 import type { AppConfig } from "./types";
+import {environment} from "../environments/environment";
 
 let config_error = false;
 
@@ -7,7 +8,7 @@ let appConfig: AppConfig | null = null;
 
 export async function loadConfig() {
 	try {
-		const res = await fetch(CONFIG_FILE_PATH);
+		const res = await fetch(environment.CONFIG_PATH);
 		if (!res.ok) {
 			config_error = true;
 			return;

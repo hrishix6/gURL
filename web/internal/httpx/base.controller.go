@@ -62,26 +62,33 @@ func (a *BaseController) ServerCooked(w http.ResponseWriter, payload any) {
 	w.Write(a.json(payload))
 }
 
-func (a *BaseController) WrapSuccessResponse(r *http.Request, payload any) *models.ApiResponse {
+func (a *BaseController) Redirect(w http.ResponseWriter, redirectURL string) {
+	w.Header().Set("Location", redirectURL)
+	w.WriteHeader(http.StatusFound)
+}
+
+func (a *BaseController) WrapSuccessResponse(r *http.Request, payload any) models.ApiSuccessResponse {
 
 	reqId, _ := ReqIdFromCtx(r.Context())
 
-	return &models.ApiResponse{
-		Data: payload,
-		MetaData: &models.ReqMetadata{
+	return models.ApiSuccessResponse{
+		Success: true,
+		Data:    payload,
+		MetaData: models.ReqMetadata{
 			Timestamp: time.Now(),
 			RequestId: reqId,
 		},
 	}
 }
 
-func (a *BaseController) WrapErrorResponse(r *http.Request, error *models.RequestError) *models.ApiResponse {
+func (a *BaseController) WrapErrorResponse(r *http.Request, error models.RequestError) models.ApiErrorResponse {
 
 	reqId, _ := ReqIdFromCtx(r.Context())
 
-	return &models.ApiResponse{
-		Error: error,
-		MetaData: &models.ReqMetadata{
+	return models.ApiErrorResponse{
+		Success: false,
+		Error:   error,
+		MetaData: models.ReqMetadata{
 			Timestamp: time.Now(),
 			RequestId: reqId,
 		},

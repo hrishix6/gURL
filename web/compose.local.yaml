@@ -1,0 +1,21 @@
+version: '3'
+services:
+  db:
+    container_name: ${POSTGRES_CONTAINER}
+    image: ${POSTGRES_IMAGE}
+    ports:
+      - "${POSTGRES_PORT}:${POSTGRES_PORT}"
+    volumes:
+      - gurl-web-db-data:/var/lib/postgresql/data
+    env_file:
+      - .env.local
+    networks:
+      - gurl-web-dev-network
+
+volumes:
+  gurl-web-db-data:
+    driver: local
+
+networks:
+  gurl-web-dev-network:
+    driver: bridge

@@ -7,7 +7,7 @@ import {
 } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import type { models } from "@wailsjs/go/models";
-import { AppService, TabsService } from "@/services";
+import { AppService, TabsService, UserAuthService } from "@/services";
 
 @Injectable({
 	providedIn: "root",
@@ -15,6 +15,7 @@ import { AppService, TabsService } from "@/services";
 export class GlobalModalsService {
 	private readonly appSvc = inject(AppService);
 	private readonly tabSvc = inject(TabsService);
+	private readonly authSvc = inject(UserAuthService);
 	private readonly destroyRef = inject(DestroyRef);
 
 	constructor() {
@@ -23,6 +24,22 @@ export class GlobalModalsService {
 			.subscribe(() => {
 				this.handleOpenCreateDefaultWorkspaceModal();
 			});
+	}
+
+	private _inviteUserModalOpen = signal<boolean>(false);
+	public inviteUserModalOpen = computed(()=> this._inviteUserModalOpen());
+
+	public openInviteUserModal() {
+		this._inviteUserModalOpen.set(true);
+	}
+
+	public closeInviteUserModal() {
+		this._inviteUserModalOpen.set(false);
+	}
+
+	public async handleInviteUser(email: string) {
+		await this.authSvc.inviteUser(email);
+		this.closeInviteUserModal();
 	}
 
 	//#region workspace
