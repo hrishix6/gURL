@@ -35,7 +35,7 @@ enum CrumbType {
             <ul>
                 @for (crumb of crumbs(); track $index) {
                     <li class="text-lg">
-                        <a class="flex items-center hover:decoration-0 hover:cursor-default">
+                        <a class="hover:decoration-0 hover:cursor-default">
                             @switch (crumb.type) {
                                 @case ("Collection") {
                                     <lucide-angular [img]="CollectionsIcon" class="size-4 mt-1" />
