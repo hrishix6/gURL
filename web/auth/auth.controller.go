@@ -67,9 +67,22 @@ func (api *AuthRouter) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	api.authSvc.TryLogin(r.Context(), api.BackendURL, loginDto)
+	magicLink := api.authSvc.TryLogin(r.Context(), api.BackendURL, loginDto)
 
-	api.Ok(w, api.WrapSuccessResponse(r, "Ok"))
+	if api.mode == "prod" {
+		api.Ok(w, api.WrapSuccessResponse(r, "Ok"))
+		return
+	}
+
+	if magicLink != "" {
+		api.Ok(w, api.WrapSuccessResponse(r, magicLink))
+		return
+	}
+
+	api.ServerCooked(w, api.WrapErrorResponse(r, models.RequestError{
+		Message: "no magic link generated",
+	}))
+
 }
 
 func (api *AuthRouter) RegisterAdmin(w http.ResponseWriter, r *http.Request) {

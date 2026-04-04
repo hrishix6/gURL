@@ -16,7 +16,7 @@ import { GlobalModalsService } from "@/services";
 	template: `
     <div tabindex="0" role="button" class="btn btn-soft btn-sm btn-primary">
 		<lucide-angular [img]="PlusIcon" class="size-4" />
-		<span>Create</span>
+		<span class="hidden xl:inline-block">Create</span>
 	</div>
     <ul
       tabindex="-1"

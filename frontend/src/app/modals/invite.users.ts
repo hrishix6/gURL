@@ -1,14 +1,11 @@
-import { NgClass } from "@angular/common";
 import {
-    AfterViewInit,
+	type AfterViewInit,
 	Component,
-	ElementRef,
+	type ElementRef,
 	HostBinding,
 	input,
-	type OnInit,
 	output,
-	signal,
-    viewChild,
+	viewChild,
 } from "@angular/core";
 import { LucideAngularModule, X } from "lucide-angular";
 
@@ -48,7 +45,7 @@ import { LucideAngularModule, X } from "lucide-angular";
     `,
 	imports: [LucideAngularModule],
 })
-export class InviteUsersDialogue implements AfterViewInit{
+export class InviteUsersDialogue implements AfterViewInit {
 	@HostBinding("class")
 	def = "modal";
 
@@ -56,31 +53,32 @@ export class InviteUsersDialogue implements AfterViewInit{
 		return this.isOpen() ? "" : null;
 	}
 
-    isOpen = input.required<boolean>();
+	isOpen = input.required<boolean>();
 	onCancel = output<void>();
 	onInvite = output<string>();
 
-    ngAfterViewInit(): void {
-        const inp = this.emailRef().nativeElement;
-        inp.value = "";
-        inp.focus();
-    }
+	ngAfterViewInit(): void {
+		const inp = this.emailRef().nativeElement;
+		inp.value = "";
+		inp.focus();
+	}
 
-    protected readonly emailRef = viewChild.required<ElementRef<HTMLInputElement>>("email");
-    protected readonly formRef = viewChild.required<ElementRef<HTMLInputElement>>("formSub");
-    protected readonly CancelIcon = X;
-	
+	protected readonly emailRef =
+		viewChild.required<ElementRef<HTMLInputElement>>("email");
+	protected readonly formRef =
+		viewChild.required<ElementRef<HTMLInputElement>>("formSub");
+	protected readonly CancelIcon = X;
 
 	protected handleClose() {
 		this.onCancel.emit();
 	}
 
-    triggerSubmit() {
-        this.formRef().nativeElement.click();
-    }
+	triggerSubmit() {
+		this.formRef().nativeElement.click();
+	}
 
-    hanndleInvite(e: Event) {
-        e.preventDefault();
-        this.onInvite.emit(this.emailRef().nativeElement.value);
-    }
+	hanndleInvite(e: Event) {
+		e.preventDefault();
+		this.onInvite.emit(this.emailRef().nativeElement.value);
+	}
 }

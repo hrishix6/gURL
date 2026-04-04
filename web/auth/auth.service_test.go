@@ -13,7 +13,7 @@ var wantUserId = "user-123"
 
 func TestMain(m *testing.M) {
 
-	authSvc = NewAuthService("gurl", "j3zfJOXhLrVYpxNbtxwn/NTlbOrKp6csk63bkNZu8ik=", nil, nil, nil, nil)
+	authSvc = NewAuthService("gurl", false, "j3zfJOXhLrVYpxNbtxwn/NTlbOrKp6csk63bkNZu8ik=", nil, nil, nil, nil)
 
 	exitVal := m.Run()
 

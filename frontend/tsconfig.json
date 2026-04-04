@@ -18,7 +18,8 @@
 		"baseUrl": "./",
 		"paths": {
 			"@/*": ["src/app/*"],
-			"@wailsjs/*": ["wailsjs/*"]
+			"@wailsjs/*": ["wailsjs/*"],
+			"@src/*": ["src/*"]
 		}
 	},
 	"angularCompilerOptions": {

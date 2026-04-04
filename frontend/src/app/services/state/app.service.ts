@@ -159,7 +159,7 @@ export class AppService {
 			displayName: env.name,
 		}));
 
-		return [{ id: NO_ENV_ID, displayName: "No Environment" }, ...t];
+		return [{ id: NO_ENV_ID, displayName: "None" }, ...t];
 	});
 
 	private _activeEnvironment = signal<string>(NO_ENV_ID);
@@ -428,6 +428,15 @@ export class AppService {
 	}
 	//#endregion theme
 
+	//#region console
+	private _isConsoleOpen = signal<boolean>(false);
+	public isConsoleOpen = computed(() => this._isConsoleOpen());
+
+	public toggleConsole() {
+		this._isConsoleOpen.update((x) => !x);
+	}
+	//#endregion console
+
 	//#region sidebar
 	private _appSidebarContent = signal<AppSidebarContent>(
 		AppSidebarContent.Collections,
@@ -541,6 +550,7 @@ export class AppService {
 			await this.refreshWorkspaces();
 		} catch (error) {
 			console.error(error);
+			this.alertSvc.addAlert(`Failed to create workspace '${name}'`, "error");
 		}
 	}
 

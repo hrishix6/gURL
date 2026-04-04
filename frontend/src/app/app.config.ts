@@ -1,6 +1,5 @@
-import { CONFIG_FILE_PATH } from "./constants";
+import { environment } from "@src/environments/environment";
 import type { AppConfig } from "./types";
-import {environment} from "../environments/environment";
 
 let config_error = false;
 

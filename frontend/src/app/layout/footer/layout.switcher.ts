@@ -20,7 +20,7 @@ import { FormLayout } from "@/types";
         </div>
         <ul
           tabindex="-1"
-          class="menu dropdown-content bg-base-100 rounded-box z-1 w-52 p-2 shadow-sm"
+          class="menu dropdown-content bg-base-100 rounded-box z-50 w-52 p-2 shadow-sm"
         >
           @for(layout of layouts; track layout) {
              <li class="my-0.5">

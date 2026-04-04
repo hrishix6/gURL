@@ -1,6 +1,6 @@
+import { environment } from "@src/environments/environment";
 import { getAppConfig } from "@/app.config";
 import type { ApiResponse, UserInfo } from "@/types";
-import {environment} from "../../../environments/environment";
 
 export class RestClient {
 	private readonly apiBaseURL: string;
@@ -51,7 +51,9 @@ export class RestClient {
 				...(ignoreTimeout
 					? {}
 					: { signal: AbortSignal.timeout(this.timeoutMS) }),
-				...(environment.origin === "same"? {credentials: "same-origin"}: { credentials: "include"}),
+				...(environment.origin === "same"
+					? { credentials: "same-origin" }
+					: { credentials: "include" }),
 			},
 		);
 
@@ -77,7 +79,9 @@ export class RestClient {
 				...(ignoreTimeout
 					? {}
 					: { signal: AbortSignal.timeout(this.timeoutMS) }),
-				...(environment.origin === "same"? {credentials: "same-origin"}: { credentials: "include"}),
+				...(environment.origin === "same"
+					? { credentials: "same-origin" }
+					: { credentials: "include" }),
 			},
 		);
 
@@ -155,7 +159,9 @@ export class RestClient {
 				...(ignoreTimeout
 					? {}
 					: { signal: AbortSignal.timeout(this.fileULTimeoutMS) }),
-				...(environment.origin === "same"? {credentials: "same-origin"}: { credentials: "include"}),
+				...(environment.origin === "same"
+					? { credentials: "same-origin" }
+					: { credentials: "include" }),
 			},
 		);
 
@@ -174,7 +180,9 @@ export class RestClient {
 				...(ignoreTimeout
 					? {}
 					: { signal: AbortSignal.timeout(this.fileDlTimeoutMS) }),
-				...(environment.origin === "same"? {credentials: "same-origin"}: { credentials: "include"}),
+				...(environment.origin === "same"
+					? { credentials: "same-origin" }
+					: { credentials: "include" }),
 			},
 		);
 
@@ -202,7 +210,9 @@ export class RestClient {
 				...(ignoreTimeout
 					? {}
 					: { signal: AbortSignal.timeout(this.fileDlTimeoutMS) }),
-				...(environment.origin === "same"? {credentials: "same-origin"}: { credentials: "include"}),
+				...(environment.origin === "same"
+					? { credentials: "same-origin" }
+					: { credentials: "include" }),
 			},
 		);
 

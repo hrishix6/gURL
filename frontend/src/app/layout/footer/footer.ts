@@ -1,22 +1,35 @@
-import { Component, HostBinding } from "@angular/core";
-import { LucideAngularModule } from "lucide-angular";
+import { NgClass } from "@angular/common";
+import { Component, HostBinding, inject } from "@angular/core";
+import { LucideAngularModule, SquareTerminal } from "lucide-angular";
 import { getAppConfig } from "@/app.config";
 import { GurlStatusBeacon } from "@/common/components/status.beacon";
+import { AppService } from "@/services";
+import { GurlSidebarToggle } from "../taskbar/sidebar.toggle";
 import { GurlLayoutSwitcher } from "./layout.switcher";
 import { GurlThemeSwitcher } from "./theme.switcher";
 
 @Component({
 	selector: "footer[gurl-footer]",
 	template: `
-    <div class="flex flex-1 items-center gap-4">
-			<div class="flex items-center gap-4">
-				@if (mode === "web") {
-					<gurl-status-beacon />
-				}
-			</div>
-		 <div class="flex items-center gap-4 ml-auto">	
+    <div class="flex flex-1 items-center gap-2">
+		@if (mode === "web") {
+				<gurl-status-beacon />
+		  }
+		 <button [ngClass]="{
+			'btn btn-sm': true,
+			'btn-soft btn-primary': appSvc.isConsoleOpen(),
+			'bg-base-300': !appSvc.isConsoleOpen()
+		 }"
+		 (click)="appSvc.toggleConsole()"
+		 >
+          <lucide-angular [img]="ConsoleIcon" class="size-4" />
+		  <span>Console</span>
+        </button>
+		 <div class="flex items-center gap-4 ml-auto">
 				<div gurl-theme-switcher></div>
+		 		<div gurl-sidebar-toggle></div>
          		<div gurl-layout-switcher></div>
+				
 		 </div>
     </div>
   `,
@@ -25,11 +38,16 @@ import { GurlThemeSwitcher } from "./theme.switcher";
 		GurlThemeSwitcher,
 		LucideAngularModule,
 		GurlStatusBeacon,
+		GurlSidebarToggle,
+		NgClass,
 	],
 })
 export class GurlFooter {
 	@HostBinding("class")
-	def = "px-4 py-1 bg-base-200 flex border-t-2 border-base-100";
+	def = "py-1 px-2 bg-base-200 flex border-t-2 border-base-100";
+
+	protected readonly ConsoleIcon = SquareTerminal;
 
 	protected readonly mode = getAppConfig().mode;
+	protected readonly appSvc = inject(AppService);
 }

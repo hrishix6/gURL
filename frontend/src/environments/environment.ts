@@ -1,4 +1,5 @@
 export const environment = {
-    CONFIG_PATH : "",
-    origin: "",
-}
+	CONFIG_PATH: "",
+	origin: "",
+	env: "",
+};

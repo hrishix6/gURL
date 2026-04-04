@@ -38,16 +38,16 @@ import { TabsContainer } from "./tabs/tabs.container";
           }
           <main class="flex flex-1 overflow-hidden">
               @if(tabsSvc.tabCount()){
-                  <gurl-taskbar />
                   @if(appSvc.isDesktopSidebarOpen()){
+                      <gurl-taskbar [variant]="'desktop'" />
                       <aside gurl-desktop-sidebar></aside>
                   }
                }
                   <!-- Main view -->
-                  <main class="flex flex-1 flex-col bg-base-200 overflow-hidden">
+                  <main class="flex flex-1 flex-col bg-base-200 overflow-hidden relative">
                     @if(tabsSvc.tabCount()){
                        <!-- Main header -->
-                    <header class="flex basis-14 grow-0 shrink-0 items-center px-2">
+                    <header class="flex basis-12 grow-0 shrink-0 items-center px-2">
                         <div class="flex-1 overflow-hidden px-2">
                           <div gurl-breadcrumbs></div>
                         </div>
@@ -70,8 +70,12 @@ import { TabsContainer } from "./tabs/tabs.container";
                     }@else {
                     <section appHome></section>
                     }
+                    @if(appSvc.isConsoleOpen()){
+                       <div class="absolute w-full h-[45%] bottom-0 left-0 z-10 bg-base-300 flex items-center justify-center">
+                            <span>TODO: Implement Console</span>
+                      </div>
+                    }
                   </main>
-             
           </main>
            <!-- Main footer -->
           <footer gurl-footer></footer>
@@ -81,9 +85,12 @@ import { TabsContainer } from "./tabs/tabs.container";
       </main>
     </div>
     <!-- This content is rendered inside mobile sidebar -->
-    <div class="drawer-side">
+    <div class="drawer-side xl:hidden">
       <label class="drawer-overlay" (click)="appSvc.toggleMobileSidebar()"></label>
-      <aside gurl-mobile-sidebar></aside>
+      <div class="min-h-full flex flex-1 overflow-hidden">
+        <gurl-taskbar [variant]="'mobile'" />
+        <aside gurl-mobile-sidebar></aside>    
+      </div>
     </div>
     <!-- Global modals -->
     <gurl-global-modals-host />

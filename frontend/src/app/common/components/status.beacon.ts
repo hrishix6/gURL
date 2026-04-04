@@ -12,19 +12,25 @@ import { RestClient } from "@/services";
 	template: `
         @switch (status()) {
             @case ("on") {
-				<div class="status status-success"></div>
-				<span class="text-sm text-success">Connected</span>
+					<div class="status status-success"></div>
+					<span class="text-xs text-success font-semibold">Connected</span>
             }
             @case("off") {
-				<div class="status status-error"></div>
-				<span class="text-sm text-error">Disconnected</span>
+					<div class="status status-error"></div>
+					<span class="text-xs text-error font-semibold">Disconnected</span>
             }
         }
     `,
 })
 export class GurlStatusBeacon implements OnInit, OnDestroy {
-	@HostBinding("class")
-	def = "flex items-center gap-2";
+	@HostBinding("class") get def() {
+		if (this.status() === "on") {
+			return "flex items-center gap-2 bg-success/10 py-1 px-3";
+		}
+
+		return "flex items-center gap-2 bg-error/10 py-1 px-3";
+	}
+
 	protected status = signal<"on" | "off">("on");
 	protected intervalId: number | null = null;
 

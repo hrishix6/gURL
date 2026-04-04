@@ -332,7 +332,7 @@ export interface WebImportDTO {
 }
 
 export interface LoginRequestDTO {
-	email: string
+	email: string;
 }
 
 export interface RegisterDTO {

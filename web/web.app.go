@@ -132,7 +132,7 @@ func InitializeWebApp(
 		log.Fatalf("unable to initialize executor %v", err)
 	}
 
-	authSvc := auth.NewAuthService(params.AppName, jwtSecret, webApp.storage.UserRepo, webApp.storage.UiStateRepo, webApp.storage.AppSetupRepo, mailer)
+	authSvc := auth.NewAuthService(params.AppName, params.Env == "PROD", jwtSecret, webApp.storage.UserRepo, webApp.storage.UiStateRepo, webApp.storage.AppSetupRepo, mailer)
 
 	apiRouter := api.NewApi(params.AppName, frontendURL, webApp.storage, webApp.executor, webApp.exporter, authSvc)
 	authRouter := auth.NewAuthRouter(frontendURL, backendURL, authSvc, params.Env == "PROD")

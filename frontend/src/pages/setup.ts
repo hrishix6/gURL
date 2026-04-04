@@ -6,7 +6,6 @@ import {
 	signal,
 	viewChild,
 } from "@angular/core";
-import { Router } from "@angular/router";
 import { CircleX, Key, LucideAngularModule, Mail, User } from "lucide-angular";
 import { getAppConfig } from "@/app.config";
 import { UserAuthService } from "@/services";
@@ -62,7 +61,6 @@ export class FirstTimeSetupPage {
 		viewChild.required<ElementRef<HTMLInputElement>>("email");
 
 	private readonly userAuthSvc = inject(UserAuthService);
-	private readonly router = inject(Router);
 
 	async handleFormSubmission(e: Event) {
 		e.preventDefault();

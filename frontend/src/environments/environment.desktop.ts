@@ -1,4 +1,4 @@
 export const environment = {
-    CONFIG_PATH : "/config.json",
-    origin: "same"
-}
+	CONFIG_PATH: "/config.json",
+	origin: "same",
+};

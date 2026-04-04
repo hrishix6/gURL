@@ -5,10 +5,10 @@ import { CreateCollectionModal } from "./create.collection";
 import { CreateEnvironmentModal } from "./create.env";
 import { CreateRequestModal } from "./create.req";
 import { DeleteConfirmationModal } from "./delete.confirmation";
+import { InviteUsersDialogue } from "./invite.users";
 import { NewCollectionModal } from "./new.collection";
 import { DefaultWorkspaceModal } from "./new.workspace";
 import { RenameCollectionModal } from "./rename.collection";
-import { InviteUsersDialogue } from "./invite.users";
 
 @Component({
 	selector: "gurl-global-modals-host",
@@ -166,16 +166,16 @@ import { InviteUsersDialogue } from "./invite.users";
       }
     </ng-content>`,
 	imports: [
-    CreateEnvironmentModal,
-    CreateCollectionModal,
-    NewCollectionModal,
-    CreateRequestModal,
-    DeleteConfirmationModal,
-    RenameCollectionModal,
-    CopyRequestModal,
-    DefaultWorkspaceModal,
-    InviteUsersDialogue
-],
+		CreateEnvironmentModal,
+		CreateCollectionModal,
+		NewCollectionModal,
+		CreateRequestModal,
+		DeleteConfirmationModal,
+		RenameCollectionModal,
+		CopyRequestModal,
+		DefaultWorkspaceModal,
+		InviteUsersDialogue,
+	],
 })
 export class GlobalModalsHost {
 	protected readonly modalsSvc = inject(GlobalModalsService);

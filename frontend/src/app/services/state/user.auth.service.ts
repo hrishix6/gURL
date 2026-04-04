@@ -1,8 +1,9 @@
 import { computed, Injectable, inject, signal } from "@angular/core";
+import { Router } from "@angular/router";
+import { environment } from "@src/environments/environment";
 import { loadConfig } from "@/app.config";
 import { AlertService, AppService, RestClient } from "@/services";
 import type { LoginRequestDTO, RegisterDTO, UserInfo } from "@/types";
-import { Router } from "@angular/router";
 
 @Injectable({
 	providedIn: "root",
@@ -21,21 +22,27 @@ export class UserAuthService {
 		this.restClient = RestClient.getInstance();
 	}
 
-	async tryLogin(
-		p: LoginRequestDTO,
-	){
-		let loginCode = '';
+	async tryLogin(p: LoginRequestDTO) {
+		let loginCode = "";
 		try {
-			const loginResponse = await this.restClient.authPost<UserInfo>(
-				"login",
-				p,
-			);
+			const loginResponse = await this.restClient.authPost<string>("login", p);
+
+			if (!loginResponse.success) {
+				throw new Error(`error from backend: ${loginResponse.error.message}`);
+			}
+
+			if (environment.env === "dev") {
+				const magicLink = loginResponse.data;
+				window.location.href = magicLink;
+				return;
+			}
+
 			loginCode = "ok_magic_link";
+			this.router.navigate(["/login"], { queryParams: { code: loginCode } });
 		} catch (error) {
 			console.error(error);
-			loginCode = "err_magic_link"
-		} finally {
-			this.router.navigate(["/login"], {queryParams: {code: loginCode}})
+			loginCode = "err_magic_link";
+			this.router.navigate(["/login"], { queryParams: { code: loginCode } });
 		}
 	}
 
@@ -47,9 +54,9 @@ export class UserAuthService {
 			loginCode = "ok_setup";
 		} catch (error) {
 			console.error(error);
-			loginCode = "err_setup"
-		}finally {
-			this.router.navigate(["/login"], {queryParams: {code: loginCode}})
+			loginCode = "err_setup";
+		} finally {
+			this.router.navigate(["/login"], { queryParams: { code: loginCode } });
 		}
 	}
 
@@ -91,13 +98,13 @@ export class UserAuthService {
 	async inviteUser(email: string) {
 		try {
 			const response = await this.restClient.post("admin/invite", {
-				email
+				email,
 			});
-			
-			if(!response.success) {
+
+			if (!response.success) {
 				console.error(response.error.message);
 				this.alertSvc.addAlert("failed to invite user", "error");
-				return
+				return;
 			}
 
 			this.alertSvc.addAlert(`invited user ${email}`, "success");

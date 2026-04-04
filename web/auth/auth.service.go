@@ -28,6 +28,7 @@ var (
 
 type AuthService struct {
 	secret            string
+	mode              string
 	issuer            string
 	audience          string
 	sessionCookieName string
@@ -44,14 +45,22 @@ type GurlJwtClaims struct {
 
 func NewAuthService(
 	appName string,
+	isProd bool,
 	jwtSecret string,
 	userRepo *db.UserRepository,
 	uiRepo *db.UiStateRepository,
 	appSetupRepo *db.AppSetupRepo,
 	mailer *emailx.Mailer,
 ) *AuthService {
+
+	mode := "prod"
+
+	if !isProd {
+		mode = "local"
+	}
 	return &AuthService{
 		secret:            jwtSecret,
+		mode:              mode,
 		issuer:            fmt.Sprintf("%s-jwt-issuer", appName),
 		audience:          fmt.Sprintf("%s-%s", appName, "web-client"),
 		sessionCookieName: "_gurl_session_",
@@ -146,13 +155,13 @@ func (authSvc *AuthService) ValidateMagicLink(ctx context.Context, magicToken st
 	return sessionToken, nil
 }
 
-func (authSvc *AuthService) TryLogin(ctx context.Context, baseURL *url.URL, dto models.LoginRequestDTO) {
+func (authSvc *AuthService) TryLogin(ctx context.Context, baseURL *url.URL, dto models.LoginRequestDTO) string {
 
 	existingUser, err := authSvc.userRepo.FindUserByEmail(ctx, dto.Email)
 
 	if err != nil {
 		log.Printf("could not find user by email %s\n", dto.Email)
-		return
+		return ""
 	}
 
 	maginLinkExpiry := time.Now().Add(internal.MAGIC_LINK_EXPIRY_MINS * time.Minute)
@@ -160,7 +169,7 @@ func (authSvc *AuthService) TryLogin(ctx context.Context, baseURL *url.URL, dto 
 
 	if err != nil {
 		log.Println("could not generate token for magic link")
-		return
+		return ""
 	}
 
 	emailCallBackURL := baseURL.JoinPath("auth", "email.callback")
@@ -173,7 +182,11 @@ func (authSvc *AuthService) TryLogin(ctx context.Context, baseURL *url.URL, dto 
 
 	log.Printf("magic link generated : %s", magicLink)
 
-	go authSvc.mailer.SendMagicLink(existingUser.Email, magicLink)
+	if authSvc.mode == "prod" {
+		go authSvc.mailer.SendMagicLink(existingUser.Email, magicLink)
+	}
+
+	return magicLink
 }
 
 func (authSvc *AuthService) TryRegisterAdmin(ctx context.Context, dto models.RegisterDTO) error {

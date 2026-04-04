@@ -27,7 +27,7 @@ export class GlobalModalsService {
 	}
 
 	private _inviteUserModalOpen = signal<boolean>(false);
-	public inviteUserModalOpen = computed(()=> this._inviteUserModalOpen());
+	public inviteUserModalOpen = computed(() => this._inviteUserModalOpen());
 
 	public openInviteUserModal() {
 		this._inviteUserModalOpen.set(true);

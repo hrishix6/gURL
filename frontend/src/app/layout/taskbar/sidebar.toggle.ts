@@ -14,7 +14,7 @@ import { AppService } from "@/services";
 	template: `
     <!-- this label toggles mobile sidebar -->
     <button
-      class="hidden xl:inline-flex btn btn-square"
+      class="hidden xl:inline-flex btn btn-square btn-sm"
       (click)="appSvc.toggleDesktopSidebar()"
     >
         @if(appSvc.isDesktopSidebarOpen()){
@@ -25,7 +25,7 @@ import { AppService } from "@/services";
     </button>
 
     <button
-      class="xl:hidden btn btn-square drawer-button"
+      class="xl:hidden btn btn-square btn-sm drawer-button"
       (click)="appSvc.toggleMobileSidebar()"
     >
         @if(appSvc.isMobileSidebarOpen()){

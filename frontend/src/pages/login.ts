@@ -4,18 +4,21 @@ import {
 	type ElementRef,
 	HostBinding,
 	inject,
-	OnInit,
 	signal,
 	viewChild,
 } from "@angular/core";
-import { ActivatedRoute, Router } from "@angular/router";
-import { CircleCheck, CircleX, Key, LucideAngularModule, User } from "lucide-angular";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { ActivatedRoute } from "@angular/router";
+import {
+	CircleCheck,
+	CircleX,
+	LucideAngularModule,
+	User,
+} from "lucide-angular";
 import { getAppConfig } from "@/app.config";
+import { LOGIN_CODES_MSGS } from "@/constants";
 import { UserAuthService } from "@/services";
 import type { LoginRequestDTO } from "@/types";
-import { LOGIN_CODES_MSGS } from "@/constants";
-import { takeUntilDestroyed, toSignal } from "@angular/core/rxjs-interop";
-import { map } from "rxjs";
 
 @Component({
 	selector: `gurl-login`,
@@ -51,7 +54,7 @@ import { map } from "rxjs";
 export class LoginPage {
 	protected readonly appConfig = getAppConfig();
 	private readonly userAuthSvc = inject(UserAuthService);
-    private readonly destroyRef = inject(DestroyRef);
+	private readonly destroyRef = inject(DestroyRef);
 
 	private readonly activatedRoute = inject(ActivatedRoute);
 
@@ -60,31 +63,30 @@ export class LoginPage {
 	protected readonly FailedIcon = CircleX;
 
 	protected loginMessage = signal<string | null>(null);
-    protected loginMessageKind = signal<"error" | "success" | null>("success")
+	protected loginMessageKind = signal<"error" | "success" | null>("success");
 
 	@HostBinding("class")
 	def = "h-screen flex flex-col gap-4 items-center justify-center";
 
-    constructor() {
-        this.activatedRoute.queryParamMap
-        .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe({
-            next: (v)=> {
-                const code = v.get("code");
-                if(code) {
-                    const failure = code.startsWith("err");
-                    const message = LOGIN_CODES_MSGS[code]
-                    this.loginMessageKind.set(failure? "error": "success");
-                    this.loginMessage.set(message);
-                }
-            }
-        });
-    }
+	constructor() {
+		this.activatedRoute.queryParamMap
+			.pipe(takeUntilDestroyed(this.destroyRef))
+			.subscribe({
+				next: (v) => {
+					const code = v.get("code");
+					if (code) {
+						const failure = code.startsWith("err");
+						const message = LOGIN_CODES_MSGS[code];
+						this.loginMessageKind.set(failure ? "error" : "success");
+						this.loginMessage.set(message);
+					}
+				},
+			});
+	}
 
 	protected emailRef =
 		viewChild.required<ElementRef<HTMLInputElement>>("email");
 
-    
 	async handleFormSubmission(e: Event) {
 		e.preventDefault();
 
