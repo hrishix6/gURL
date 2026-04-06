@@ -194,6 +194,7 @@ export interface AppConfig {
 	auth_url: string;
 	appVersion: string;
 	setup_required: boolean;
+	demo_enabled: boolean;
 }
 
 export interface InputToken {
@@ -342,4 +343,6 @@ export interface RegisterDTO {
 export interface UserInfo {
 	email: string;
 	isAdmin: boolean;
+	isDemoUser: boolean;
+	sessionStartUnix: number;
 }

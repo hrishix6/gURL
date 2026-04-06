@@ -2,18 +2,19 @@ import { NgClass } from "@angular/common";
 import { Component, HostBinding, inject } from "@angular/core";
 import { LucideAngularModule, SquareTerminal } from "lucide-angular";
 import { getAppConfig } from "@/app.config";
+import { GurlDemoSessionProgress } from "@/common/components/demo.session.progress";
 import { GurlStatusBeacon } from "@/common/components/status.beacon";
-import { AppService } from "@/services";
-import { GurlSidebarToggle } from "../taskbar/sidebar.toggle";
+import { AppService, UserAuthService } from "@/services";
+import { GurlSidebarToggle } from "./sidebar.toggle";
 import { GurlLayoutSwitcher } from "./layout.switcher";
 import { GurlThemeSwitcher } from "./theme.switcher";
 
 @Component({
 	selector: "footer[gurl-footer]",
 	template: `
-    <div class="flex flex-1 items-center gap-2">
+    <div class="flex flex-1 items-center gap-1">
 		@if (mode === "web") {
-				<gurl-status-beacon />
+			<gurl-status-beacon />
 		  }
 		 <button [ngClass]="{
 			'btn btn-sm': true,
@@ -25,6 +26,11 @@ import { GurlThemeSwitcher } from "./theme.switcher";
           <lucide-angular [img]="ConsoleIcon" class="size-4" />
 		  <span>Console</span>
         </button>
+		@if (mode === "web") {
+			@if(!!userAuthSvc.userInfo()?.isDemoUser) {
+				<gurl-demo-session-progress />
+			}
+		}
 		 <div class="flex items-center gap-4 ml-auto">
 				<div gurl-theme-switcher></div>
 		 		<div gurl-sidebar-toggle></div>
@@ -40,6 +46,7 @@ import { GurlThemeSwitcher } from "./theme.switcher";
 		GurlStatusBeacon,
 		GurlSidebarToggle,
 		NgClass,
+		GurlDemoSessionProgress,
 	],
 })
 export class GurlFooter {
@@ -50,4 +57,5 @@ export class GurlFooter {
 
 	protected readonly mode = getAppConfig().mode;
 	protected readonly appSvc = inject(AppService);
+	protected readonly userAuthSvc = inject(UserAuthService);
 }

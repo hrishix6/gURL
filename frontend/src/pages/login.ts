@@ -16,6 +16,7 @@ import {
 	User,
 } from "lucide-angular";
 import { getAppConfig } from "@/app.config";
+import { DemoLoginCaptcha } from "@/common/components/demo.login.captcha";
 import { LOGIN_CODES_MSGS } from "@/constants";
 import { UserAuthService } from "@/services";
 import type { LoginRequestDTO } from "@/types";
@@ -27,29 +28,36 @@ import type { LoginRequestDTO } from "@/types";
             gURL
             <span class="text-sm">{{ appConfig.appVersion }}</span>
         </h2>
-        <form class="flex flex-col gap-4 w-sm" (submit)="handleFormSubmission($event)">
-            @if(loginMessage()){
-               <div class="alert alert-soft alert-{{loginMessageKind()}}">
-                    <lucide-angular [img]="loginMessageKind() == 'error' ? FailedIcon: PassIcon "class="size-4" />
-                     <span>{{loginMessage()}}</span>
-                </div>
-            }
-            <div>
-                <label class="input w-full">
-                <lucide-angular [img]="UserIcon" class="size-4" />
-                <input
-                    type="email"
-                    placeholder="example@email.com"
-                    title="Please fill out this field"
-                    required
-                    #email
-                />
-                </label>
-            </div>
-            <input type="submit" class="btn btn-block btn-primary" value="Login" />
-        </form>
+		<div class="flex flex-col w-sm">
+			<form class="flex flex-col gap-4" (submit)="handleFormSubmission($event)">
+				@if(loginMessage()){
+				<div class="alert alert-soft alert-{{loginMessageKind()}}">
+						<lucide-angular [img]="loginMessageKind() == 'error' ? FailedIcon: PassIcon "class="size-4" />
+						<span>{{loginMessage()}}</span>
+					</div>
+				}
+				<div>
+					<label class="input w-full">
+					<lucide-angular [img]="UserIcon" class="size-4" />
+					<input
+						type="email"
+						placeholder="example@email.com"
+						title="Please fill out this field"
+						required
+						#email
+					/>
+					</label>
+				</div>
+				<input type="submit" class="btn btn-block btn-primary" value="Login" />
+				
+				
+        	</form>
+			@if(appConfig.demo_enabled){
+				<gurl-demo-login />
+			}
+		</div>
     `,
-	imports: [LucideAngularModule],
+	imports: [LucideAngularModule, DemoLoginCaptcha],
 })
 export class LoginPage {
 	protected readonly appConfig = getAppConfig();

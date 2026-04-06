@@ -3,5 +3,7 @@
     "mode": "desktop",
 	"api_url": "",
 	"auth_url": "",
-	"appVersion": "v0.8.0"
+	"appVersion": "v0.8.0",
+	"demo_enabled": false,
+	"setup_required": false
 }

@@ -52,6 +52,7 @@
 
 @plugin "daisyui" {
   themes: mountain --default --prefersdark, water, lavender, forest, dracula, night;
+  exclude: rootscrollgutter;
 }
 
 @plugin "daisyui/theme" {

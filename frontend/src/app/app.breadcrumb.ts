@@ -7,6 +7,7 @@ import {
 } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import {
+	ChevronRightIcon,
 	Container,
 	Layers,
 	LucideAngularModule,
@@ -32,27 +33,30 @@ enum CrumbType {
 	selector: "div[gurl-breadcrumbs]",
 	template: `
         @if (crumbs().length > 0) {
-            <ul>
+            <ul class="flex items-center gap-2">
                 @for (crumb of crumbs(); track $index) {
-                    <li class="text-lg">
-                        <a class="hover:decoration-0 hover:cursor-default">
+                    <li class="text-sm">
+                        <a class="flex items-center gap-2 hover:decoration-0 hover:cursor-default">
                             @switch (crumb.type) {
                                 @case ("Collection") {
-                                    <lucide-angular [img]="CollectionsIcon" class="size-4 mt-1" />
+                                    <lucide-angular [img]="CollectionsIcon" class="size-4" />
                                 }
                                 @case ("Environment") {
-                                    <lucide-angular [img]="EnvironmentIcon" class="size-4 mt-1" />
+                                    <lucide-angular [img]="EnvironmentIcon" class="size-4" />
                                 }
                                 @case ("Request") {
-                                    <lucide-angular [img]="RequestsIcon" class="size-4 mt-1" />
+                                    <lucide-angular [img]="RequestsIcon" class="size-4" />
                                 }
 								@case ("Request_Example") {
-									<lucide-angular [img]="ExampleIcon" class="size-4 mt-1" />
+									<lucide-angular [img]="ExampleIcon" class="size-4" />
 								}
                             }
-                            <span>{{crumb.name}}</span>
+                            <p class="font-semibold">{{crumb.name}}</p>
                         </a>
                     </li>
+					@if($index < (crumbs().length - 1)){
+						<lucide-angular [img]="ChevronRightIcon" class="size-4 text-base-content/50" />
+					}
                 }
             </ul>
         }
@@ -61,7 +65,7 @@ enum CrumbType {
 })
 export class Breadcrumbs {
 	@HostBinding("class")
-	readonly hostClass = "breadcrumbs overflow-x-auto whitespace-nowrap";
+	readonly hostClass = "overflow-x-auto whitespace-nowrap";
 
 	constructor() {
 		this.tabSvc.activeTabChanges$
@@ -110,6 +114,7 @@ export class Breadcrumbs {
 	protected readonly CollectionsIcon = Layers;
 	protected readonly EnvironmentIcon = Container;
 	protected readonly RequestsIcon = RadioTower;
+	protected readonly ChevronRightIcon = ChevronRightIcon;
 	protected readonly ExampleIcon = ScrollText;
 
 	protected loadCrumbs(tabId: string) {

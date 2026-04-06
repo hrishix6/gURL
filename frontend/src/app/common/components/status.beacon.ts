@@ -12,11 +12,11 @@ import { RestClient } from "@/services";
 	template: `
         @switch (status()) {
             @case ("on") {
-					<div class="status status-success"></div>
+					<div class="status status-success animate-pulse"></div>
 					<span class="text-xs text-success font-semibold">Connected</span>
             }
             @case("off") {
-					<div class="status status-error"></div>
+					<div class="status status-error animate-ping"></div>
 					<span class="text-xs text-error font-semibold">Disconnected</span>
             }
         }
@@ -50,7 +50,10 @@ export class GurlStatusBeacon implements OnInit, OnDestroy {
 
 	private async healthCheck() {
 		try {
-			await this.restClient.get("health");
+			const response = await this.restClient.get("health");
+			if (!response.success) {
+				throw new Error("health check failed");
+			}
 			this.status.set("on");
 		} catch (error) {
 			console.error(error);

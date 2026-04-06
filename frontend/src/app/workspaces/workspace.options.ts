@@ -35,7 +35,7 @@ import { AppService } from "@/services";
 							(click)="handleWorkspaceSwitch(item.id)"
 							>
 							<lucide-angular [img]="WorkspaceIcon" class="size-4"  /> 
-							{{ item.displayName }}
+							<span class="truncate">{{ item.displayName }}</span>
 							@if(item.id == appSvc.activeWorkSpace().id) {
 							<lucide-angular [img]="CheckedIcon" class="size-4 ml-auto" />
 							}
@@ -45,13 +45,6 @@ import { AppService } from "@/services";
 			  	<li class="menu-title">
 					Options (TODO)
 				</li>
-				<!-- todo -->
-                <!-- <li class="my-0.5 menu-disabled">
-					<a href="#" (click)="handleOperation('rename')" role="link" aria-disabled="true">
-						<lucide-angular [img]="RenameIcon" class="size-4"  /> 
-						Rename 
-					</a>
-				</li> -->
 				<li class="my-0.5 menu-disabled">
 					<a href="#" (click)="handleOperation('export')" role="link" aria-disabled="true">
 						<lucide-angular [img]="ExportIcon" class="size-4"  /> 

@@ -197,7 +197,6 @@ export const BULK_EDIT_COOKIES_INSTRUCTION =
 
 export const DEFAULT_REQ_TAB: ReqTabId = "req_headers";
 export const DEFAULT_RES_TAB: ResTabId = "res_body";
-export const DEFAULT_COLLECTION_ID = "gurl_default_collection";
 
 export const NO_ENV_ID = "no_env";
 export const ENV_TOKEN_REGEX = /({{.*?}})/g;
@@ -213,10 +212,12 @@ export const COOKIE_PLACEHOLDER = "cookie_default";
 export const MULTIPART_ID_PLACEHOLDER = "mid_default";
 export const URLENCODED_ID_PLACEHOLDER = "uid_default";
 export const ENV_ID_PLACEHOLDER = "eid_default";
-export const DB_NAME = "gurl-db";
-export const DB_VERSION = 4;
-export const ROOT_USER = "gurl-default-user";
+
 export const DL_LIMIT_BYTES = 300_000_000;
+export const CF_TURNSTILE_SITE_KEY = "0x4AAAAAAC1FmrUCFKoOASfz";
+export const CF_TURNSTILE_SCRIPT_SRC =
+	"https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+export const DEMO_USER_SESSION_MAX_MINS = 5;
 
 export const LOGIN_CODES_MSGS: Record<string, string> = {
 	err_link_invalid: "Magic Link is invalid, try requesting a new one.",
@@ -225,4 +226,5 @@ export const LOGIN_CODES_MSGS: Record<string, string> = {
 	err_setup: "Setup was not successful",
 	ok_magic_link: "If account exists you will receive magic link in your inbox.",
 	err_magic_link: "Failed to send magic link, try again later",
+	err_demo_session_fail: "Failed to initialize demo session at this time.",
 };

@@ -9,7 +9,6 @@ import {
 	viewChild,
 } from "@angular/core";
 import { LucideAngularModule, X } from "lucide-angular";
-import { DEFAULT_COLLECTION_ID } from "@/constants";
 import { AppService, FormService } from "@/services";
 
 @Component({
@@ -36,7 +35,7 @@ import { AppService, FormService } from "@/services";
 			#reqNameInputEl
           />
           <select class="select w-full select-ghost bg-base-300 select-primary" (change)="onCollectionChange($event)">
-			<option [value]="defaultCollectionId" [selected]="selectedCollectionId() === defaultCollectionId">Select Collection</option>
+			<option [value]="defaultCollectionId" [selected]="selectedCollectionId()== defaultCollectionId">None</option>
             @for (collection of appSvc.collections(); track collection.id) {
             <option [value]="collection.id" [selected]="selectedCollectionId() === collection.id">
               {{ collection.name }}
@@ -74,7 +73,7 @@ export class SaveRequestModal implements AfterViewInit {
 		this.reqNameInputEl()?.nativeElement.focus();
 	}
 
-	protected readonly defaultCollectionId = DEFAULT_COLLECTION_ID;
+	protected readonly defaultCollectionId = "none";
 
 	protected readonly CancelIcon = X;
 	private readonly reqNameInputEl =
@@ -88,7 +87,8 @@ export class SaveRequestModal implements AfterViewInit {
 	);
 
 	protected selectedCollectionId = signal<string>(
-		this.formSvc.draftParentData().parentCollectionId || DEFAULT_COLLECTION_ID,
+		this.formSvc.draftParentData().parentCollectionId ||
+			this.defaultCollectionId,
 	);
 
 	protected error = signal<boolean>(false);

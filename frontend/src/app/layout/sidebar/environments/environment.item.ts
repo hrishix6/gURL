@@ -1,3 +1,4 @@
+import { NgClass } from "@angular/common";
 import { Component, HostBinding, inject, input } from "@angular/core";
 import type { models } from "@wailsjs/go/models";
 import {
@@ -8,7 +9,13 @@ import {
 	LucideAngularModule,
 	Trash2,
 } from "lucide-angular";
-import { AppService, GlobalModalsService, TabsService } from "@/services";
+import { getAppConfig } from "@/app.config";
+import {
+	AppService,
+	GlobalModalsService,
+	TabsService,
+	UserAuthService,
+} from "@/services";
 
 @Component({
 	selector: `div[gurl-environment-item]`,
@@ -29,33 +36,71 @@ import { AppService, GlobalModalsService, TabsService } from "@/services";
         <button tabindex="0" class="btn btn-sm btn-square btn-ghost">
           <lucide-angular [img]="EnvironmentOptionsIcon" class="size-4" />
         </button>
-        <ul
-          tabindex="-1"
-          class="dropdown-content menu bg-base-100 rounded-box z-50 w-max shadow-sm"
-        >
-			<li>
-              <a href="#" role="link" (click)="copyEnvironment()">
-				    <lucide-angular [img]="CopyIcon" class="size-4" />	
-			  	    Copy
-              </a>
-            </li>
-            <li>
-              <a href="#" role="link" (click)="toggleDeleteModal()">
-				      <lucide-angular [img]="DeleteIcon" class="size-4" />	
-			  	    Delete
-              </a>
-            </li>
-			<li>
-				<button role="link" (click)="toggleExportEnv()">
-					<lucide-angular [img]="ExportIcon" class="size-4" />
-					Export
-				</button>
-            </li>
-        </ul>
+		@switch (config.mode) {
+			@case ("web") {
+				  <ul
+			tabindex="-1"
+			class="dropdown-content menu bg-base-100 rounded-box z-50 w-max shadow-sm"
+			>
+				<li
+				[ngClass]="{
+					'menu-disabled': !!userAuthSvc.userInfo()?.isDemoUser,
+				}"
+				>
+				<a role="link" [ariaDisabled]="!!userAuthSvc.userInfo()?.isDemoUser"  (click)="copyEnvironment()">
+						<lucide-angular [img]="CopyIcon" class="size-4" />	
+						Copy
+				</a>
+				</li>
+				<li 
+				[ngClass]="{
+					'menu-disabled': !!userAuthSvc.userInfo()?.isDemoUser,
+				}"
+				>
+				<a role="link" [ariaDisabled]="!!userAuthSvc.userInfo()?.isDemoUser"  (click)="toggleDeleteModal()">
+						<lucide-angular [img]="DeleteIcon" class="size-4" />	
+						Delete
+				</a>
+				</li>
+				<li>
+					<button role="link" (click)="toggleExportEnv()">
+						<lucide-angular [img]="ExportIcon" class="size-4" />
+						Export
+					</button>
+				</li>
+			</ul>
+			}
+			@case ("desktop") {
+				  <ul
+					tabindex="-1"
+					class="dropdown-content menu bg-base-100 rounded-box z-50 w-max shadow-sm"
+					>
+						<li>
+						<a href="#" role="link" (click)="copyEnvironment()">
+								<lucide-angular [img]="CopyIcon" class="size-4" />	
+								Copy
+						</a>
+						</li>
+						<li>
+						<a href="#" role="link" (click)="toggleDeleteModal()">
+								<lucide-angular [img]="DeleteIcon" class="size-4" />	
+								Delete
+						</a>
+						</li>
+						<li>
+							<button role="link" (click)="toggleExportEnv()">
+								<lucide-angular [img]="ExportIcon" class="size-4" />
+								Export
+							</button>
+						</li>
+					</ul>
+			}
+		}
+      
       </div>
     </div>
   `,
-	imports: [LucideAngularModule],
+	imports: [LucideAngularModule, NgClass],
 })
 export class GurlEnvironmentItem {
 	@HostBinding("class")
@@ -64,6 +109,8 @@ export class GurlEnvironmentItem {
 	data = input.required<models.EnvironmentDTO>();
 
 	protected readonly EnvironmentIcon = Container;
+	protected readonly config = getAppConfig();
+	protected readonly userAuthSvc = inject(UserAuthService);
 	protected readonly EnvironmentOptionsIcon = EllipsisVertical;
 	protected readonly ExportIcon = FileDown;
 	protected readonly DeleteIcon = Trash2;

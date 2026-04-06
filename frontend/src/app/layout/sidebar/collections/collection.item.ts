@@ -20,8 +20,8 @@ import {
 	SquarePen,
 	Trash2,
 } from "lucide-angular";
-import { DEFAULT_COLLECTION_ID } from "@/constants";
-import { AppService, GlobalModalsService } from "@/services";
+import { getAppConfig } from "@/app.config";
+import { AppService, GlobalModalsService, UserAuthService } from "@/services";
 import { GurlRequestItem } from "./collection.request.item";
 
 @Component({
@@ -31,11 +31,7 @@ import { GurlRequestItem } from "./collection.request.item";
       <div
         class="flex flex-1 items-center gap-2"
       >
-        <div
-          [ngClass]="{
-            'text-primary': data().id !== defaultCollectionID
-          }"
-        >
+        <div>
           <lucide-angular [img]="CollectionsIcon" class="size-4" />
         </div>
         <p class="flex-1 text-sm truncate">{{ data().name }}</p>
@@ -48,57 +44,86 @@ import { GurlRequestItem } from "./collection.request.item";
        	 }
 	  </button>
       <div class="dropdown dropdown-end">
-        <button tabindex="0" class="btn btn-sm btn-square btn-ghost" [disabled]="data().id === defaultCollectionID && requestItems().length == 0">
+        <button tabindex="0" class="btn btn-sm btn-square btn-ghost">
           <lucide-angular [img]="CollectionOptionsIcon" class="size-4" />
         </button>
-        <ul
+		@switch (config.mode) {
+			@case ("web") {
+				<ul
+				tabindex="-1"
+				class="dropdown-content menu bg-base-100 rounded-box z-50 w-max shadow-sm"
+				>
+
+				<li [ngClass]="{
+					'menu-disabled': !!userAuthSvc.userInfo()?.isDemoUser,
+				}"
+				
+				>
+					<a role="link" [ariaDisabled]="!!userAuthSvc.userInfo()?.isDemoUser" (click)="toggleRenameModal()"> 
+							<lucide-angular [img]="RenameIcon" class="size-4" />
+						Rename 
+			</a>
+					</li>
+			@if(requestItems().length){
+						<li>
+							<a role="link" (click)="toggleClearModal()">
+								<lucide-angular [img]="ClearIcon" class="size-4" />
+								Clear
+			</a>
+						</li>
+						<li
+				>
+							<a role="link" (click)="toggleExportDialogue()">
+								<lucide-angular [img]="ExportIcon" class="size-4" />
+								Export
+			</a>
+						</li>
+			}
+					<li [ngClass]="{
+					'menu-disabled': !!userAuthSvc.userInfo()?.isDemoUser,
+				}">
+					<a role="link" [ariaDisabled]="!!userAuthSvc.userInfo()?.isDemoUser" (click)="toggleDeleteModal()">
+						<lucide-angular [img]="DeleteIcon" class="size-4" />	
+						Delete
+			</a>
+					</li>
+				</ul>
+			}
+			@case ("desktop") {
+				<ul
           tabindex="-1"
           class="dropdown-content menu bg-base-100 rounded-box z-50 w-max shadow-sm"
         >
-          @if(data().id === defaultCollectionID) {
-           	<li>
-              <button role="link" (click)="toggleClearModal()">
-				<lucide-angular [img]="ClearIcon" class="size-4" />
-				Clear
-			</button>
-            </li>
-			<li>
-              <button role="link" (click)="toggleExportDialogue()">
-				<lucide-angular [img]="ExportIcon" class="size-4" />
-				Export
-			</button>
-            </li>
-          } 
-          @else {
-             <li class="my-0.5">
-              <button role="link" (click)="toggleRenameModal()"> 
-					<lucide-angular [img]="RenameIcon" class="size-4" />
-				Rename 
-			 </button>
-            </li>
+
+					<li class="my-0.5">
+					<button role="link" (click)="toggleRenameModal()"> 
+							<lucide-angular [img]="RenameIcon" class="size-4" />
+						Rename 
+					</button>
+					</li>
 			@if(requestItems().length){
-				<li>
-					
-              		<button role="link" (click)="toggleClearModal()">
-						<lucide-angular [img]="ClearIcon" class="size-4" />
-						Clear
+						<li>
+							<button role="link" (click)="toggleClearModal()">
+								<lucide-angular [img]="ClearIcon" class="size-4" />
+								Clear
+							</button>
+						</li>
+						<li>
+							<button role="link" (click)="toggleExportDialogue()">
+								<lucide-angular [img]="ExportIcon" class="size-4" />
+								Export
+							</button>
+						</li>
+					}
+					<li>
+					<button role="link" (click)="toggleDeleteModal()">
+						<lucide-angular [img]="DeleteIcon" class="size-4" />	
+						Delete
 					</button>
-            	</li>
-				<li>
-					<button role="link" (click)="toggleExportDialogue()">
-						<lucide-angular [img]="ExportIcon" class="size-4" />
-						Export
-					</button>
-            	</li>
+					</li>
+				</ul>
 			}
-            <li>
-              <button role="link" (click)="toggleDeleteModal()">
-				<lucide-angular [img]="DeleteIcon" class="size-4" />	
-			  	Delete
-			 </button>
-            </li>
-            }
-        </ul>
+ 		}
       </div>
     </div>
     @if(isOpen()) {
@@ -123,6 +148,8 @@ export class GurlCollectionItem {
 	data = input.required<models.CollectionDTO>();
 
 	protected readonly appSvc = inject(AppService);
+	protected readonly config = getAppConfig();
+	protected readonly userAuthSvc = inject(UserAuthService);
 	protected readonly modalsSvc = inject(GlobalModalsService);
 	protected readonly CollectionsIcon = Layers;
 	protected readonly CollectionOptionsIcon = EllipsisVertical;
@@ -133,7 +160,6 @@ export class GurlCollectionItem {
 	protected readonly ClearIcon = Eraser;
 	protected readonly RenameIcon = SquarePen;
 	protected readonly DeleteIcon = Trash2;
-	protected readonly defaultCollectionID = DEFAULT_COLLECTION_ID;
 
 	protected toggleRenameModal() {
 		const activeEl = document.activeElement as HTMLElement;

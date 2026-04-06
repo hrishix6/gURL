@@ -14,11 +14,11 @@ import { GurlDropdown } from "./common/components";
 import { Alert } from "./common/components/alert";
 import { GurlFooter } from "./layout/footer/footer";
 import { Navbar } from "./layout/navbar/navbar";
-import { DesktopSidebar } from "./layout/sidebar/desktop.sidebar";
-import { MobileSidebar } from "./layout/sidebar/mobile.sidebar";
 import { Taskbar } from "./layout/taskbar/task.bar";
 import { GlobalModalsHost } from "./modals/global.modals.host";
 import { TabsContainer } from "./tabs/tabs.container";
+import { Sidebar } from "./layout/sidebar/sidebar";
+
 
 @Component({
 	selector: "app",
@@ -40,7 +40,7 @@ import { TabsContainer } from "./tabs/tabs.container";
               @if(tabsSvc.tabCount()){
                   @if(appSvc.isDesktopSidebarOpen()){
                       <gurl-taskbar [variant]="'desktop'" />
-                      <aside gurl-desktop-sidebar></aside>
+                      <aside gurl-sidebar [mode]="'desktop'"></aside>
                   }
                }
                   <!-- Main view -->
@@ -87,9 +87,9 @@ import { TabsContainer } from "./tabs/tabs.container";
     <!-- This content is rendered inside mobile sidebar -->
     <div class="drawer-side xl:hidden">
       <label class="drawer-overlay" (click)="appSvc.toggleMobileSidebar()"></label>
-      <div class="min-h-full flex flex-1 overflow-hidden">
+      <div class="min-h-full flex flex-1">
         <gurl-taskbar [variant]="'mobile'" />
-        <aside gurl-mobile-sidebar></aside>    
+         <aside gurl-sidebar [mode]="'mobile'"></aside>
       </div>
     </div>
     <!-- Global modals -->
@@ -103,20 +103,19 @@ import { TabsContainer } from "./tabs/tabs.container";
      </div>
   `,
 	imports: [
-		LucideAngularModule,
-		GlobalSpinner,
-		GurlFooter,
-		DesktopSidebar,
-		MobileSidebar,
-		TabsContainer,
-		AppHome,
-		GurlDropdown,
-		Taskbar,
-		Breadcrumbs,
-		GlobalModalsHost,
-		Alert,
-		Navbar,
-	],
+    LucideAngularModule,
+    GlobalSpinner,
+    GurlFooter,
+    TabsContainer,
+    AppHome,
+    GurlDropdown,
+    Taskbar,
+    Breadcrumbs,
+    GlobalModalsHost,
+    Alert,
+    Navbar,
+    Sidebar
+],
 })
 export class App implements OnInit {
 	@HostBinding("class")

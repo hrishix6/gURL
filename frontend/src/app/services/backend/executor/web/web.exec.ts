@@ -44,7 +44,7 @@ export class WebHttpExecutor implements HttpExecutor {
 			throw new Error("failed to retrive saved response src");
 		}
 
-		if (result.data) {
+		if (!result.data) {
 			throw new Error("received invalid response src from backend");
 		}
 

@@ -3,7 +3,7 @@
 	"version": "0.6.0",
 	"scripts": {
 		"ng": "ng",
-		"start": "ng serve",
+		"start": "ng serve --configuration development",
 		"web:start": "ng serve --configuration web-dev",
 		"build": "ng build",
 		"web-dev-build": "ng build --configuration web-dev",
