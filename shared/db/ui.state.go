@@ -10,7 +10,7 @@ import (
 
 type UIState struct {
 	BaseEntity
-	IsSidebarOpen          bool   `gorm:"column:sidebarOpen;default:false"`
+	IsSidebarOpen          bool   `gorm:"column:sidebarOpen;default:true"`
 	AlwaysDiscardDrafts    bool   `gorm:"column:alwaysDiscardDrafts;default:false"`
 	AlwaysDiscardEnvDrafts bool   `gorm:"column:alwaysDiscardEnvDrafts;default:false"`
 	Layout                 string `gorm:"column:layout;default:r"`
