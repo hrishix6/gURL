@@ -10,6 +10,10 @@ type RegisterDTO struct {
 	Email string `json:"email"`
 }
 
+type DemoSessionDTO struct {
+	CFToken string `json:"token"`
+}
+
 type ReqMetadata struct {
 	Timestamp time.Time `json:"timestamp,omitempty"`
 	RequestId string    `json:"request_id,omitempty"`
@@ -33,6 +37,8 @@ type ApiErrorResponse struct {
 }
 
 type UserInfo struct {
-	Email   string `json:"email"`
-	IsAdmin bool   `json:"isAdmin"`
+	Email      string `json:"email"`
+	IsAdmin    bool   `json:"isAdmin"`
+	IsDemoUser bool   `json:"isDemoUser"`
+	IssuedAt   int64  `json:"sessionStartUnix"`
 }

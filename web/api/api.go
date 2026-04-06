@@ -1,16 +1,19 @@
 package api
 
 import (
+	"fmt"
 	"gurl/shared/utils"
 	"gurl/web/auth"
 	"gurl/web/executor"
 	"gurl/web/exporter"
+	"gurl/web/internal"
 	"gurl/web/internal/httpx"
 	"gurl/web/internal/models"
 	"gurl/web/storage"
 	"log"
 	"net/http"
 	"net/url"
+	"strings"
 )
 
 type Api struct {
@@ -45,6 +48,26 @@ func NewApi(appName string, domainURL string, store *storage.WebStorage,
 	}
 }
 
+func (api *Api) ProtectFromDemoUser(next http.HandlerFunc) http.HandlerFunc {
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		userId := utils.UserIdFromContext(r.Context())
+		isDemoUser := strings.HasPrefix(userId, internal.DEMO_USER_ID_PREFIX)
+		if isDemoUser {
+			pattern := fmt.Sprintf("%s %s", r.Method, r.URL.Path)
+			log.Printf("Demo user %s  denied%s\n", userId, pattern)
+
+			api.NoEntry(w, api.WrapErrorResponse(r, models.RequestError{
+				Message: "not allowed",
+			}))
+
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	}
+}
+
 func (api *Api) ProtectedRoute(next http.Handler) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -60,7 +83,7 @@ func (api *Api) ProtectedRoute(next http.Handler) http.Handler {
 			return
 		}
 
-		userid, err := api.authSvc.ParseToken(sessionCookie.Value)
+		claims, err := api.authSvc.ParseToken(sessionCookie.Value)
 
 		if err != nil {
 			api.WhoAreYou(w, api.WrapErrorResponse(r, models.RequestError{
@@ -71,7 +94,7 @@ func (api *Api) ProtectedRoute(next http.Handler) http.Handler {
 			return
 		}
 
-		r = r.WithContext(utils.ContextWithUserId(r.Context(), userid))
+		r = r.WithContext(utils.ContextWithUserId(r.Context(), claims.UserId))
 
 		next.ServeHTTP(w, r)
 	})
@@ -98,17 +121,17 @@ func (api *Api) Routes() http.Handler {
 
 	//workspaces
 	apiMux.Get("/workspaces", api.GetAllWorkspaces)
-	apiMux.Post("/workspaces", api.CreateWorkspace)
+	apiMux.Post("/workspaces", api.ProtectFromDemoUser(api.CreateWorkspace))
 	apiMux.Get("/workspaces/{id}", api.GetWorkspaceById)
 	apiMux.Patch("/workspaces/{id}", api.UpdateWorkspace)
 
 	//collections
 	apiMux.Get("/collections", api.GetAllCollections)
-	apiMux.Post("/collections", api.CreateCollection)
-	apiMux.Delete("/collections/{id}", api.DeleteCollection)
+	apiMux.Post("/collections", api.ProtectFromDemoUser(api.CreateCollection))
+	apiMux.Delete("/collections/{id}", api.ProtectFromDemoUser(api.DeleteCollection))
 	apiMux.Post("/collections/{id}/clear", api.ClearCollection)
 	apiMux.Delete("/collections/{id}/drafts", api.SoftDeleteReqDraftsUnderCollection)
-	apiMux.Post("/collections/{id}/rename", api.RenameCollection)
+	apiMux.Post("/collections/{id}/rename", api.ProtectFromDemoUser(api.RenameCollection))
 
 	//reqs
 	apiMux.Get("/reqs", api.GetRequests)
@@ -133,9 +156,9 @@ func (api *Api) Routes() http.Handler {
 
 	//env
 	apiMux.Get("/envs", api.GetEnvironments)
-	apiMux.Post("/envs", api.CreateEnvironment)
-	apiMux.Post("/envs/{id}", api.CopyEnvironment)
-	apiMux.Delete("/envs/{id}", api.DeleteEnvironment)
+	apiMux.Post("/envs", api.ProtectFromDemoUser(api.CreateEnvironment))
+	apiMux.Post("/envs/{id}", api.ProtectFromDemoUser(api.CopyEnvironment))
+	apiMux.Delete("/envs/{id}", api.ProtectFromDemoUser(api.DeleteEnvironment))
 	apiMux.Delete("/envs/{id}/drafts", api.DeleteEnvDraftsUnderEnv)
 
 	//env-drafts
@@ -155,8 +178,8 @@ func (api *Api) Routes() http.Handler {
 	apiMux.Post("/exec/tmp/download", api.DownloadTempFile)
 
 	//import-export
-	apiMux.Post("/import/env", api.ImportEnvironment)
-	apiMux.Post("/import/collection", api.ImportCollection)
+	apiMux.Post("/import/env", api.ProtectFromDemoUser(api.ImportEnvironment))
+	apiMux.Post("/import/collection", api.ProtectFromDemoUser(api.ImportCollection))
 	apiMux.Get("/export/env/{id}", api.DownloadEnvironmentExport)
 	apiMux.Get("/export/collection/{id}", api.DownloadCollectionExport)
 

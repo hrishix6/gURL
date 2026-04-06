@@ -11,10 +11,11 @@ import (
 
 type AppConfigController struct {
 	httpx.BaseController
-	storage     *storage.WebStorage
-	appVersion  string
-	apiBaseUrl  string
-	authBaseUrl string
+	storage          *storage.WebStorage
+	appVersion       string
+	apiBaseUrl       string
+	authBaseUrl      string
+	enableDemoLogins bool
 }
 
 func NewAppConfigController(
@@ -22,12 +23,14 @@ func NewAppConfigController(
 	apiBaseUrl string,
 	authBaseUrl string,
 	storage *storage.WebStorage,
+	enbleDemoLogins bool,
 ) *AppConfigController {
 	return &AppConfigController{
-		storage:     storage,
-		appVersion:  appVersion,
-		apiBaseUrl:  apiBaseUrl,
-		authBaseUrl: authBaseUrl,
+		storage:          storage,
+		appVersion:       appVersion,
+		apiBaseUrl:       apiBaseUrl,
+		authBaseUrl:      authBaseUrl,
+		enableDemoLogins: enbleDemoLogins,
 	}
 }
 
@@ -52,6 +55,7 @@ func (acc *AppConfigController) GetAppConfig(w http.ResponseWriter, r *http.Requ
 		AuthBaseURL:   acc.authBaseUrl,
 		AppVersion:    acc.appVersion,
 		SetupRequired: !appSetup.AdminUserConfigured,
+		DemoEnabled:   acc.enableDemoLogins,
 	}
 
 	acc.Ok(w, gurlClientConfig)

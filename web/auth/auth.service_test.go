@@ -13,7 +13,7 @@ var wantUserId = "user-123"
 
 func TestMain(m *testing.M) {
 
-	authSvc = NewAuthService("gurl", false, "j3zfJOXhLrVYpxNbtxwn/NTlbOrKp6csk63bkNZu8ik=", nil, nil, nil, nil)
+	authSvc = NewAuthService("gurl", false, "j3zfJOXhLrVYpxNbtxwn/NTlbOrKp6csk63bkNZu8ik=", "", nil, nil)
 
 	exitVal := m.Run()
 
@@ -36,13 +36,13 @@ func TestParsingToken(t *testing.T) {
 		t.Errorf("expected token generation to succeed: %v", err)
 	}
 
-	userId, err := authSvc.ParseToken(token)
+	cl, err := authSvc.ParseToken(token)
 
 	if err != nil {
 		t.Errorf("expected token generation to succeed: %v", err)
 	}
 
-	if userId != wantUserId {
+	if cl.UserId != wantUserId {
 		t.Error("expected claims to have valid userid")
 	}
 }

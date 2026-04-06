@@ -3,16 +3,17 @@ package auth
 import (
 	"context"
 	"fmt"
-	"gurl/shared/db"
 	internalModels "gurl/shared/models"
 	"gurl/shared/nanoid"
 	"gurl/shared/utils"
 	"gurl/web/internal"
 	"gurl/web/internal/emailx"
 	"gurl/web/internal/models"
+	"gurl/web/storage"
 	"log"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/go-jose/go-jose/v4"
@@ -32,10 +33,10 @@ type AuthService struct {
 	issuer            string
 	audience          string
 	sessionCookieName string
-	userRepo          *db.UserRepository
-	uiRepo            *db.UiStateRepository
-	appSetupReo       *db.AppSetupRepo
+	csrfCookieName    string
+	storage           *storage.WebStorage
 	mailer            *emailx.Mailer
+	cfTurnstileSecret string
 }
 
 type GurlJwtClaims struct {
@@ -47,9 +48,8 @@ func NewAuthService(
 	appName string,
 	isProd bool,
 	jwtSecret string,
-	userRepo *db.UserRepository,
-	uiRepo *db.UiStateRepository,
-	appSetupRepo *db.AppSetupRepo,
+	cfTurnstileSecret string,
+	storage *storage.WebStorage,
 	mailer *emailx.Mailer,
 ) *AuthService {
 
@@ -64,11 +64,33 @@ func NewAuthService(
 		issuer:            fmt.Sprintf("%s-jwt-issuer", appName),
 		audience:          fmt.Sprintf("%s-%s", appName, "web-client"),
 		sessionCookieName: "_gurl_session_",
-		userRepo:          userRepo,
-		uiRepo:            uiRepo,
-		appSetupReo:       appSetupRepo,
+		csrfCookieName:    "_gurl_csrf_",
+		storage:           storage,
 		mailer:            mailer,
+		cfTurnstileSecret: cfTurnstileSecret,
 	}
+}
+
+func (authSvc *AuthService) VerifyCFTurnstileToken(ctx context.Context, token string) error {
+	f := url.Values{}
+	f.Add("secret", authSvc.cfTurnstileSecret)
+	f.Add("response", token)
+
+	req, err := http.NewRequestWithContext(ctx, "POST", internal.CF_TURNSTILE_CHALLENGE_URL, strings.NewReader(f.Encode()))
+
+	if err != nil {
+		log.Printf("cf verify error : %v\n", err)
+		return err
+	}
+
+	req.Header.Set("content-type", "application/x-www-form-urlencoded")
+	res, err := http.DefaultClient.Do(req)
+
+	if !(res.StatusCode >= 200 && res.StatusCode <= 299) {
+		return fmt.Errorf("cf verification failed")
+	}
+
+	return nil
 }
 
 func (authSvc *AuthService) generateToken(userId string, expiry time.Time) (string, error) {
@@ -100,18 +122,20 @@ func (authSvc *AuthService) generateToken(userId string, expiry time.Time) (stri
 	return raw, nil
 }
 
-func (authSvc *AuthService) ParseToken(token string) (string, error) {
+func (authSvc *AuthService) ParseToken(token string) (*GurlJwtClaims, error) {
 
 	parsed, err := jwt.ParseSigned(token, []jose.SignatureAlgorithm{jose.HS256})
 
 	if err != nil {
-		return "", err
+		log.Printf("jwt_parse_err: %v\n", err)
+		return nil, err
 	}
 
 	cl := GurlJwtClaims{}
 
 	if err := parsed.Claims([]byte(authSvc.secret), &cl); err != nil {
-		return "", err
+		log.Printf("jwt_parse_err: %v\n", err)
+		return nil, err
 	}
 
 	if err := cl.Validate(jwt.Expected{
@@ -121,25 +145,98 @@ func (authSvc *AuthService) ParseToken(token string) (string, error) {
 			authSvc.audience,
 		},
 	}); err != nil {
-		return "", err
+		log.Printf("jwt_parse_err: %v\n", err)
+		return nil, err
 	}
 
 	if cl.UserId == "" {
-		return "", fmt.Errorf("user_id is null in claims")
+		log.Printf("userid is null in jwt \n")
+		return nil, fmt.Errorf("user_id is null in claims")
 	}
 
-	return cl.UserId, nil
+	return &cl, nil
 }
 
-func (authSvc *AuthService) ValidateMagicLink(ctx context.Context, magicToken string) (string, error) {
+func (authSvc *AuthService) DemoUserLogin(ctx context.Context) (string, error) {
+	id := nanoid.Must()
 
-	userId, err := authSvc.ParseToken(magicToken)
+	newDemoUserId := fmt.Sprintf("%s_%s", internal.DEMO_USER_ID_PREFIX, id)
+	newDemoUserWorkspaceId := fmt.Sprintf("%s_%s", internal.DEMO_USER_WORKSPACE_PREFIX, id)
+	newDemoUserUIStateId := fmt.Sprintf("%s_%s", internal.DEMO_USER_UISTATE_PREFIX, id)
+	newDemoEnvId := fmt.Sprintf("%s_%s", internal.DEMO_USER_ENV_PREFIX, id)
+	newDemoCollectionId := fmt.Sprintf("%s_%s", internal.DEMO_USER_COLLECTION_PREFIX, id)
+
+	newDemoUserCtx := utils.ContextWithUserId(ctx, newDemoUserId)
+
+	err := authSvc.storage.UserRepo.CreateDemoUser(newDemoUserCtx, newDemoUserId)
 
 	if err != nil {
 		return "", err
 	}
 
-	existingUser, err := authSvc.userRepo.FindUserById(ctx, userId)
+	err = authSvc.storage.WorkspaceRepo.CreateWorkspace(newDemoUserCtx, internalModels.CreateWorkspaceDTO{
+		Id:   newDemoUserWorkspaceId,
+		Name: internal.DEMO_USER_WORKSPACE_PREFIX,
+	})
+
+	if err != nil {
+		return "", err
+	}
+
+	err = authSvc.storage.UiStateRepo.InitializeUIStateForUser(newDemoUserCtx, newDemoUserUIStateId)
+
+	if err != nil {
+		return "", err
+	}
+
+	updateErr := authSvc.storage.UiStateRepo.UpdateUIStateForUser(newDemoUserCtx, internalModels.UpdateUIStateDTO{
+		ActiveWorkspace: &newDemoUserWorkspaceId,
+	})
+
+	if updateErr != nil {
+		return "", fmt.Errorf("failed to set demo workspace as active ui state")
+	}
+
+	err = authSvc.storage.EnvRepo.AddEnvironment(newDemoUserCtx, internalModels.AddEnvironmentDTO{
+		Id:          newDemoEnvId,
+		Name:        internal.DEMO_USER_ENV_PREFIX,
+		WorkspaceId: newDemoUserWorkspaceId,
+	})
+
+	if err != nil {
+		return "", err
+	}
+
+	err = authSvc.storage.CollectionRepo.AddCollection(newDemoUserCtx, internalModels.CreateCollectionDTO{
+		Id:        newDemoCollectionId,
+		Name:      internal.DEMO_USER_COLLECTION_PREFIX,
+		Workspace: newDemoUserWorkspaceId,
+	})
+
+	if err != nil {
+		return "", err
+	}
+
+	sessionTokenExpiry := time.Now().Add(internal.DEMO_USER_JWT_EXPIRY_MINS * time.Minute)
+
+	sessionToken, err := authSvc.generateToken(newDemoUserId, sessionTokenExpiry)
+
+	if err != nil {
+		return "", err
+	}
+
+	return sessionToken, nil
+}
+
+func (authSvc *AuthService) ValidateMagicLink(ctx context.Context, magicToken string) (string, error) {
+
+	claims, err := authSvc.ParseToken(magicToken)
+
+	if err != nil {
+		return "", err
+	}
+
+	existingUser, err := authSvc.storage.UserRepo.FindUserById(ctx, claims.UserId)
 
 	if err != nil {
 		return "", err
@@ -157,7 +254,7 @@ func (authSvc *AuthService) ValidateMagicLink(ctx context.Context, magicToken st
 
 func (authSvc *AuthService) TryLogin(ctx context.Context, baseURL *url.URL, dto models.LoginRequestDTO) string {
 
-	existingUser, err := authSvc.userRepo.FindUserByEmail(ctx, dto.Email)
+	existingUser, err := authSvc.storage.UserRepo.FindUserByEmail(ctx, dto.Email)
 
 	if err != nil {
 		log.Printf("could not find user by email %s\n", dto.Email)
@@ -191,13 +288,13 @@ func (authSvc *AuthService) TryLogin(ctx context.Context, baseURL *url.URL, dto 
 
 func (authSvc *AuthService) TryRegisterAdmin(ctx context.Context, dto models.RegisterDTO) error {
 
-	setup, err := authSvc.appSetupReo.GetAppSetup(ctx)
+	setup, err := authSvc.storage.AppSetupRepo.GetAppSetup(ctx)
 
 	if setup.AdminUserConfigured {
 		return ErrAlreadyConfigured
 	}
 
-	adminId, err := authSvc.userRepo.CreateAdminUser(ctx, internalModels.CreateUserDTO{
+	adminId, err := authSvc.storage.UserRepo.CreateAdminUser(ctx, internalModels.CreateUserDTO{
 		Email: dto.Email,
 	})
 
@@ -209,13 +306,13 @@ func (authSvc *AuthService) TryRegisterAdmin(ctx context.Context, dto models.Reg
 
 	newUiStateId := nanoid.Must()
 
-	err = authSvc.uiRepo.InitializeUIStateForUser(newUserCtx, newUiStateId)
+	err = authSvc.storage.UiStateRepo.InitializeUIStateForUser(newUserCtx, newUiStateId)
 
 	if err != nil {
 		return ErrAuthFailure
 	}
 
-	err = authSvc.appSetupReo.MarksetupDone(ctx)
+	err = authSvc.storage.AppSetupRepo.MarksetupDone(ctx)
 
 	if err != nil {
 		return ErrAuthFailure
@@ -276,22 +373,26 @@ func (authSvc *AuthService) ClearSessionCookie(mode string) http.Cookie {
 	}
 }
 
-func (authSvc *AuthService) GetUserInfo(ctx context.Context, userId string) (models.UserInfo, error) {
-	user, err := authSvc.userRepo.FindUserById(ctx, userId)
+func (authSvc *AuthService) GetUserInfo(ctx context.Context, claims *GurlJwtClaims) (models.UserInfo, error) {
+	user, err := authSvc.storage.UserRepo.FindUserById(ctx, claims.UserId)
 
 	if err != nil {
 		return models.UserInfo{}, err
 	}
 
+	isDemoUser := strings.HasPrefix(user.Id, internal.DEMO_USER_ID_PREFIX)
+
 	return models.UserInfo{
-		Email:   user.Email,
-		IsAdmin: user.IsAdmin,
+		Email:      user.Email,
+		IsAdmin:    user.IsAdmin,
+		IsDemoUser: isDemoUser,
+		IssuedAt:   claims.IssuedAt.Time().UnixMilli(),
 	}, nil
 }
 
 func (authSvc *AuthService) InviteUser(ctx context.Context, baseURL *url.URL, userEmail string) error {
 
-	newUserId, err := authSvc.userRepo.CreateUser(ctx, internalModels.CreateUserDTO{
+	newUserId, err := authSvc.storage.UserRepo.CreateUser(ctx, internalModels.CreateUserDTO{
 		Email: userEmail,
 	})
 
@@ -303,7 +404,7 @@ func (authSvc *AuthService) InviteUser(ctx context.Context, baseURL *url.URL, us
 
 	newUiStateId := nanoid.Must()
 
-	err = authSvc.uiRepo.InitializeUIStateForUser(newUserCtx, newUiStateId)
+	err = authSvc.storage.UiStateRepo.InitializeUIStateForUser(newUserCtx, newUiStateId)
 
 	if err != nil {
 		return ErrAuthFailure

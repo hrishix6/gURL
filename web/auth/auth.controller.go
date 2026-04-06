@@ -85,6 +85,61 @@ func (api *AuthRouter) Login(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func (api *AuthRouter) DemoSession(w http.ResponseWriter, r *http.Request) {
+
+	err := r.ParseForm()
+	if err != nil {
+		loginBaseURL := api.FrontendURL.JoinPath("login")
+		q := loginBaseURL.Query()
+		q.Add("code", "err_demo_session_fail")
+		loginBaseURL.RawQuery = q.Encode()
+
+		api.Redirect(w, loginBaseURL.String())
+		return
+	}
+
+	token := r.FormValue("token")
+
+	if token == "" {
+		loginBaseURL := api.FrontendURL.JoinPath("login")
+		q := loginBaseURL.Query()
+		q.Add("code", "err_demo_session_fail")
+		loginBaseURL.RawQuery = q.Encode()
+
+		api.Redirect(w, loginBaseURL.String())
+		return
+	}
+
+	err = api.authSvc.VerifyCFTurnstileToken(r.Context(), token)
+
+	if err != nil {
+		loginBaseURL := api.FrontendURL.JoinPath("login")
+		q := loginBaseURL.Query()
+		q.Add("code", "err_demo_session_fail")
+		loginBaseURL.RawQuery = q.Encode()
+
+		api.Redirect(w, loginBaseURL.String())
+		return
+	}
+
+	demo_user_token, err := api.authSvc.DemoUserLogin(r.Context())
+
+	if err != nil {
+		loginBaseURL := api.FrontendURL.JoinPath("login")
+		q := loginBaseURL.Query()
+		q.Add("code", "err_demo_session_fail")
+		loginBaseURL.RawQuery = q.Encode()
+
+		api.Redirect(w, loginBaseURL.String())
+		return
+	}
+
+	cookie := api.authSvc.GenerateSessionCookie(api.mode, demo_user_token)
+
+	http.SetCookie(w, &cookie)
+	api.Redirect(w, api.FrontendURL.String())
+}
+
 func (api *AuthRouter) RegisterAdmin(w http.ResponseWriter, r *http.Request) {
 
 	var dto models.RegisterDTO
@@ -151,7 +206,7 @@ func (api *AuthRouter) Check(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userid, err := api.authSvc.ParseToken(sessionCookie.Value)
+	claims, err := api.authSvc.ParseToken(sessionCookie.Value)
 
 	if err != nil {
 		clearCookie := api.authSvc.ClearSessionCookie(api.mode)
@@ -164,7 +219,7 @@ func (api *AuthRouter) Check(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userInfo, err := api.authSvc.GetUserInfo(r.Context(), userid)
+	userInfo, err := api.authSvc.GetUserInfo(r.Context(), claims)
 
 	if err != nil {
 		clearCookie := api.authSvc.ClearSessionCookie(api.mode)
@@ -220,6 +275,7 @@ func (auth *AuthRouter) Routes() http.Handler {
 	authMux.Get("/email.callback", auth.EmailCallback)
 	authMux.Post("/register/admin", auth.RegisterAdmin)
 	authMux.Post("/logout", auth.Logout)
+	authMux.Post("/demo-session", auth.DemoSession)
 
 	return httpx.RequestContext(httpx.RequestLogger(authMux))
 }

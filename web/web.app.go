@@ -83,6 +83,18 @@ func InitializeWebApp(
 		log.Fatalf("JWT_SECRET environment variable must be provided")
 	}
 
+	enbleDemoLogins := false
+	cfTurnstileSecret := ""
+
+	if demoEnabled, ok := os.LookupEnv("FEAT_DEMO_ENALBED"); ok && demoEnabled == "true" {
+		enbleDemoLogins = true
+		cfSecret, cfSecretOk := os.LookupEnv("CF_TURNSTILE_SECRET")
+		if !cfSecretOk {
+			log.Fatalf("CF_TURNSTILE_SECRET environment variable must be provided")
+		}
+		cfTurnstileSecret = cfSecret
+	}
+
 	mailerConfig, err := emailx.ReadMailConfig()
 
 	if err != nil {
@@ -132,14 +144,20 @@ func InitializeWebApp(
 		log.Fatalf("unable to initialize executor %v", err)
 	}
 
-	authSvc := auth.NewAuthService(params.AppName, params.Env == "PROD", jwtSecret, webApp.storage.UserRepo, webApp.storage.UiStateRepo, webApp.storage.AppSetupRepo, mailer)
+	authSvc := auth.NewAuthService(
+		params.AppName,
+		params.Env == "PROD",
+		jwtSecret,
+		cfTurnstileSecret,
+		webApp.storage,
+		mailer)
 
 	apiRouter := api.NewApi(params.AppName, frontendURL, webApp.storage, webApp.executor, webApp.exporter, authSvc)
 	authRouter := auth.NewAuthRouter(frontendURL, backendURL, authSvc, params.Env == "PROD")
 
 	mux := http.NewServeMux()
 
-	appConfigRouter := config.NewAppConfigController(internal.VERSION, "/api/v1", "/auth", webApp.storage)
+	appConfigRouter := config.NewAppConfigController(internal.VERSION, "/api/v1", "/auth", webApp.storage, enbleDemoLogins)
 
 	mux.Handle("/config.json", appConfigRouter.Routes())
 
