@@ -178,7 +178,7 @@ func (rr *RequestRepository) updateDraftParents(id string, delta map[string]inte
 }
 
 func (rr *RequestRepository) DeleteDraftsUnderCollection(ctx context.Context, collectionId string) error {
-	tx := rr.db.Model(&RequestDraft{}).Where("parentCollectionId = ?", collectionId).Updates(map[string]any{
+	tx := rr.db.Model(&RequestDraft{}).Where("'parentCollectionId' = ?", collectionId).Updates(map[string]any{
 		"parentRequestId":    "",
 		"parentRequestName":  "",
 		"parentCollectionId": "",
@@ -192,7 +192,7 @@ func (rr *RequestRepository) DeleteDraftsUnderCollection(ctx context.Context, co
 }
 
 func (rr *RequestRepository) DeleteRequestDrafts(ctx context.Context, requestId string) error {
-	tx := rr.db.Model(&RequestDraft{}).Where("parentRequestId = ?", requestId).Updates(map[string]any{
+	tx := rr.db.Model(&RequestDraft{}).Where("'parentRequestId' = ?", requestId).Updates(map[string]any{
 		"parentRequestId":    "",
 		"parentRequestName":  "",
 		"parentCollectionId": "",

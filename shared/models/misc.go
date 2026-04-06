@@ -39,6 +39,7 @@ type GurlClientConfig struct {
 	AuthBaseURL   string `json:"auth_url"`
 	AppVersion    string `json:"appVersion"`
 	SetupRequired bool   `json:"setup_required"`
+	DemoEnabled   bool   `json:"demo_enabled"`
 }
 
 type ParseCookieTextDTO struct {

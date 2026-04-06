@@ -24,6 +24,22 @@ func NewUserRepository(db *gorm.DB) *UserRepository {
 	}
 }
 
+func (usr *UserRepository) CreateDemoUser(ctx context.Context, demoId string) error {
+
+	err := gorm.G[User](usr.db).Create(ctx, &User{
+		BaseEntity: BaseEntity{
+			Id: demoId,
+		},
+		Email: demoId,
+	})
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (usr *UserRepository) CreateUser(ctx context.Context, dto models.CreateUserDTO) (string, error) {
 
 	newUserId := nanoid.Must()
