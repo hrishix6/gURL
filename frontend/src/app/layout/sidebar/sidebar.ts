@@ -19,25 +19,22 @@ import { GurlReqHistory } from "./history/history.sidebar";
         }
     }
   `,
-	imports: [
-		GurlCollections,
-		GurlReqHistory,
-		GurlEnvironments,
-	],
+	imports: [GurlCollections, GurlReqHistory, GurlEnvironments],
 })
 export class Sidebar {
-
-    mode = input.required<"mobile" | "desktop">();
+	mode = input.required<"mobile" | "desktop">();
 
 	@HostBinding("class") get def() {
-        switch(this.mode()) {
-            case "desktop":
-                return "bg-base-200 basis-[375px] hidden xl:flex flex-col shrink-0 grow-0  overflow-hidden border-r-2 border-base-100"
+		switch (this.mode()) {
+			case "desktop":
+				return "bg-base-200 basis-[375px] hidden xl:flex flex-col shrink-0 grow-0  overflow-hidden border-r-2 border-base-100";
 
-            case "mobile":
-                return "bg-base-200 flex flex-col basis-[375px] min-h-full shrink-0 grow-0 border-r-2 border-base-100  overflow-hidden";
-        }
-    }
+			case "mobile":
+				return "bg-base-200 flex flex-col basis-[375px] min-h-full shrink-0 grow-0 border-r-2 border-base-100  overflow-hidden";
+		}
+
+		return "";
+	}
 
 	protected readonly appSvc = inject(AppService);
 }

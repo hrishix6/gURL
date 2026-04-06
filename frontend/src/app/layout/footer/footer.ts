@@ -5,8 +5,8 @@ import { getAppConfig } from "@/app.config";
 import { GurlDemoSessionProgress } from "@/common/components/demo.session.progress";
 import { GurlStatusBeacon } from "@/common/components/status.beacon";
 import { AppService, UserAuthService } from "@/services";
-import { GurlSidebarToggle } from "./sidebar.toggle";
 import { GurlLayoutSwitcher } from "./layout.switcher";
+import { GurlSidebarToggle } from "./sidebar.toggle";
 import { GurlThemeSwitcher } from "./theme.switcher";
 
 @Component({

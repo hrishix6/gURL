@@ -14,11 +14,10 @@ import { GurlDropdown } from "./common/components";
 import { Alert } from "./common/components/alert";
 import { GurlFooter } from "./layout/footer/footer";
 import { Navbar } from "./layout/navbar/navbar";
+import { Sidebar } from "./layout/sidebar/sidebar";
 import { Taskbar } from "./layout/taskbar/task.bar";
 import { GlobalModalsHost } from "./modals/global.modals.host";
 import { TabsContainer } from "./tabs/tabs.container";
-import { Sidebar } from "./layout/sidebar/sidebar";
-
 
 @Component({
 	selector: "app",
@@ -103,19 +102,19 @@ import { Sidebar } from "./layout/sidebar/sidebar";
      </div>
   `,
 	imports: [
-    LucideAngularModule,
-    GlobalSpinner,
-    GurlFooter,
-    TabsContainer,
-    AppHome,
-    GurlDropdown,
-    Taskbar,
-    Breadcrumbs,
-    GlobalModalsHost,
-    Alert,
-    Navbar,
-    Sidebar
-],
+		LucideAngularModule,
+		GlobalSpinner,
+		GurlFooter,
+		TabsContainer,
+		AppHome,
+		GurlDropdown,
+		Taskbar,
+		Breadcrumbs,
+		GlobalModalsHost,
+		Alert,
+		Navbar,
+		Sidebar,
+	],
 })
 export class App implements OnInit {
 	@HostBinding("class")
