@@ -18,13 +18,25 @@ services:
     image: gurl-web 
     build: .
     env_file:
-      - web.env.prod
+      - private.env.prod
     networks:
       -  gurl-web-prod-network
     volumes:
       - ./appData:/usr/local/src/gURL
+      
+  nginx:
+    image: nginx:alpine
+    container_name: nginx-proxy
+    depends_on:
+      - gurl
     ports:
-      - "8080:80"
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/certs:/etc/nginx/certs:ro
+    networks:
+      -  gurl-web-prod-network
 
 volumes:
   gurl-web-db-volume:

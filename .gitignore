@@ -10,3 +10,4 @@ shared/assets/static/
 appData/
 !wailsjs/go/
 runtime/
+nginx/
