@@ -18,7 +18,7 @@ services:
     image: gurl-web 
     build: .
     env_file:
-      - private.env.prod
+      - public.env.prod
     networks:
       -  gurl-web-prod-network
     volumes:

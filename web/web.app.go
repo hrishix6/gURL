@@ -95,13 +95,7 @@ func InitializeWebApp(
 		cfTurnstileSecret = cfSecret
 	}
 
-	mailerConfig, err := emailx.ReadMailConfig()
-
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	mailer := emailx.NewMailer(mailerConfig)
+	mailer := emailx.NewMailer()
 
 	webApp := NewGurlWebApp(
 		params.AppName,
@@ -132,7 +126,7 @@ func InitializeWebApp(
 
 	previewSrvAddr := fmt.Sprintf("%s/preview", frontendURL)
 
-	err = webApp.storage.Startup(ctx)
+	err := webApp.storage.Startup(ctx)
 
 	if err != nil {
 		log.Fatalf("unable to initialize storage %v", err)
