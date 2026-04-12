@@ -49,8 +49,6 @@ import type { LoginRequestDTO } from "@/types";
 					</label>
 				</div>
 				<input type="submit" class="btn btn-block btn-primary" value="Login" />
-				
-				
         	</form>
 			@if(appConfig.demo_enabled){
 				<gurl-demo-login />

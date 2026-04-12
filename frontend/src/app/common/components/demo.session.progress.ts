@@ -16,7 +16,7 @@ import { UserAuthService } from "@/services";
             @if(determiningTime()){
                 <progress class="progress w-52"></progress>
             } @else {
-                <progress class="progress w-52 progress-success" [value]="elapsedMins()" [max]="max"></progress>
+                <progress class="progress w-52 progress-primary" [value]="elapsedMins()" [max]="max"></progress>
             }
         </div>
     `,
@@ -28,7 +28,7 @@ export class GurlDemoSessionProgress implements OnDestroy {
 	protected readonly determiningTime = signal<boolean>(false);
 	private readonly userAuthSvc = inject(UserAuthService);
 
-	protected readonly elapsedMins = signal<number>(0);
+	protected readonly elapsedMins = signal<string>("");
 
 	constructor() {
 		effect(() => {
@@ -49,7 +49,7 @@ export class GurlDemoSessionProgress implements OnDestroy {
 
 					const elapsedMins = DEMO_USER_SESSION_MAX_MINS - remainingMins;
 
-					this.elapsedMins.set(elapsedMins);
+					this.elapsedMins.set(elapsedMins.toFixed(2));
 
 					this.determiningTime.set(false);
 
@@ -57,7 +57,7 @@ export class GurlDemoSessionProgress implements OnDestroy {
 						console.log(`demo session time as ended`);
 						this.cleanUp();
 					}
-				}, 10000);
+				}, 5000);
 			}
 			return () => {
 				this.cleanUp();

@@ -1,6 +1,6 @@
 import { Component, HostBinding, inject, signal } from "@angular/core";
-import { Info, LucideAngularModule, Search } from "lucide-angular";
-import { AppService } from "@/services";
+import { CirclePlus, Info, LucideAngularModule, Search } from "lucide-angular";
+import { AppService, GlobalModalsService } from "@/services";
 import { GurlCollectionItem } from "./collection.item";
 
 @Component({
@@ -25,9 +25,13 @@ import { GurlCollectionItem } from "./collection.item";
       }
     </section>
     } @else {
-      <div class="flex items-center gap-2 my-2 justify-center text-sm opacity-25">
-        <lucide-angular [img]="InfoIcon" class="size-4" />
-		    To save requests, create a Collection
+      <div class="flex-1 flex flex-col justify-center items-center">
+          <div class="flex flex-col gap-2 opacity-30">
+            <button class="btn btn-lg btn-ghost"  (click)="handleOpenAddCollectionModal()">
+                  <lucide-angular [img]="AddIcon" class="size-8" />
+                  <span class="text-lg">Collection</span>
+            </button>
+           </div>
       </div>
     }
   `,
@@ -41,6 +45,12 @@ export class GurlCollections {
 	protected readonly appSvc = inject(AppService);
 	protected searchInput = signal<string>("");
 	protected readonly InfoIcon = Info;
+	protected readonly AddIcon = CirclePlus;
+	private readonly modalsSvc = inject(GlobalModalsService);
+
+	protected handleOpenAddCollectionModal() {
+		this.modalsSvc.handleOpenCreateCollectionModal();
+	}
 
 	protected handleInput(e: Event) {
 		const target = e.target as HTMLInputElement;

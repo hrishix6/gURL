@@ -2,6 +2,7 @@ export namespace models {
 	
 	export class AddDraftDTO {
 	    id: string;
+	    workspace_id: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new AddDraftDTO(source);
@@ -10,6 +11,7 @@ export namespace models {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
+	        this.workspace_id = source["workspace_id"];
 	    }
 	}
 	export class AddEnvironmentDTO {
@@ -33,6 +35,7 @@ export namespace models {
 	export class AddEnvironmentDraftDTO {
 	    draftId: string;
 	    envId: string;
+	    workspaceId: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new AddEnvironmentDraftDTO(source);
@@ -42,6 +45,21 @@ export namespace models {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.draftId = source["draftId"];
 	        this.envId = source["envId"];
+	        this.workspaceId = source["workspaceId"];
+	    }
+	}
+	export class AddFreshEnvDraftDTO {
+	    id: string;
+	    workspaceId: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new AddFreshEnvDraftDTO(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.workspaceId = source["workspaceId"];
 	    }
 	}
 	export class ApiKeyAuth {
@@ -131,7 +149,6 @@ export namespace models {
 	    }
 	}
 	export class DownloadTmpFileDTO {
-	    file_path: string;
 	    file_name: string;
 	    file_mimetype: string;
 	
@@ -141,7 +158,6 @@ export namespace models {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.file_path = source["file_path"];
 	        this.file_name = source["file_name"];
 	        this.file_mimetype = source["file_mimetype"];
 	    }
@@ -292,7 +308,6 @@ export namespace models {
 	    html5Element: string;
 	    src: string;
 	    canRender: boolean;
-	    filepath: string;
 	    filename: string;
 	    detectedMimeType: string;
 	    reportedMimeType: string;
@@ -307,7 +322,6 @@ export namespace models {
 	        this.html5Element = source["html5Element"];
 	        this.src = source["src"];
 	        this.canRender = source["canRender"];
-	        this.filepath = source["filepath"];
 	        this.filename = source["filename"];
 	        this.detectedMimeType = source["detectedMimeType"];
 	        this.reportedMimeType = source["reportedMimeType"];
@@ -572,6 +586,7 @@ export namespace models {
 	    parentRequestId: string;
 	    parentRequestName: string;
 	    parentCollectionId: string;
+	    workspace_id: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new RequestDraftDTO(source);
@@ -599,6 +614,7 @@ export namespace models {
 	        this.parentRequestId = source["parentRequestId"];
 	        this.parentRequestName = source["parentRequestName"];
 	        this.parentCollectionId = source["parentCollectionId"];
+	        this.workspace_id = source["workspace_id"];
 	    }
 	}
 	export class RequestLightDTO {
@@ -656,7 +672,6 @@ export namespace models {
 	    }
 	}
 	export class SaveRequestCopyDTO {
-	    id: string;
 	    name: string;
 	
 	    static createFrom(source: any = {}) {
@@ -665,7 +680,6 @@ export namespace models {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.id = source["id"];
 	        this.name = source["name"];
 	    }
 	}
@@ -673,7 +687,7 @@ export namespace models {
 	    html5Element: string;
 	    src: string;
 	    canRender: boolean;
-	    filepath: string;
+	    filename: string;
 	    extension: string;
 	
 	    static createFrom(source: any = {}) {
@@ -685,7 +699,7 @@ export namespace models {
 	        this.html5Element = source["html5Element"];
 	        this.src = source["src"];
 	        this.canRender = source["canRender"];
-	        this.filepath = source["filepath"];
+	        this.filename = source["filename"];
 	        this.extension = source["extension"];
 	    }
 	}
@@ -729,6 +743,7 @@ export namespace models {
 	    basicAuthJson?: string;
 	    apiKeyAuthJson?: string;
 	    tokenAuthJson?: string;
+	    lastResponsePath?: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new UpdateDraftFieldsDTO(source);
@@ -752,6 +767,7 @@ export namespace models {
 	        this.basicAuthJson = source["basicAuthJson"];
 	        this.apiKeyAuthJson = source["apiKeyAuthJson"];
 	        this.tokenAuthJson = source["tokenAuthJson"];
+	        this.lastResponsePath = source["lastResponsePath"];
 	    }
 	}
 	export class UpdateEnvDraftDataDTO {
@@ -791,6 +807,7 @@ export namespace models {
 	export class UpdateWorkspaceDTO {
 	    name?: string;
 	    activeTab?: string;
+	    activeEnv?: string;
 	    openTabsJSON?: string;
 	
 	    static createFrom(source: any = {}) {
@@ -801,6 +818,7 @@ export namespace models {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.name = source["name"];
 	        this.activeTab = source["activeTab"];
+	        this.activeEnv = source["activeEnv"];
 	        this.openTabsJSON = source["openTabsJSON"];
 	    }
 	}
@@ -809,6 +827,7 @@ export namespace models {
 	    name: string;
 	    openTabsJSON: string;
 	    activeTab: string;
+	    activeEnv: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new WorkspaceDTO(source);
@@ -820,6 +839,7 @@ export namespace models {
 	        this.name = source["name"];
 	        this.openTabsJSON = source["openTabsJSON"];
 	        this.activeTab = source["activeTab"];
+	        this.activeEnv = source["activeEnv"];
 	    }
 	}
 	export class WorkspaceLightDTO {

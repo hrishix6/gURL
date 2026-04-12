@@ -95,7 +95,7 @@ import { TabsContainer } from "./tabs/tabs.container";
     <gurl-global-modals-host />
 
     <!-- Global alerts -->
-     <div class="toast toast-start">
+     <div class="toast">
       @for(alert of alertSvc.alerts(); track alert.id){
         <gurl-alert [data]="alert"></gurl-alert>
       }

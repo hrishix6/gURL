@@ -27,9 +27,7 @@ import {
          class="flex flex-1 items-center gap-2 focus:outline-0 focus:underline"
          (click)="openEnvironmentTab()"
       > 
-            <div class="text-primary">
             <lucide-angular [img]="EnvironmentIcon" class="size-4" />
-            </div>
             <p class="flex-1 text-sm truncate">{{ data().name }}</p>
         </a>
       <div class="dropdown dropdown-end">

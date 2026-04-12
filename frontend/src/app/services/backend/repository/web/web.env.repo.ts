@@ -111,10 +111,8 @@ export class WebEnvRepository implements EnvironmentRepository {
 		return result.data;
 	}
 
-	async addFreshEnvDraft(draftId: string): Promise<void> {
-		const result = await this.restClient.post<void>("env-drafts-fresh", {
-			draftId,
-		});
+	async addFreshEnvDraft(dto: models.AddFreshEnvDraftDTO): Promise<void> {
+		const result = await this.restClient.post<void>("env-drafts-fresh", dto);
 
 		if (!result.success) {
 			throw new Error("Failed to get environment draft by id");

@@ -32,11 +32,11 @@ export class WebHttpExecutor implements HttpExecutor {
 
 		return result.data;
 	}
-	async getSavedResponsesSrc(filePath: string): Promise<string> {
+	async getSavedResponsesSrc(filename: string): Promise<string> {
 		const result = await this.restClient.post<string>(
 			`${this._execBasePath}/src_path`,
 			{
-				saved_res_path: filePath,
+				file_name: filename,
 			},
 		);
 

@@ -61,6 +61,7 @@ export class AppService {
 	private discardEnvDraftsDbSync$ = new Subject<boolean>();
 	private activeWorkspaceDbSync$ = new Subject<string>();
 	public activeEnvChange$ = new Subject<void>();
+	public activeEnvDbSync$ = new Subject<string>();
 	public refreshBreadcrumb$ = new Subject<void>();
 	public initiateDefaultWorkspaceCreation$ = new Subject<void>();
 
@@ -170,6 +171,7 @@ export class AppService {
 		const index = this.environmentDropdownItems().findIndex((x) => x.id === id);
 		if (index > -1) {
 			this._activeEnvironment.set(id);
+			this.activeEnvDbSync$.next(id);
 			this.activeEnvChange$.next();
 		}
 	}
@@ -306,7 +308,7 @@ export class AppService {
 
 	public async copyRequest(sourceId: string, name: string) {
 		try {
-			await this.reqRepo.saveRequestCopy(sourceId, { id: nanoid(), name });
+			await this.reqRepo.saveRequestCopy(sourceId, { name });
 			this.alertSvc.addAlert(`Request copy "${name}" added.`, "success");
 			await this.initializeSavedRequests();
 		} catch (error) {
@@ -587,6 +589,21 @@ export class AppService {
 			this.activeEnvChange$.next();
 		});
 
+		this.activeEnvDbSync$.pipe(takeUntilDestroyed(this.destoyRef)).subscribe({
+			next: (v) => {
+				this.workspaceRepo
+					.updateWorkspace(this._activeWorkspace(), {
+						activeEnv: v,
+					})
+					.then(() => {
+						console.log(`updated active env to ${v} for workspace`);
+					})
+					.catch(() => {
+						console.log(`failed to update active env ${v} in db`);
+					});
+			},
+		});
+
 		this.layoutChange$.pipe(takeUntilDestroyed(this.destoyRef)).subscribe({
 			next: (v) => {
 				this.uiStateRepo
@@ -820,18 +837,32 @@ export class AppService {
 	}
 
 	public async initializeActiveWorkspace(workspaceId: string) {
+		const workspaceInfo =
+			await this.workspaceRepo.getWorkspaceById(workspaceId);
+
+		if (!workspaceInfo) {
+			throw new Error("workspace not found");
+		}
+
 		this.setActiveWorkspace(workspaceId);
 		if (this.globalHistory[workspaceId]) {
 			this._historyItems.set(this.globalHistory[workspaceId]);
 		} else {
 			this._historyItems.set([]);
 		}
-		this._activeEnvironment.set(NO_ENV_ID);
+
 		await this.initializeCollections();
 		await this.initializeSavedRequests();
 		await this.initializeSavedExamples();
 		await this.initializeEnvironments();
-		await this.tabSvc.init(workspaceId);
+
+		if (this._environments().some((x) => x.id === workspaceInfo.activeEnv)) {
+			this._activeEnvironment.set(workspaceInfo.activeEnv);
+		} else {
+			this._activeEnvironment.set(NO_ENV_ID);
+		}
+
+		this.tabSvc.init(workspaceInfo);
 	}
 
 	public async init() {

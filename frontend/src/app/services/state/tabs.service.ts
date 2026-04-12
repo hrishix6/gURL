@@ -110,7 +110,10 @@ export class TabsService {
 				isModified: false,
 			};
 
-			await this.envRepo.addFreshEnvDraft(newTab.entityId);
+			await this.envRepo.addFreshEnvDraft({
+				id: newTab.entityId,
+				workspaceId: this._workspaceId(),
+			});
 
 			this._openTabs.update((prev) => {
 				const copy = [...prev, newTab];
@@ -172,6 +175,7 @@ export class TabsService {
 			await this.envRepo.addEnvironmentDraft({
 				draftId: newTab.entityId,
 				envId: item.id,
+				workspaceId: this._workspaceId(),
 			});
 
 			this._openTabs.update((prev) => {
@@ -191,6 +195,7 @@ export class TabsService {
 		try {
 			const newDraft: models.AddDraftDTO = {
 				id: nanoid(),
+				workspace_id: this._workspaceId(),
 			};
 			console.dir(newDraft);
 
@@ -267,6 +272,7 @@ export class TabsService {
 				basicAuth: item.basicAuth ? JSON.stringify(item.basicAuth) : "",
 				apiKeyAuth: item.apiKeyAuth ? JSON.stringify(item.apiKeyAuth) : "",
 				tokenAuth: item.tokenAuth ? JSON.stringify(item.tokenAuth) : "",
+				workspace_id: this._workspaceId(),
 			};
 
 			await this.reqRepo.addDraft(newDraft);
@@ -297,6 +303,7 @@ export class TabsService {
 		try {
 			const newDraft: models.AddDraftDTO = {
 				id: nanoid(),
+				workspace_id: this._workspaceId(),
 			};
 
 			const newTab: ApplicationTab = {
@@ -432,31 +439,22 @@ export class TabsService {
 		});
 	}
 
-	async init(workspaceId: string) {
-		try {
-			const workspace = await this.workspaceRepo.getWorkspaceById(workspaceId);
-			if (!workspace) {
-				throw new Error("failed to find workspace");
-			}
-			this.setWorkspaceId(workspaceId);
-			const { openTabsJSON, activeTab } = workspace;
-			const parsedTabs: ApplicationTab[] = JSON.parse(openTabsJSON);
-			if (Array.isArray(parsedTabs) && parsedTabs.length) {
-				console.log(`populating tabs`);
-				this._openTabs.set(parsedTabs);
+	init(workspaceInfo: models.WorkspaceDTO) {
+		this.setWorkspaceId(workspaceInfo.id);
+		const { openTabsJSON, activeTab } = workspaceInfo;
+		const parsedTabs: ApplicationTab[] = JSON.parse(openTabsJSON);
+		if (Array.isArray(parsedTabs) && parsedTabs.length) {
+			console.log(`populating tabs`);
+			this._openTabs.set(parsedTabs);
 
-				if (parsedTabs.findIndex((x) => x.id === activeTab) > -1) {
-					this._activeTab.set(activeTab);
-				} else {
-					this._activeTab.set(parsedTabs[0].id);
-				}
+			if (parsedTabs.findIndex((x) => x.id === activeTab) > -1) {
+				this._activeTab.set(activeTab);
 			} else {
-				this._openTabs.set([]);
-				this.createFreshTab();
+				this._activeTab.set(parsedTabs[0].id);
 			}
-		} catch (error) {
-			console.error(error);
-			this.alertSvc.addAlert("Failed to load tabs", "error");
+		} else {
+			this._openTabs.set([]);
+			this.createFreshTab();
 		}
 	}
 

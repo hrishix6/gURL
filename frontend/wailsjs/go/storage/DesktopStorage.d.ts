@@ -14,7 +14,7 @@ export function AddEnvironmentDraft(arg1:models.AddEnvironmentDraftDTO):Promise<
 
 export function AddFreshDraft(arg1:models.AddDraftDTO):Promise<void>;
 
-export function AddFreshEnvDraft(arg1:string):Promise<void>;
+export function AddFreshEnvDraft(arg1:models.AddFreshEnvDraftDTO):Promise<void>;
 
 export function AddReqExample(arg1:models.ReqExampleDTO,arg2:models.SavedResponseRenderMeta):Promise<void>;
 

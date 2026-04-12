@@ -37,7 +37,7 @@ export class DesktopEnvRepository implements EnvironmentRepository {
 		return AddEnvironmentDraft(arg1);
 	}
 
-	addFreshEnvDraft(arg1: string): Promise<void> {
+	addFreshEnvDraft(arg1: models.AddFreshEnvDraftDTO): Promise<void> {
 		return AddFreshEnvDraft(arg1);
 	}
 

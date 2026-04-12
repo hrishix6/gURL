@@ -29,7 +29,7 @@ import { AlertService } from "@/services";
             <span>New</span>
           </button>
           @if(mode === "web") {
-              <input type="file" class="hidden" #webFileInp (input)="handleWebCollectionImport($event)"   />
+              <input type="file" accept=".json" class="hidden" #webFileInp (input)="handleWebCollectionImport($event)"   />
           }
           <button class="btn btn-soft btn-primary xl:btn-lg" (click)="handleImport()">
             <lucide-angular [img]="ImportIcon" class="size-6" />

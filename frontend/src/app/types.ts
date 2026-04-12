@@ -224,7 +224,7 @@ export interface CollectionRepository {
 }
 
 export interface EnvironmentRepository {
-	addFreshEnvDraft(arg1: string): Promise<void>;
+	addFreshEnvDraft(dto: models.AddFreshEnvDraftDTO): Promise<void>;
 	addEnvironmentDraft(arg1: models.AddEnvironmentDraftDTO): Promise<void>;
 	copyEnvironment(
 		sourceId: string,

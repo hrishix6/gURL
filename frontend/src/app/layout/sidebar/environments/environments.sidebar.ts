@@ -1,6 +1,6 @@
 import { Component, HostBinding, inject, signal } from "@angular/core";
-import { Info, LucideAngularModule, Search } from "lucide-angular";
-import { AppService } from "@/services";
+import { CirclePlus, Info, LucideAngularModule, Search } from "lucide-angular";
+import { AppService, GlobalModalsService } from "@/services";
 import { GurlEnvironmentItem } from "./environment.item";
 
 @Component({
@@ -29,9 +29,13 @@ import { GurlEnvironmentItem } from "./environment.item";
       }
     </div>
     }@else {
-    <div class="flex items-center gap-2 my-2 justify-center text-sm opacity-25">
-        <lucide-angular [img]="InfoIcon" class="size-4" />
-		    To interpolate variables, create an Environment
+    <div class="flex-1 flex flex-col justify-center items-center">
+          <div class="flex flex-col gap-2 opacity-30">
+            <button class="btn btn-lg btn-ghost" (click)="handleOpenAddEnvModal()">
+                  <lucide-angular [img]="AddIcon" class="size-8" />
+                  <span class="text-lg">Environment</span>
+            </button>
+           </div>
       </div>
     }
   `,
@@ -43,9 +47,15 @@ export class GurlEnvironments {
 
 	protected readonly InfoIcon = Info;
 	protected readonly SearchIcon = Search;
+	protected readonly AddIcon = CirclePlus;
 	protected appSvc = inject(AppService);
+	private readonly modalsSvc = inject(GlobalModalsService);
 
 	protected searchInput = signal<string>("");
+
+	protected handleOpenAddEnvModal() {
+		this.modalsSvc.handleOpenCreateEnvModal();
+	}
 
 	protected handleInput(e: Event) {
 		const target = e.target as HTMLInputElement;

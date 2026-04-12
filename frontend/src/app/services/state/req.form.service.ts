@@ -261,6 +261,7 @@ export class FormService {
 			parentCollectionId: "",
 			parentRequestId: "",
 			parentRequestName: "",
+			workspace_id: this._appSvc.activeWorkSpace().id,
 		};
 		await this._tabSvc.createDuplicateTab(newDraft);
 	}
@@ -538,7 +539,7 @@ export class FormService {
 			: null;
 
 		if (renderMeta) {
-			const { canRender, html5Element, extension, filepath } = renderMeta;
+			const { canRender, html5Element, extension, filename } = renderMeta;
 
 			const res = {
 				id: data.id,
@@ -562,10 +563,10 @@ export class FormService {
 					canRender: canRender,
 					html5Element: html5Element,
 					extension: extension,
-					filepath: filepath,
+					filename: filename,
 					detectedMimeType: "",
 					reportedMimeType: "",
-					src: await this.httpExecutor.getSavedResponsesSrc(filepath),
+					src: await this.httpExecutor.getSavedResponsesSrc(filename),
 				},
 			} as models.GurlRes;
 
@@ -804,7 +805,6 @@ export class FormService {
 				return;
 			}
 			await this.fileRepo.saveFile({
-				file_path: b.filepath,
 				file_mimetype: b.detectedMimeType,
 				file_name: b.filename,
 			});
@@ -979,7 +979,7 @@ export class FormService {
 			const meta: models.SavedResponseRenderMeta = {
 				canRender: body?.canRender || false,
 				html5Element: body?.html5Element || "",
-				filepath: body?.filepath || "",
+				filename: body?.filename || "",
 				extension: body?.extension || "",
 				src: "",
 			};

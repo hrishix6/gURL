@@ -12,11 +12,11 @@ import { CF_TURNSTILE_SCRIPT_SRC, CF_TURNSTILE_SITE_KEY } from "@/constants";
 	selector: `gurl-demo-login`,
 	template: `
         @if(cfScriptLoaded()){
-        <div class="divider">OR</div>
+        <div class="divider text-sm">OR</div>
 		<form class="flex flex-col gap-2" method="post" action="/auth/demo-session">
 				<input type="hidden" name="token" value="" #CFtoken/>
 				<input type="submit" class="hidden" #trydemoformtrigger />
-				<button type="button" class="btn btn-block"     
+				<button type="button" class="btn btn-soft btn-primary"     
 						[disabled]="disableRetryBtn()"
 						(click)="handleDemo()">
 					Try Demo
