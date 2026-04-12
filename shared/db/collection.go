@@ -4,16 +4,36 @@ import (
 	"context"
 	"gurl/shared/models"
 	"gurl/shared/utils"
-	"log"
 
 	"gorm.io/gorm"
 )
 
 type Collection struct {
 	BaseEntity
-	Name        string `gorm:"column:name"`
-	WorkspaceId string `gorm:"column:workspace_id;default:null"`
-	UserId      string `gorm:"column:user_id;default:null"`
+	Name        string    `gorm:"column:name"`
+	WorkspaceId string    `gorm:"column:workspace_id;not null"`
+	Workspace   Workspace `gorm:"foreignKey:WorkspaceId;"`
+	UserId      string    `gorm:"column:user_id;not null"`
+	User        User      `gorm:"foreignKey:UserId;"`
+}
+
+// Hooks
+func (c *Collection) BeforeDelete(tx *gorm.DB) error {
+
+	var reqs []Request
+
+	if err := tx.Where("collection_id = ? AND user_id = ?", c.Id, c.UserId).Find(&reqs).Error; err != nil {
+		return err
+	}
+
+	for _, r := range reqs {
+
+		if err := tx.Delete(&r).Error; err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (c *Collection) ToCollectionDTO() *models.CollectionDTO {
@@ -78,26 +98,35 @@ func (cr *CollectionRepository) RenameCollection(ctx context.Context, id, name s
 
 func (cr *CollectionRepository) DeleteCollection(ctx context.Context, id string) error {
 
-	user := utils.UserIdFromContext(ctx)
+	c, err := cr.FindCollectionById(ctx, id)
 
-	tx := cr.db.Where(&Collection{
-		BaseEntity: BaseEntity{
-			Id: id,
-		},
-		UserId: user,
-	}).Delete(&Collection{})
-
-	if tx.Error != nil {
-		return tx.Error
+	if err != nil {
+		return err
 	}
 
-	return nil
+	return cr.db.Delete(&c).Error
 }
 
 func (cr *CollectionRepository) ClearCollection(ctx context.Context, id string) error {
-	r, err := gorm.G[Request](cr.db).Where("collection_id = ?", id).Delete(ctx)
 
-	log.Printf("deleted %d requsts under collection\n", r)
+	c, err := cr.FindCollectionById(ctx, id)
+
+	if err != nil {
+		return err
+	}
+
+	var reqs []Request
+
+	if err := cr.db.Where("collection_id = ? AND user_id = ?", c.Id, c.UserId).Find(&reqs).Error; err != nil {
+		return err
+	}
+
+	for _, r := range reqs {
+
+		if err := cr.db.Delete(&r).Error; err != nil {
+			return err
+		}
+	}
 
 	return err
 }
@@ -119,5 +148,5 @@ func (cr *CollectionRepository) FindCollectionById(ctx context.Context, id strin
 }
 
 func (cr *CollectionRepository) FindCollectionCountByName(ctx context.Context, name string) (int64, error) {
-	return gorm.G[Collection](cr.db).Where("name = ?", name).Count(ctx, "id")
+	return gorm.G[Collection](cr.db).Where("name = ? AND user_id = ?", name, utils.UserIdFromContext(ctx)).Count(ctx, "id")
 }

@@ -7,37 +7,15 @@ import (
 	"path/filepath"
 )
 
-func InitTempDir(appDataDir string) (string, error) {
+func InitTempDir(appDataDir string, tmpDirLocation string) (string, error) {
 
-	base := os.TempDir()
-
-	TempDir := filepath.Join(base, appDataDir, "temp")
+	TempDir := filepath.Join(appDataDir, tmpDirLocation)
 
 	if err := os.MkdirAll(TempDir, 0o755); err != nil {
 		return "", err
 	}
 
-	err := CleanupTempDir(TempDir)
-
-	if err != nil {
-		return "", err
-	}
-
 	return TempDir, nil
-}
-
-func CleanupTempDir(tempDir string) error {
-	entries, err := os.ReadDir(tempDir)
-	if err != nil {
-		return err
-	}
-
-	for _, entry := range entries {
-		path := filepath.Join(tempDir, entry.Name())
-		os.RemoveAll(path)
-	}
-
-	return nil
 }
 
 func InitDataDir(appDataDir string) error {
@@ -50,9 +28,9 @@ func InitDataDir(appDataDir string) error {
 	return nil
 }
 
-func InitWebTempDir(appDataDir string) (string, error) {
+func InitWebTempDir(appDataDir string, webuploadDir string) (string, error) {
 
-	webTempDir := filepath.Join(appDataDir, "uploads")
+	webTempDir := filepath.Join(appDataDir, webuploadDir)
 
 	if err := os.MkdirAll(webTempDir, 0o755); err != nil {
 		return "", err

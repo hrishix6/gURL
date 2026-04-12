@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"gurl/shared/models"
+	"gurl/shared/nanoid"
 	"gurl/shared/utils"
 
 	"gorm.io/datatypes"
@@ -14,10 +15,29 @@ type Request struct {
 	BaseEntity
 	RequestCore
 	Name         string     `gorm:"column:name;not null"`
-	CollectionId string     `gorm:"not null"`
-	Collection   Collection `gorm:"constraint:OnDelete:CASCADE;"`
-	WorkspaceId  string     `gorm:"column:workspace_id;default:null"`
-	UserId       string     `gorm:"column:user_id;default:null"`
+	CollectionId string     `gorm:"column:collection_id;not null"`
+	Collection   Collection `gorm:"foreignKey:CollectionId;"`
+	WorkspaceId  string     `gorm:"column:workspace_id;not null"`
+	Workspace    Workspace  `gorm:"foreignKey:WorkspaceId;"`
+	UserId       string     `gorm:"column:user_id;not null"`
+	User         User       `gorm:"foreignKey:UserId;"`
+}
+
+func (r *Request) BeforeDelete(tx *gorm.DB) error {
+
+	var examples []RequestExample
+
+	if err := tx.Where("request_id = ? AND user_id = ?", r.Id, r.UserId).Find(&examples).Error; err != nil {
+		return err
+	}
+
+	for _, ex := range examples {
+		if err := tx.Delete(&ex).Error; err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (r *Request) ToRequestDTO() *models.RequestDTO {
@@ -42,6 +62,11 @@ func (r *Request) FromRequestDraft(ctx context.Context, payload *models.SaveDraf
 	r.Name = payload.Name
 	r.RequestCore = dto.RequestCore
 	r.UserId = utils.UserIdFromContext(ctx)
+}
+
+func (r *Request) UpdateFromDraft(ctx context.Context, payload *models.SaveDraftAsReqDTO, dto *RequestDraft) {
+	r.Name = payload.Name
+	r.RequestCore = dto.RequestCore
 }
 
 type RequestRepository struct {
@@ -74,14 +99,13 @@ func (rr *RequestRepository) findSavedReq(ctx context.Context, id string) (Reque
 
 func (rr *RequestRepository) DeleteSavedReq(ctx context.Context, id string) error {
 
-	tx := rr.db.Where(&Request{
-		BaseEntity: BaseEntity{
-			Id: id,
-		},
-		UserId: utils.UserIdFromContext(ctx),
-	}).Delete(&Request{})
+	r, err := rr.findSavedReq(ctx, id)
 
-	return tx.Error
+	if err != nil {
+		return err
+	}
+
+	return rr.db.Delete(&r).Error
 }
 
 func (rr *RequestRepository) findDraft(ctx context.Context, id string) (RequestDraft, error) {
@@ -89,13 +113,13 @@ func (rr *RequestRepository) findDraft(ctx context.Context, id string) (RequestD
 }
 
 func (rr *RequestRepository) RemoveDraft(ctx context.Context, id string) error {
-	_, err := gorm.G[RequestDraft](rr.db).Where("id = ?", id).Delete(ctx)
+	d, err := rr.findDraft(ctx, id)
 
 	if err != nil {
 		return err
 	}
 
-	return nil
+	return rr.db.Delete(&d).Error
 }
 
 func (rr *RequestRepository) GetSavedRequests(ctx context.Context, workspaceId string) ([]models.RequestLightDTO, error) {
@@ -143,6 +167,7 @@ func (rr *RequestRepository) AddFreshDraft(ctx context.Context, dto models.AddDr
 		BaseEntity: BaseEntity{
 			Id: dto.Id,
 		},
+		WorkspaceId: dto.WorkspaceId,
 	})
 }
 
@@ -178,10 +203,10 @@ func (rr *RequestRepository) updateDraftParents(id string, delta map[string]inte
 }
 
 func (rr *RequestRepository) DeleteDraftsUnderCollection(ctx context.Context, collectionId string) error {
-	tx := rr.db.Model(&RequestDraft{}).Where("'parentCollectionId' = ?", collectionId).Updates(map[string]any{
-		"parentRequestId":    "",
-		"parentRequestName":  "",
-		"parentCollectionId": "",
+	tx := rr.db.Model(&RequestDraft{}).Where("parent_collection_id = ?", collectionId).Updates(map[string]any{
+		"parent_request_id":    "",
+		"parent_request_name":  "",
+		"parent_collection_id": "",
 	})
 
 	if tx.Error != nil {
@@ -192,10 +217,10 @@ func (rr *RequestRepository) DeleteDraftsUnderCollection(ctx context.Context, co
 }
 
 func (rr *RequestRepository) DeleteRequestDrafts(ctx context.Context, requestId string) error {
-	tx := rr.db.Model(&RequestDraft{}).Where("'parentRequestId' = ?", requestId).Updates(map[string]any{
-		"parentRequestId":    "",
-		"parentRequestName":  "",
-		"parentCollectionId": "",
+	tx := rr.db.Model(&RequestDraft{}).Where("parent_request_id = ?", requestId).Updates(map[string]any{
+		"parent_request_id":    "",
+		"parent_request_name":  "",
+		"parent_collection_id": "",
 	})
 
 	if tx.Error != nil {
@@ -208,17 +233,6 @@ func (rr *RequestRepository) DeleteRequestDrafts(ctx context.Context, requestId 
 func (rr *RequestRepository) SaveDraftAsRequest(ctx context.Context, id string, dto models.SaveDraftAsReqDTO) error {
 
 	draft, err := rr.findDraft(ctx, id)
-
-	if err != nil {
-		return err
-	}
-
-	//update draft
-	err = rr.updateDraftParents(id, map[string]any{
-		"parentRequestId":    dto.RequestId,
-		"parentRequestName":  dto.Name,
-		"parentCollectionId": dto.CollectionId,
-	})
 
 	if err != nil {
 		return err
@@ -243,25 +257,21 @@ func (rr *RequestRepository) SaveDraftAsRequest(ctx context.Context, id string, 
 		return err
 	}
 
-	//delete existing req and instead create new record.
-	err = rr.DeleteSavedReq(ctx, existing.Id)
+	//update draft
+	err = rr.updateDraftParents(id, map[string]any{
+		"parent_request_id":    dto.RequestId,
+		"parent_request_name":  dto.Name,
+		"parent_collection_id": dto.CollectionId,
+	})
 
 	if err != nil {
 		return err
 	}
 
-	//create new saved request with same id and new data
-	req := &Request{}
+	existing.UpdateFromDraft(ctx, &dto, &draft)
 
-	req.FromRequestDraft(ctx, &dto, &draft)
+	return rr.db.Save(&existing).Error
 
-	createErr := rr.addSavedReq(ctx, req)
-
-	if createErr != nil {
-		return createErr
-	}
-
-	return nil
 }
 
 func (rr *RequestRepository) SaveRequestCopy(ctx context.Context, id string, dto models.SaveRequestCopyDTO) error {
@@ -272,7 +282,7 @@ func (rr *RequestRepository) SaveRequestCopy(ctx context.Context, id string, dto
 		return err
 	}
 
-	existing.Id = dto.Id
+	existing.Id = nanoid.Must()
 	existing.Name = dto.Name
 
 	createErr := rr.addSavedReq(ctx, &existing)
@@ -312,7 +322,7 @@ func (rr *RequestRepository) UpdateDraftFields(ctx context.Context, id string, d
 	}
 
 	if dto.BodyType != nil {
-		updates["bodyType"] = *dto.BodyType
+		updates["body_type"] = *dto.BodyType
 	}
 
 	if dto.Multipart != nil {
@@ -332,23 +342,27 @@ func (rr *RequestRepository) UpdateDraftFields(ctx context.Context, id string, d
 	}
 
 	if dto.AuthType != nil {
-		updates["authType"] = *dto.AuthType
+		updates["auth_type"] = *dto.AuthType
 	}
 
 	if dto.AuthEnabled != nil {
-		updates["authEnabled"] = *dto.AuthEnabled
+		updates["auth_enabled"] = *dto.AuthEnabled
 	}
 
 	if dto.BasicAuth != nil {
-		updates["basicAuth"] = datatypes.JSON([]byte(*dto.BasicAuth))
+		updates["basic_auth"] = datatypes.JSON([]byte(*dto.BasicAuth))
 	}
 
 	if dto.ApiKeyAuth != nil {
-		updates["apiKeyAuth"] = datatypes.JSON([]byte(*dto.ApiKeyAuth))
+		updates["api_key_auth"] = datatypes.JSON([]byte(*dto.ApiKeyAuth))
 	}
 
 	if dto.TokenAuth != nil {
-		updates["tokenAuth"] = datatypes.JSON([]byte(*dto.TokenAuth))
+		updates["token_auth"] = datatypes.JSON([]byte(*dto.TokenAuth))
+	}
+
+	if dto.LastTmpResponsePath != nil {
+		updates["last_res_path"] = *dto.LastTmpResponsePath
 	}
 
 	if len(updates) == 0 {

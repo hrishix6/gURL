@@ -25,6 +25,7 @@ type RequestDraftDTO struct {
 	ParentRequestId    string `json:"parentRequestId"`
 	ParentRequestName  string `json:"parentRequestName"`
 	ParentCollectionId string `json:"parentCollectionId"`
+	WorkspaceId        string `json:"workspace_id"`
 }
 
 type RequestDTO struct {
@@ -43,7 +44,8 @@ type RequestLightDTO struct {
 }
 
 type AddDraftDTO struct {
-	Id string `json:"id"`
+	Id          string `json:"id"`
+	WorkspaceId string `json:"workspace_id"`
 }
 
 type SaveDraftAsReqDTO struct {
@@ -72,9 +74,10 @@ type UpdateDraftFieldsDTO struct {
 	BasicAuth   *string `json:"basicAuthJson"`
 	ApiKeyAuth  *string `json:"apiKeyAuthJson"`
 	TokenAuth   *string `json:"tokenAuthJson"`
+
+	LastTmpResponsePath *string `json:"lastResponsePath"`
 }
 
 type SaveRequestCopyDTO struct {
-	Id   string `json:"id"`
 	Name string `json:"name"`
 }

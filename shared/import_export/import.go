@@ -268,43 +268,53 @@ func toDbRequestFromImported(ctx context.Context, importedReq models.ImportedGur
 	return newReq, nil
 }
 
-func (i2 *InternalImporter) handleImportEmptyCollection(ctx context.Context, collection models.ImportedCollection, workspaceId string) error {
+func (i2 *InternalImporter) handleImportEmptyCollection(ctx context.Context, collection models.ImportedCollection, workspaceId string) (string, error) {
 
 	name := *collection.Name
 
 	cnt, err := i2.collectionRepo.FindCollectionCountByName(ctx, name)
 
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	if cnt > 0 {
 		name = fmt.Sprintf("%s(%d)", name, cnt)
 	}
 
-	return i2.collectionRepo.AddCollection(ctx, models.CreateCollectionDTO{
-		Id:        nanoid.Must(),
+	newId := nanoid.Must()
+
+	err = i2.collectionRepo.AddCollection(ctx, models.CreateCollectionDTO{
+		Id:        newId,
 		Name:      name,
 		Workspace: workspaceId,
 	})
+
+	if err != nil {
+		return "", err
+	}
+
+	return newId, nil
 }
 
-func (i2 *InternalImporter) handleImportWithRequests(ctx context.Context, collection models.ImportedCollection, requests []models.ImportedGurlReq, workspaceId string) error {
+func (i2 *InternalImporter) handleImportWithRequests(ctx context.Context, collection models.ImportedCollection, requests []models.ImportedGurlReq, workspaceId string) (string, error) {
 
 	name := *collection.Name
 
 	cnt, err := i2.collectionRepo.FindCollectionCountByName(ctx, name)
 
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	if cnt > 0 {
 		name = fmt.Sprintf("%s(%d)", name, cnt)
 	}
 
+	newCollectionId := nanoid.Must()
+
 	newCollection := models.CreateCollectionDTO{
-		Id:        nanoid.Must(),
+		Id:        newCollectionId,
 		Name:      name,
 		Workspace: workspaceId,
 	}
@@ -312,7 +322,7 @@ func (i2 *InternalImporter) handleImportWithRequests(ctx context.Context, collec
 	err = i2.collectionRepo.AddCollection(ctx, newCollection)
 
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	var newRequests []dbPkg.Request
@@ -327,15 +337,21 @@ func (i2 *InternalImporter) handleImportWithRequests(ctx context.Context, collec
 		newRequests = append(newRequests, *newReq)
 	}
 
-	return i2.reqRepo.CreateRequestsInBatch(ctx, newRequests)
+	err = i2.reqRepo.CreateRequestsInBatch(ctx, newRequests)
+
+	if err != nil {
+		return "", err
+	}
+
+	return newCollectionId, nil
 }
 
-func (i2 *InternalImporter) HandleImportEnvironment(ctx context.Context, sourceFile string, workspaceId string) error {
+func (i2 *InternalImporter) HandleImportEnvironment(ctx context.Context, sourceFile string, workspaceId string) (string, error) {
 
 	srcF, err := os.Open(sourceFile)
 
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	defer srcF.Close()
@@ -345,15 +361,15 @@ func (i2 *InternalImporter) HandleImportEnvironment(ctx context.Context, sourceF
 	err = json.NewDecoder(srcF).Decode(&importedEnv)
 
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	if importedEnv.Name == nil || strings.TrimSpace(*importedEnv.Name) == "" {
-		return errors.New("invalid environment name")
+		return "", errors.New("invalid environment name")
 	}
 
 	if importedEnv.Version == nil || strings.TrimSpace(*importedEnv.Version) == "" {
-		return errors.New("invalid environment version")
+		return "", errors.New("invalid environment version")
 	}
 
 	var exportedItems []models.ExportedEnvironmentItem
@@ -361,7 +377,7 @@ func (i2 *InternalImporter) HandleImportEnvironment(ctx context.Context, sourceF
 	err = json.Unmarshal(importedEnv.Vars, &exportedItems)
 
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	var uiItems []models.UIEnvironmentItem
@@ -379,7 +395,7 @@ func (i2 *InternalImporter) HandleImportEnvironment(ctx context.Context, sourceF
 	bs, err := json.Marshal(uiItems)
 
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	name := *importedEnv.Name
@@ -387,27 +403,35 @@ func (i2 *InternalImporter) HandleImportEnvironment(ctx context.Context, sourceF
 	cnt, err := i2.envRepo.FindEnvCountByName(ctx, name)
 
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	if cnt > 0 {
 		name = fmt.Sprintf("%s(%d)", name, cnt)
 	}
 
-	return i2.envRepo.AddEnvironment(ctx, models.AddEnvironmentDTO{
-		Id:          nanoid.Must(),
+	newId := nanoid.Must()
+
+	err = i2.envRepo.AddEnvironment(ctx, models.AddEnvironmentDTO{
+		Id:          newId,
 		Name:        name,
 		WorkspaceId: workspaceId,
 		Data:        string(bs),
 	})
+
+	if err != nil {
+		return "", err
+	}
+
+	return newId, nil
 }
 
-func (i2 *InternalImporter) HandleImportCollection(ctx context.Context, sourceFile string, workspaceId string) error {
+func (i2 *InternalImporter) HandleImportCollection(ctx context.Context, sourceFile string, workspaceId string) (string, error) {
 
 	srcF, err := os.Open(sourceFile)
 
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	defer srcF.Close()
@@ -417,15 +441,15 @@ func (i2 *InternalImporter) HandleImportCollection(ctx context.Context, sourceFi
 	err = json.NewDecoder(srcF).Decode(&importedCollection)
 
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	if importedCollection.Name == nil || strings.TrimSpace(*importedCollection.Name) == "" {
-		return errors.New("invalid collection name")
+		return "", errors.New("invalid collection name")
 	}
 
 	if importedCollection.Version == nil || strings.TrimSpace(*importedCollection.Version) == "" {
-		return errors.New("invalid collection version")
+		return "", errors.New("invalid collection version")
 	}
 
 	var importedRequests []models.ImportedGurlReq
@@ -433,7 +457,7 @@ func (i2 *InternalImporter) HandleImportCollection(ctx context.Context, sourceFi
 	err = json.Unmarshal(importedCollection.Requests, &importedRequests)
 
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	if len(importedRequests) == 0 {

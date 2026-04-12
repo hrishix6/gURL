@@ -80,7 +80,6 @@ type GurlRenderMeta struct {
 	Html5Element     string `json:"html5Element"`
 	Src              string `json:"src"`
 	CanRender        bool   `json:"canRender"`
-	Filepath         string `json:"filepath"`
 	Filename         string `json:"filename"`
 	DetectedMimeType string `json:"detectedMimeType"`
 	ReportedMimeType string `json:"reportedMimeType"`
@@ -299,6 +298,6 @@ type SavedResponseRenderMeta struct {
 	Html5Element string `json:"html5Element"`
 	Src          string `json:"src"`
 	CanRender    bool   `json:"canRender"`
-	Filepath     string `json:"filepath"`
+	Filename     string `json:"filename"`
 	Extension    string `json:"extension"`
 }

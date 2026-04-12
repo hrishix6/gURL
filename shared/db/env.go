@@ -15,8 +15,10 @@ type Environment struct {
 	BaseEntity
 	Name        string         `gorm:"column:name"`
 	Data        datatypes.JSON `gorm:"column:data;default:'[]'"`
-	WorkspaceId string         `gorm:"column:workspace_id;default:null"`
-	UserId      string         `gorm:"column:user_id;default:null"`
+	WorkspaceId string         `gorm:"column:workspace_id;not null"`
+	Workspace   Workspace      `gorm:"foreignKey:WorkspaceId;"`
+	UserId      string         `gorm:"column:user_id;not null"`
+	User        User           `gorm:"foreignKey:UserId;"`
 }
 
 func (e *Environment) ToEnvironmentDTO() models.EnvironmentDTO {
@@ -39,6 +41,11 @@ func (e *Environment) FromEnvironmentDraft(ctx context.Context, dto *models.Save
 	e.Data = env.Data
 	e.WorkspaceId = dto.WorkspaceId
 	e.UserId = utils.UserIdFromContext(ctx)
+}
+
+func (e *Environment) UpdateFromDraft(ctx context.Context, dto *models.SaveEnvDraftAsEnvDTO, draft *EnvironmentDraft) {
+	e.Name = dto.Name
+	e.Data = draft.Data
 }
 
 type EnvironmentRepository struct {
@@ -111,12 +118,13 @@ func (er *EnvironmentRepository) FindEnvDraft(ctx context.Context, id string) (m
 	return r.ToEnvironmentDraftDTO(), nil
 }
 
-func (er *EnvironmentRepository) AddFreshEnvDraft(ctx context.Context, id string) error {
+func (er *EnvironmentRepository) AddFreshEnvDraft(ctx context.Context, dto models.AddFreshEnvDraftDTO) error {
 	return gorm.G[EnvironmentDraft](er.db).Create(ctx, &EnvironmentDraft{
 		BaseEntity: BaseEntity{
-			Id: id,
+			Id: dto.Id,
 		},
-		Name: "New Environment",
+		Name:        "New Environment",
+		WorkspaceId: dto.WorkspaceId,
 	})
 }
 
@@ -222,31 +230,11 @@ func (er *EnvironmentRepository) SaveEnvDraftAsEnv(ctx context.Context, id strin
 		return err
 	}
 
-	//update draft
-	err = er.updateEnvDraftParents(id, map[string]any{
-		"parentEnvId":   dto.EnvId,
-		"parentEnvName": dto.Name,
-	})
+	existing, err := er.FindSavedEnvById(ctx, dto.EnvId)
 
 	if err != nil {
-		return err
-	}
 
-	user := utils.UserIdFromContext(ctx)
-
-	var existing = new(Environment)
-
-	// existing, err := gorm.G[Environment](er.db).Where("id = ?", dto.EnvId).First(ctx)
-	tx := er.db.Where(&Environment{
-		BaseEntity: BaseEntity{
-			Id: dto.EnvId,
-		},
-		UserId: user,
-	}).First(existing)
-
-	if tx.Error != nil {
-
-		if errors.Is(tx.Error, gorm.ErrRecordNotFound) {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			env := &Environment{}
 			env.FromEnvironmentDraft(ctx, &dto, &draft)
 			createErr := er.addEnv(ctx, env)
@@ -258,34 +246,28 @@ func (er *EnvironmentRepository) SaveEnvDraftAsEnv(ctx context.Context, id strin
 			return nil
 		}
 
-		return tx.Error
+		return err
 	}
 
-	//delete existing env and instead create new record.
-	err = er.RemoveEnv(ctx, existing.Id)
+	//update draft
+	err = er.updateEnvDraftParents(id, map[string]any{
+		"parent_env_id":   dto.EnvId,
+		"parent_env_name": dto.Name,
+	})
 
 	if err != nil {
 		return err
 	}
 
-	//create new env with same id and new data
-	env := &Environment{}
+	existing.UpdateFromDraft(ctx, &dto, &draft)
 
-	env.FromEnvironmentDraft(ctx, &dto, &draft)
-
-	createErr := er.addEnv(ctx, env)
-
-	if createErr != nil {
-		return createErr
-	}
-
-	return nil
+	return er.db.Save(&existing).Error
 }
 
 func (er *EnvironmentRepository) DeleteEnvDraftsUnderEnv(ctx context.Context, envId string) error {
-	tx := er.db.Model(&EnvironmentDraft{}).Where("parentEnvId = ?", envId).Updates(map[string]any{
-		"parentEnvId":   "",
-		"parentEnvName": "",
+	tx := er.db.Model(&EnvironmentDraft{}).Where("parent_env_id = ?", envId).Updates(map[string]any{
+		"parent_env_id":   "",
+		"parent_env_name": "",
 	})
 
 	if tx.Error != nil {
@@ -310,5 +292,5 @@ func (er *EnvironmentRepository) FindSavedEnvById(ctx context.Context, id string
 }
 
 func (er *EnvironmentRepository) FindEnvCountByName(ctx context.Context, name string) (int64, error) {
-	return gorm.G[Environment](er.db).Where("name = ?", name).Count(ctx, "id")
+	return gorm.G[Environment](er.db).Where("name = ? AND user_id = ?", name, utils.UserIdFromContext(ctx)).Count(ctx, "id")
 }

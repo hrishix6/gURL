@@ -12,9 +12,69 @@ import (
 type Workspace struct {
 	BaseEntity
 	Name      string         `gorm:"column:name"`
-	OpenTabs  datatypes.JSON `gorm:"column:openTabs;default:'[]'"`
-	ActiveTab string         `gorm:"column:activeTab"`
-	UserId    string         `gorm:"column:user_id;default:null"`
+	OpenTabs  datatypes.JSON `gorm:"column:open_tabs;default:'[]'"`
+	ActiveTab string         `gorm:"column:active_tab"`
+	ActiveEnv string         `gorm:"active_env;default:no_env"`
+	UserId    string         `gorm:"column:user_id;not null"`
+	User      User           `gorm:"foreignKey:UserId;"`
+}
+
+// Hooks
+func (w *Workspace) BeforeDelete(tx *gorm.DB) error {
+
+	var collections []Collection
+
+	if err := tx.Where("workspace_id = ? AND user_id = ?", w.Id, w.UserId).Find(&collections).Error; err != nil {
+		return err
+	}
+
+	for _, c := range collections {
+
+		if err := tx.Delete(&c).Error; err != nil {
+			return err
+		}
+	}
+
+	var reqDrafts []RequestDraft
+
+	if err := tx.Where("workspace_id = ?", w.Id).Find(&reqDrafts).Error; err != nil {
+		return err
+	}
+
+	for _, rd := range reqDrafts {
+
+		if err := tx.Delete(&rd).Error; err != nil {
+			return err
+		}
+	}
+
+	var envs []Environment
+
+	if err := tx.Where("workspace_id = ? AND user_id = ?", w.Id, w.UserId).Find(&envs).Error; err != nil {
+		return err
+	}
+
+	for _, e := range envs {
+
+		if err := tx.Delete(&e).Error; err != nil {
+			return err
+		}
+	}
+
+	var envDrafts []EnvironmentDraft
+
+	if err := tx.Where("workspace_id = ?", w.Id).Find(&envDrafts).Error; err != nil {
+		return err
+	}
+
+	for _, ed := range envDrafts {
+
+		if err := tx.Delete(&ed).Error; err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 type WorkspaceRepository struct {
@@ -71,6 +131,7 @@ func (wr *WorkspaceRepository) GetWorkspaceById(ctx context.Context, id string) 
 		Name:         w.Name,
 		OpenTabsJSON: string(w.OpenTabs),
 		ActiveTab:    w.ActiveTab,
+		ActiveEnv:    w.ActiveEnv,
 	}, nil
 }
 
@@ -92,11 +153,15 @@ func (wr *WorkspaceRepository) UpdateWorkspace(ctx context.Context, id string, d
 	updates := make(map[string]any)
 
 	if dto.OpenTabsJSON != nil {
-		updates["openTabs"] = datatypes.JSON([]byte(*dto.OpenTabsJSON))
+		updates["open_tabs"] = datatypes.JSON([]byte(*dto.OpenTabsJSON))
 	}
 
 	if dto.ActiveTab != nil {
-		updates["activeTab"] = *dto.ActiveTab
+		updates["active_tab"] = *dto.ActiveTab
+	}
+
+	if dto.ActiveEnv != nil {
+		updates["active_env"] = *dto.ActiveEnv
 	}
 
 	if dto.Name != nil {

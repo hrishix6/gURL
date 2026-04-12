@@ -7,7 +7,6 @@ import (
 	"gurl/shared/models"
 	"gurl/shared/utils"
 	"io"
-	"log"
 	"os"
 	"path/filepath"
 
@@ -18,27 +17,45 @@ import (
 type RequestExample struct {
 	BaseEntity
 	RequestCore
-	RequestId    string `gorm:"not null"`
-	CollectionId string `gorm:"not null"`
-	Name         string `gorm:"column:name;not null"`
-	UploadSize   int64  `gorm:"column:uploadSize;"`
+	RequestId    string     `gorm:"column:request_id;not null"`
+	Request      Request    `gorm:"foreignKey:RequestId;"`
+	CollectionId string     `gorm:"not null"`
+	Collection   Collection `gorm:"foreignKey:CollectionId;"`
+	Name         string     `gorm:"column:name;not null"`
+	UploadSize   int64      `gorm:"column:upload_size;"`
 
 	// Response Data
-	ResponseSuccess    bool   `gorm:"column:responseSuccess"`
-	ResponseStatus     int64  `gorm:"column:responseStatus"`
-	ResponseStatusText string `gorm:"column:responseStatusText"`
-	ResponseTime       int64  `gorm:"column:responseTime"`
-	ResponseSize       int64  `gorm:"column:responseSize"`
-	LimitExceeded      bool   `gorm:"column:limitExceeded"`
-	ResponseTffbMs     int64  `gorm:"column:responseTffbMs"`
-	ResponseDlMs       int64  `gorm:"column:responseDlMs"`
+	ResponseSuccess    bool   `gorm:"column:response_success"`
+	ResponseStatus     int64  `gorm:"column:response_status"`
+	ResponseStatusText string `gorm:"column:response_status_text"`
+	ResponseTime       int64  `gorm:"column:response_time"`
+	ResponseSize       int64  `gorm:"column:response_size"`
+	LimitExceeded      bool   `gorm:"column:limit_exceeded"`
+	ResponseTffbMs     int64  `gorm:"column:response_tffb_ms"`
+	ResponseDlMs       int64  `gorm:"column:response_dl_ms"`
 
-	SentHeaders     datatypes.JSON `gorm:"column:sentHeaders;default:'[]'"`
-	ResponseHeaders datatypes.JSON `gorm:"column:responseHeaders;default:'[]'"`
-	ResponseCookies datatypes.JSON `gorm:"column:responseCookies;default:'[]'"`
-	ResponseBody    datatypes.JSON `gorm:"column:responseBody"`
-	WorkspaceId     string         `gorm:"column:workspace_id;default:null"`
-	UserId          string         `gorm:"column:user_id;default:null"`
+	SentHeaders      datatypes.JSON `gorm:"column:sent_headers;default:'[]'"`
+	ResponseHeaders  datatypes.JSON `gorm:"column:response_headers;default:'[]'"`
+	ResponseCookies  datatypes.JSON `gorm:"column:response_cookies;default:'[]'"`
+	ResponseBody     datatypes.JSON `gorm:"column:response_body"`
+	ResponseSavePath string         `gorm:"column:save_path;not null"`
+	WorkspaceId      string         `gorm:"column:workspace_id;not null"`
+	Workspace        Workspace      `gorm:"foreignKey:WorkspaceId;"`
+	UserId           string         `gorm:"column:user_id;not null"`
+	User             User           `gorm:"foreignKey:UserId;"`
+}
+
+// Hooks
+func (re *RequestExample) AfterDelete(tx *gorm.DB) error {
+	if re.ResponseSavePath != "" {
+		err := os.Remove(re.ResponseSavePath)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (r *RequestExample) ToReqExampleDTO() *models.ReqExampleDTO {
@@ -79,6 +96,7 @@ func NewReqExampleRepository(db *gorm.DB) *ReqExampleRepository {
 func (rer *ReqExampleRepository) AddReqExample(ctx context.Context,
 	dto models.ReqExampleDTO,
 	meta models.SavedResponseRenderMeta,
+	tmpDir string,
 	savedResponsesDir string,
 ) error {
 
@@ -123,15 +141,19 @@ func (rer *ReqExampleRepository) AddReqExample(ctx context.Context,
 		ResponseCookies:    datatypes.JSON([]byte(dto.ResponseCookies)),
 	}
 
+	srcPath := filepath.Join(tmpDir, meta.Filename)
+
 	//copy temp response to saved responses
-	srcF, err := os.Open(meta.Filepath)
+	srcF, err := os.Open(srcPath)
 
 	if err != nil {
 		return err
 	}
 	defer srcF.Close()
 
-	dstFilePath := filepath.Join(savedResponsesDir, fmt.Sprintf("%s%s", dto.Id, meta.Extension))
+	dstFileName := fmt.Sprintf("%s%s", dto.Id, meta.Extension)
+
+	dstFilePath := filepath.Join(savedResponsesDir, dstFileName)
 
 	dstF, err := os.Create(dstFilePath)
 
@@ -149,9 +171,9 @@ func (rer *ReqExampleRepository) AddReqExample(ctx context.Context,
 	renderMeta := models.SavedResponseRenderMeta{
 		CanRender:    meta.CanRender,
 		Html5Element: meta.Html5Element,
-		Filepath:     dstFilePath,
 		Extension:    meta.Extension,
 		Src:          "",
+		Filename:     dstFileName,
 	}
 
 	bytes, err := json.Marshal(renderMeta)
@@ -161,6 +183,7 @@ func (rer *ReqExampleRepository) AddReqExample(ctx context.Context,
 	}
 
 	example.ResponseBody = datatypes.JSON(bytes)
+	example.ResponseSavePath = dstFilePath
 
 	return gorm.G[RequestExample](rer.db).Create(ctx, example)
 }
@@ -224,27 +247,5 @@ func (rer *ReqExampleRepository) DeleteReqExample(ctx context.Context, id string
 		return tx.Error
 	}
 
-	var renderMeta models.SavedResponseRenderMeta
-
-	err := json.Unmarshal(example.ResponseBody, &renderMeta)
-
-	if err != nil {
-		return err
-	}
-
-	if renderMeta.Filepath != "" {
-		err = os.Remove(renderMeta.Filepath)
-
-		if err != nil {
-			log.Printf("unable to delete saved response file at %s\n", renderMeta.Filepath)
-		}
-	}
-
-	_, err = gorm.G[RequestExample](rer.db).Where("id = ?", example.Id).Delete(ctx)
-
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return rer.db.Delete(&example).Error
 }

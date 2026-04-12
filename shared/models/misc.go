@@ -47,7 +47,7 @@ type ParseCookieTextDTO struct {
 }
 
 type GetSavedResponseSrcDTO struct {
-	SavedResPath string `json:"saved_res_path"`
+	Name string `json:"file_name"`
 }
 
 type UploadWebTempFileRes struct {
@@ -57,7 +57,6 @@ type UploadWebTempFileRes struct {
 }
 
 type DownloadTmpFileDTO struct {
-	Path     string `json:"file_path"`
 	Name     string `json:"file_name"`
 	MimeType string `json:"file_mimetype"`
 }

@@ -10,13 +10,14 @@ import (
 
 type UIState struct {
 	BaseEntity
-	IsSidebarOpen          bool   `gorm:"column:sidebarOpen;default:true"`
-	AlwaysDiscardDrafts    bool   `gorm:"column:alwaysDiscardDrafts;default:false"`
-	AlwaysDiscardEnvDrafts bool   `gorm:"column:alwaysDiscardEnvDrafts;default:false"`
+	IsSidebarOpen          bool   `gorm:"column:sidebar_open;default:true"`
+	AlwaysDiscardDrafts    bool   `gorm:"column:always_discard_drafts;default:false"`
+	AlwaysDiscardEnvDrafts bool   `gorm:"column:always_discard_env_drafts;default:false"`
 	Layout                 string `gorm:"column:layout;default:r"`
-	ActiveWorkspace        string `gorm:"column:activeWorkspace;default:''"`
-	ActiveTheme            string `gorm:"column:activeTheme;default:'mountain'"`
-	UserId                 string `gorm:"column:user_id;default:null"`
+	ActiveWorkspace        string `gorm:"column:active_workspace;default:''"`
+	ActiveTheme            string `gorm:"column:active_theme;default:'mountain'"`
+	UserId                 string `gorm:"column:user_id;not null"`
+	User                   User   `gorm:"foreignKey:UserId;"`
 }
 
 type UiStateRepository struct {
@@ -29,15 +30,6 @@ func NewUiStateRepository(db *gorm.DB) *UiStateRepository {
 	}
 }
 
-func (usr *UiStateRepository) InitializeUIState(ctx context.Context) error {
-	initialState := &UIState{
-		BaseEntity: BaseEntity{
-			Id: DEFAULT_UI_STATE_ID,
-		},
-	}
-	return gorm.G[UIState](usr.db).Create(ctx, initialState)
-}
-
 func (usr *UiStateRepository) InitializeUIStateForUser(ctx context.Context, id string) error {
 	initialState := &UIState{
 		BaseEntity: BaseEntity{
@@ -47,23 +39,6 @@ func (usr *UiStateRepository) InitializeUIStateForUser(ctx context.Context, id s
 	}
 
 	return gorm.G[UIState](usr.db).Create(ctx, initialState)
-}
-
-func (usr *UiStateRepository) GetUIState(ctx context.Context) (*models.UIStateDTO, error) {
-	r, err := gorm.G[UIState](usr.db).Where("id = ?", DEFAULT_UI_STATE_ID).First(ctx)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return &models.UIStateDTO{
-		Layout:                 r.Layout,
-		IsSidebarOpen:          r.IsSidebarOpen,
-		AlwaysDiscard:          r.AlwaysDiscardDrafts,
-		AlwaysDiscardEnvDrafts: r.AlwaysDiscardEnvDrafts,
-		ActiveWorkspace:        r.ActiveWorkspace,
-		ActiveTheme:            r.ActiveTheme,
-	}, nil
 }
 
 func (usr *UiStateRepository) GetUIStateForUser(ctx context.Context) (*models.UIStateDTO, error) {
@@ -86,18 +61,6 @@ func (usr *UiStateRepository) GetUIStateForUser(ctx context.Context) (*models.UI
 		ActiveWorkspace:        uiState.ActiveWorkspace,
 		ActiveTheme:            uiState.ActiveTheme,
 	}, nil
-}
-
-func (usr *UiStateRepository) UpdateUIState(dto models.UpdateUIStateDTO) error {
-
-	updates := buildUIStateUpdateMap(dto)
-
-	if len(updates) == 0 {
-		return nil
-	}
-
-	tx := usr.db.Model(&UIState{}).Where("id = ?", DEFAULT_UI_STATE_ID).Updates(updates)
-	return tx.Error
 }
 
 func buildUIStateUpdateMap(dto models.UpdateUIStateDTO) map[string]any {

@@ -5,6 +5,7 @@ type WorkspaceDTO struct {
 	Name         string `json:"name"`
 	OpenTabsJSON string `json:"openTabsJSON"`
 	ActiveTab    string `json:"activeTab"`
+	ActiveEnv    string `json:"activeEnv"`
 }
 
 type CreateWorkspaceDTO struct {
@@ -15,6 +16,7 @@ type CreateWorkspaceDTO struct {
 type UpdateWorkspaceDTO struct {
 	Name         *string `json:"name"`
 	ActiveTab    *string `json:"activeTab"`
+	ActiveEnv    *string `json:"activeEnv"`
 	OpenTabsJSON *string `json:"openTabsJSON"`
 }
 

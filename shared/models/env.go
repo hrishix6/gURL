@@ -14,6 +14,11 @@ type EnvironmentDTO struct {
 	Data string `json:"dataJSON"`
 }
 
+type AddFreshEnvDraftDTO struct {
+	Id          string `json:"id"`
+	WorkspaceId string `json:"workspaceId"`
+}
+
 type AddEnvironmentDTO struct {
 	Id          string `json:"id"`
 	Name        string `json:"name"`
@@ -22,8 +27,9 @@ type AddEnvironmentDTO struct {
 }
 
 type AddEnvironmentDraftDTO struct {
-	DraftId string `json:"draftId"`
-	EnvId   string `json:"envId"`
+	DraftId     string `json:"draftId"`
+	EnvId       string `json:"envId"`
+	WorkspaceId string `json:"workspaceId"`
 }
 
 type CopyEnvironmentDTO struct {

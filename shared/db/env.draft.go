@@ -10,8 +10,10 @@ type EnvironmentDraft struct {
 	BaseEntity
 	Name          string         `gorm:"column:name"`
 	Data          datatypes.JSON `gorm:"column:data;default:'[]'"`
-	ParentEnvId   string         `gorm:"column:parentEnvId"`
-	ParentEnvName string         `gorm:"column:parentEnvName"`
+	ParentEnvId   string         `gorm:"column:parent_env_id"`
+	ParentEnvName string         `gorm:"column:parent_env_name"`
+	WorkspaceId   string         `gorm:"column:workspace_id;not null"`
+	Workspace     Workspace      `gorm:"foreignKey:WorkspaceId;"`
 }
 
 func (ed *EnvironmentDraft) ToEnvironmentDraftDTO() models.EnvironmentDraftDTO {
@@ -36,4 +38,5 @@ func (ed *EnvironmentDraft) FromEnvironment(dto models.AddEnvironmentDraftDTO, e
 	ed.ParentEnvName = e.Name
 	ed.ParentEnvId = e.Id
 	ed.Data = e.Data
+	ed.WorkspaceId = dto.WorkspaceId
 }

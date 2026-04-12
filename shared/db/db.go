@@ -1,33 +1,46 @@
 package db
 
 import (
+	"fmt"
 	"net/url"
 
 	"github.com/glebarez/sqlite"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-)
-
-const (
-	DB_NAME             = "gurl.db"
-	DEFAULT_UI_STATE_ID = "gurl_ui_state"
+	//"gorm.io/plugin/soft_delete"
 )
 
 type BaseEntity struct {
 	Id        string `gorm:"primaryKey"`
-	Created   int    `gorm:"autoCreateTime;column:created"`
-	UpdatedAt int    `gorm:"autoUpdateTime;column:updated"`
+	Created   int64  `gorm:"autoCreateTime;column:created"`
+	UpdatedAt int64  `gorm:"autoUpdateTime;column:updated"`
+	// Deleted   soft_delete.DeletedAt `gorm:"column:is_deleted;softDelete:flag"`
 }
 
 func InitDesktopDb(dsn string) (*gorm.DB, error) {
 
-	db, err := gorm.Open(sqlite.Open(dsn), &gorm.Config{})
+	db, err := gorm.Open(sqlite.Open(fmt.Sprintf("%s?_pragma=foreign_keys(1)", dsn)), &gorm.Config{})
 
 	if err != nil {
 		return nil, err
 	}
 
-	db.Exec("PRAGMA foreign_keys = ON;")
+	err = db.AutoMigrate(
+		&User{},
+		&MimeRecord{},
+		&UIState{},
+		&Workspace{},
+		&Collection{},
+		&Request{},
+		&RequestDraft{},
+		&RequestExample{},
+		&Environment{},
+		&EnvironmentDraft{},
+	)
+
+	if err != nil {
+		return nil, err
+	}
 	return db, nil
 }
 
@@ -52,5 +65,24 @@ func InitWebDb(dsn string) (*gorm.DB, error) {
 	}
 
 	_lowDb.SetMaxOpenConns(25)
+
+	err = db.AutoMigrate(
+		&AppSetup{},
+		&User{},
+		&MimeRecord{},
+		&UIState{},
+		&Workspace{},
+		&Collection{},
+		&Request{},
+		&RequestDraft{},
+		&RequestExample{},
+		&Environment{},
+		&EnvironmentDraft{},
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
 	return db, nil
 }

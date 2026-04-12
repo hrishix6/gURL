@@ -279,7 +279,8 @@ func (htf *HttpTransformer) TempStoreResponse(ctx context.Context, id string, re
 
 	defer res.Body.Close()
 
-	tmpF, err := os.CreateTemp(baseDir, fmt.Sprintf("gurl-%s*", id))
+	// tmpF, err := os.CreateTemp(baseDir, fmt.Sprintf("gurl-%s*", id))
+	tmpF, err := os.Create(filepath.Join(baseDir, fmt.Sprintf("gurl-%s", id)))
 
 	if err != nil {
 		return nil, err
@@ -449,7 +450,6 @@ func (htf *HttpTransformer) TransformHttpResponse(
 		Html5Element:     html5Tag,
 		Src:              fmt.Sprintf("%s/%s", renderBasePath, tmpFileName),
 		CanRender:        canRender,
-		Filepath:         tempStorageStats.TempFilePath,
 		Filename:         tempStorageStats.TempFileName,
 		DetectedMimeType: cType,
 		ReportedMimeType: tempStorageStats.ReportedMimeType,

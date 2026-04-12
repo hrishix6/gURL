@@ -14,17 +14,17 @@ type RequestCore struct {
 	Headers datatypes.JSON `gorm:"column:headers;default:'[]'"`
 	Cookies datatypes.JSON `gorm:"column:cookies;default:'[]'"`
 
-	BodyType       string         `gorm:"column:bodyType;default:none"`
+	BodyType       string         `gorm:"column:body_type;default:none"`
 	MultipartForm  datatypes.JSON `gorm:"column:multipart;default:'[]'"`
 	UrlEncodedForm datatypes.JSON `gorm:"column:urlencoded;default:'[]'"`
 	TextBody       string         `gorm:"column:textbody"`
 	BinaryBody     datatypes.JSON `gorm:"column:binarybody"`
 
-	AuthEnabled bool           `gorm:"column:authEnabled;default:false"`
-	AuthType    string         `gorm:"column:authType;default:no_auth"`
-	BasicAuth   datatypes.JSON `gorm:"column:basicAuth"`
-	ApiKeyAuth  datatypes.JSON `gorm:"column:apiKeyAuth"`
-	TokenAuth   datatypes.JSON `gorm:"column:tokenAuth"`
+	AuthEnabled bool           `gorm:"column:auth_enabled;default:false"`
+	AuthType    string         `gorm:"column:auth_type;default:no_auth"`
+	BasicAuth   datatypes.JSON `gorm:"column:basic_auth"`
+	ApiKeyAuth  datatypes.JSON `gorm:"column:api_key_auth"`
+	TokenAuth   datatypes.JSON `gorm:"column:token_auth"`
 }
 
 func (r RequestCore) ToRequestCoreDTO() models.RequestCoreDTO {
