@@ -4,14 +4,10 @@ import (
 	"gurl/shared/models"
 )
 
-func (s *DesktopStorage) initializeUIState() error {
-	return s.uiStateRepo.InitializeUIState(s.appCtx)
-}
-
 func (s *DesktopStorage) GetUIState() (*models.UIStateDTO, error) {
-	return s.uiStateRepo.GetUIState(s.appCtx)
+	return s.uiStateRepo.GetUIStateForUser(s.appCtx)
 }
 
 func (s *DesktopStorage) UpdateUIState(dto models.UpdateUIStateDTO) error {
-	return s.uiStateRepo.UpdateUIState(dto)
+	return s.uiStateRepo.UpdateUIStateForUser(s.appCtx, dto)
 }

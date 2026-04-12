@@ -29,7 +29,9 @@ func (ex *DesktopExporter) ImportCollection(workspaceId string) error {
 		return err
 	}
 
-	return ex.internalImportor.HandleImportCollection(ex.appCtx, src, workspaceId)
+	_, err = ex.internalImportor.HandleImportCollection(ex.appCtx, src, workspaceId)
+
+	return err
 }
 
 func (ex *DesktopExporter) ImportEnvironment(workspaceId string) error {
@@ -54,5 +56,7 @@ func (ex *DesktopExporter) ImportEnvironment(workspaceId string) error {
 		return err
 	}
 
-	return ex.internalImportor.HandleImportEnvironment(ex.appCtx, src, workspaceId)
+	_, err = ex.internalImportor.HandleImportEnvironment(ex.appCtx, src, workspaceId)
+
+	return err
 }

@@ -16,8 +16,8 @@ func (s *DesktopStorage) FindEnvDraft(id string) (models.EnvironmentDraftDTO, er
 	return s.envRepo.FindEnvDraft(s.appCtx, id)
 }
 
-func (s *DesktopStorage) AddFreshEnvDraft(id string) error {
-	return s.envRepo.AddFreshEnvDraft(s.appCtx, id)
+func (s *DesktopStorage) AddFreshEnvDraft(dto models.AddFreshEnvDraftDTO) error {
+	return s.envRepo.AddFreshEnvDraft(s.appCtx, dto)
 }
 
 func (s *DesktopStorage) CopyEnvironment(id string, dto models.CopyEnvironmentDTO) error {

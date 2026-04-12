@@ -4,12 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"gurl/desktop/internal"
 	dbPkg "gurl/shared/db"
 	"gurl/shared/models"
+	"gurl/shared/nanoid"
 	"gurl/shared/utils"
 	"io"
 	"log"
 	"os"
+	"path/filepath"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 	"gorm.io/gorm"
@@ -18,6 +21,7 @@ import (
 type DesktopStorage struct {
 	db                *gorm.DB
 	appCtx            context.Context
+	tmpDir            string
 	savedResponsesDir string
 	envRepo           *dbPkg.EnvironmentRepository
 	collectionRepo    *dbPkg.CollectionRepository
@@ -25,18 +29,21 @@ type DesktopStorage struct {
 	reqExampleRepo    *dbPkg.ReqExampleRepository
 	uiStateRepo       *dbPkg.UiStateRepository
 	workspaceRepo     *dbPkg.WorkspaceRepository
+	userRepo          *dbPkg.UserRepository
 }
 
-func NewStorage(db *gorm.DB, savedResponsesDir string) DesktopStorage {
+func NewStorage(db *gorm.DB, tmpDir string, savedResponsesDir string) DesktopStorage {
 	return DesktopStorage{
 		db:                db,
 		savedResponsesDir: savedResponsesDir,
+		tmpDir:            tmpDir,
 		envRepo:           dbPkg.NewEnvironmentRepository(db),
 		collectionRepo:    dbPkg.NewCollectionRepository(db),
 		reqRepo:           dbPkg.NewRequestRepository(db),
 		reqExampleRepo:    dbPkg.NewReqExampleRepository(db),
 		uiStateRepo:       dbPkg.NewUiStateRepository(db),
 		workspaceRepo:     dbPkg.NewWorkspaceRepository(db),
+		userRepo:          dbPkg.NewUserRepository(db),
 	}
 }
 
@@ -53,46 +60,57 @@ func NewTestStorage(db *gorm.DB, appCtx context.Context) DesktopStorage {
 	}
 }
 
-func Startup(s *DesktopStorage, appCtx context.Context) error {
+func Startup(s *DesktopStorage, appCtx context.Context) (context.Context, error) {
 	log.Println("[DesktopStorage] Initialization Started")
 
-	s.appCtx = appCtx
+	//add default user if doesn't exist.
+	existingUser, err := s.userRepo.FindUserByEmail(appCtx, internal.DEFAULT_USER_ID)
 
-	err := s.db.AutoMigrate(
-		&dbPkg.MimeRecord{},
-		&dbPkg.UIState{},
-		&dbPkg.Workspace{},
-		&dbPkg.Collection{},
-		&dbPkg.Request{},
-		&dbPkg.RequestDraft{},
-		&dbPkg.RequestExample{},
-		&dbPkg.Environment{},
-		&dbPkg.EnvironmentDraft{},
-	)
+	userid := ""
 
 	if err != nil {
-		return err
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			newUserId, addErr := s.userRepo.CreateAdminUser(appCtx, models.CreateUserDTO{
+				Email: internal.DEFAULT_USER_ID,
+			})
+
+			if addErr != nil {
+				return nil, addErr
+			}
+
+			userid = newUserId
+
+		} else {
+			return nil, err
+		}
+	} else {
+		userid = existingUser.Id
 	}
 
-	log.Println("[DesktopStorage] Db Migrated")
+	s.appCtx = utils.ContextWithUserId(appCtx, userid)
+
+	log.Printf("userid in context is now: %s\n", utils.UserIdFromContext(s.appCtx))
 
 	//add default UI state record if not exists
-	_, err = s.GetUIState()
+	_, err = s.uiStateRepo.GetUIStateForUser(s.appCtx)
 
-	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 
-		addErr := s.initializeUIState()
+			addErr := s.uiStateRepo.InitializeUIStateForUser(s.appCtx, nanoid.Must())
 
-		if addErr != nil {
-			return fmt.Errorf("unable to add default UIState")
+			if addErr != nil {
+				return nil, fmt.Errorf("unable to add default UIState for default user")
+			}
+
+			log.Println("[DesktopStorage] Default UIState is created")
+		} else {
+			return nil, err
 		}
-
-		log.Println("[DesktopStorage] Default UIState is created")
 	}
 
 	log.Println("[DesktopStorage] Initialization Completed")
-
-	return nil
+	return s.appCtx, nil
 }
 
 func Shutdown(s *DesktopStorage) {
@@ -144,7 +162,9 @@ func (s *DesktopStorage) SaveFile(dto models.DownloadTmpFileDTO) error {
 		return err
 	}
 
-	srcF, err := os.Open(dto.Path)
+	srcPath := filepath.Join(s.tmpDir, dto.Name)
+
+	srcF, err := os.Open(srcPath)
 
 	if err != nil {
 		return err

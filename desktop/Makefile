@@ -3,9 +3,6 @@
 
 STATIC_DIR := ../shared/assets/static
 
-include desktop.env.local
-export
-
 fmt:
 		go fmt ./...
 
@@ -22,4 +19,4 @@ build: clean
 		wails build -tags webkit2_41
 
 dev: vet
-		wails dev -tags webkit2_41
+		GURL_ENV=DEV wails dev -tags webkit2_41

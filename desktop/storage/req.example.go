@@ -5,7 +5,7 @@ import (
 )
 
 func (s *DesktopStorage) AddReqExample(dto models.ReqExampleDTO, meta models.SavedResponseRenderMeta) error {
-	return s.reqExampleRepo.AddReqExample(s.appCtx, dto, meta, s.savedResponsesDir)
+	return s.reqExampleRepo.AddReqExample(s.appCtx, dto, meta, s.tmpDir, s.savedResponsesDir)
 }
 
 func (s *DesktopStorage) GetReqExampleById(id string) (*models.ReqExampleDTO, error) {

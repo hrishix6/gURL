@@ -15,14 +15,14 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
 	"github.com/wailsapp/wails/v2/pkg/options/linux"
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 func InitializeDesktopApp(
 	params models.AppInitParams,
 ) {
-
 	//bounded structs
-	storageInstance := storage.NewStorage(params.Db, params.SavedResponsesDir)
+	storageInstance := storage.NewStorage(params.Db, params.TempDir, params.SavedResponsesDir)
 
 	executorInstance := executor.NewExecutor(
 		params.Db,
@@ -39,19 +39,24 @@ func InitializeDesktopApp(
 		},
 		BackgroundColour: &options.RGBA{R: 27, G: 38, B: 54, A: 1},
 		OnStartup: func(ctx context.Context) {
-			err := storage.Startup(&storageInstance, ctx)
+
+			env := runtime.Environment(ctx)
+
+			log.Printf("%s, %s, %s \n", env.Arch, env.BuildType, env.Platform)
+
+			destktopUserCtx, err := storage.Startup(&storageInstance, ctx)
 
 			if err != nil {
 				log.Fatalf("unable to initialize storage %v", err)
 			}
 
-			err = executor.Startup(&executorInstance, ctx, assets.MimedbJson)
+			err = executor.Startup(&executorInstance, destktopUserCtx, assets.MimedbJson)
 
 			if err != nil {
 				log.Fatalf("unable to initialize executor %v", err)
 			}
 
-			err = exporter.Startup(&exporterInstance, ctx)
+			err = exporter.Startup(&exporterInstance, destktopUserCtx)
 
 			if err != nil {
 				log.Fatalf("unable to initialize exporter %v", err)
