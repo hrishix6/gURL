@@ -1,26 +1,31 @@
-version: '3'
-
 services:
   db:
     container_name: gurl-web-db
     image: ${POSTGRES_IMAGE}
+    healthcheck:
+      test: [ 'CMD-SHELL', 'pg_isready -U postgres' ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     volumes:
-      - gurl-web-db-volume:/var/lib/postgresql/data
+      - gurl-web-public-db:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
     env_file:
       - .env.local
     networks:
-      - gurl-web-prod-network
+      - gurl-web-public-network
   gurl:
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+        restart: true
     container_name: gurl-web-container
     image: gurl-web 
-    build: .
-    env_file:
-      - public.env.prod
+    build: Dockerfile.public
     networks:
-      -  gurl-web-prod-network
+      -  gurl-web-public-network
     volumes:
       - ./appData:/usr/local/src/gURL
       
@@ -36,12 +41,12 @@ services:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/certs:/etc/nginx/certs:ro
     networks:
-      -  gurl-web-prod-network
+      -  gurl-web-public-network
 
 volumes:
-  gurl-web-db-volume:
+  gurl-web-public-db:
     driver: local
 
 networks:
-  gurl-web-prod-network:
+  gurl-web-public-network:
     driver: bridge

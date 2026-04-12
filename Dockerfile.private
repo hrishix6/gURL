@@ -46,10 +46,15 @@ WORKDIR /app
 
 COPY --from=backend /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
-COPY --from=backend /app/bin ./bin
+COPY --from=backend /app/bin/gurl-web ./
 
+COPY ./web/demo ./demo
+
+COPY ./private.env.prod.json ./
+
+ENV CFG_FILE=private.env.prod.json
 ENV WEB_PORT=80
 EXPOSE 80
 
-CMD ["./bin/gurl-web"]
+CMD ["./gurl-web"]
 

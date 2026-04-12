@@ -4,13 +4,7 @@
         {
             "previewLimit": 50,
             "driver": "SQLite",
-            "name": "gurl_web_db",
-            "database": "web/appData/gurl.db"
-        },
-        {
-            "previewLimit": 50,
-            "driver": "SQLite",
-            "name": "gurl_desktop_db",
+            "name": "desktop db",
             "database": "desktop/appData/gurl.db"
         }
     ]

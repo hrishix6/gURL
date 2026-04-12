@@ -5,6 +5,7 @@ bin/
 *md5
 *.env.local
 *.env.prod
+*.env.*.json
 *.db
 shared/assets/static/
 appData/
