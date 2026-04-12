@@ -7,6 +7,7 @@ import (
 	"gurl/web/executor"
 	"gurl/web/exporter"
 	"gurl/web/internal"
+	"gurl/web/internal/config"
 	"gurl/web/internal/httpx"
 	"gurl/web/internal/models"
 	"gurl/web/storage"
@@ -18,33 +19,39 @@ import (
 
 type Api struct {
 	httpx.BaseController
-	domainURL *url.URL
-	version   string
-	storage   *storage.WebStorage
-	executor  *executor.WebExecutor
-	exporter  *exporter.WebExporter
-	authSvc   *auth.AuthService
+	domainURL   *url.URL
+	version     string
+	tmpDir      string
+	savedResDir string
+	storage     *storage.WebStorage
+	executor    *executor.WebExecutor
+	exporter    *exporter.WebExporter
+	authSvc     *auth.AuthService
 }
 
-func NewApi(appName string, domainURL string, store *storage.WebStorage,
+func NewApi(
+	cfg *config.WebApplicationConfig,
+	store *storage.WebStorage,
 	exec *executor.WebExecutor,
 	export *exporter.WebExporter,
 	authSvc *auth.AuthService,
 ) *Api {
 
-	d, err := url.Parse(domainURL)
+	d, err := url.Parse(cfg.FrontendURL)
 
 	if err != nil {
 		log.Fatalf("expected valid domain url: %v", err)
 	}
 
 	return &Api{
-		domainURL: d,
-		storage:   store,
-		executor:  exec,
-		exporter:  export,
-		version:   "v1",
-		authSvc:   authSvc,
+		domainURL:   d,
+		storage:     store,
+		executor:    exec,
+		exporter:    export,
+		version:     "v1",
+		authSvc:     authSvc,
+		tmpDir:      cfg.BaseTmpDir,
+		savedResDir: cfg.BaseSavedResponsesDir,
 	}
 }
 

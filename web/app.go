@@ -5,13 +5,13 @@ import (
 	"errors"
 	"fmt"
 	"gurl/shared/assets"
-	"gurl/shared/models"
 	"gurl/web/api"
 	"gurl/web/auth"
-	"gurl/web/config"
+	clientconfig "gurl/web/client_config"
 	"gurl/web/executor"
 	"gurl/web/exporter"
 	"gurl/web/internal"
+	"gurl/web/internal/config"
 	"gurl/web/internal/emailx"
 	"gurl/web/storage"
 	"io/fs"
@@ -24,31 +24,12 @@ import (
 	"strings"
 	"sync"
 	"syscall"
+	"time"
+
+	"github.com/go-co-op/gocron/v2"
 
 	"gorm.io/gorm"
 )
-
-type GurlWebApp struct {
-	storage   *storage.WebStorage
-	executor  *executor.WebExecutor
-	exporter  *exporter.WebExporter
-	cleanupWG *sync.WaitGroup
-}
-
-func NewGurlWebApp(
-	appName string,
-	db *gorm.DB,
-	savedResDir string,
-	tmpDir string,
-	webTmpDir string,
-) *GurlWebApp {
-	return &GurlWebApp{
-		storage:   storage.NewWebStorage(db, savedResDir),
-		executor:  executor.NewWebExecutor(db, appName, tmpDir, savedResDir, webTmpDir),
-		exporter:  exporter.NewWebExporter(db),
-		cleanupWG: &sync.WaitGroup{},
-	}
-}
 
 func withCORS(next http.Handler, frontendURL, backendURL string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -74,84 +55,54 @@ func withCORS(next http.Handler, frontendURL, backendURL string) http.Handler {
 }
 
 func InitializeWebApp(
-	params models.WebAppInitParams,
+	appCfg *config.WebApplicationConfig,
+	dbConn *gorm.DB,
 ) {
 
-	jwtSecret, ok := os.LookupEnv("JWT_SECRET")
+	var cleanupWG sync.WaitGroup
 
-	if !ok {
-		log.Fatalf("JWT_SECRET environment variable must be provided")
-	}
-
-	enbleDemoLogins := false
-	cfTurnstileSecret := ""
-
-	if demoEnabled, ok := os.LookupEnv("FEAT_DEMO_ENALBED"); ok && demoEnabled == "true" {
-		enbleDemoLogins = true
-		cfSecret, cfSecretOk := os.LookupEnv("CF_TURNSTILE_SECRET")
-		if !cfSecretOk {
-			log.Fatalf("CF_TURNSTILE_SECRET environment variable must be provided")
-		}
-		cfTurnstileSecret = cfSecret
-	}
-
-	mailer := emailx.NewMailer()
-
-	webApp := NewGurlWebApp(
-		params.AppName,
-		params.Db,
-		params.SavedResponsesDir,
-		params.TempDir,
-		params.WebTempDir,
-	)
+	mailer := emailx.NewMailer(appCfg.EmailConfig)
+	webStorage := storage.NewWebStorage(dbConn, appCfg.BaseSavedResponsesDir)
+	webExecutor := executor.NewWebExecutor(appCfg, webStorage)
+	webExporter := exporter.NewWebExporter(dbConn, appCfg.BaseUploadsDir)
+	authSvc := auth.NewAuthService(appCfg, webStorage, webExporter, mailer)
 
 	ctx := context.Background()
 
-	srvAddr := fmt.Sprintf(":%d", params.Port)
+	srvAddr := fmt.Sprintf(":%d", appCfg.Port)
 
-	backendURL := ""
-	frontendURL := ""
-
-	if params.BackendURL != "" {
-		backendURL = params.BackendURL
-	} else {
-		backendURL = fmt.Sprintf("http://localhost:%d", params.Port)
+	if appCfg.BackendURL == "" {
+		appCfg.BackendURL = fmt.Sprintf("http://localhost:%d", appCfg.Port)
 	}
 
-	if params.FrontendURL != "" {
-		frontendURL = params.FrontendURL
-	} else {
-		frontendURL = backendURL
+	if appCfg.FrontendURL == "" {
+		appCfg.FrontendURL = appCfg.BackendURL
 	}
 
-	previewSrvAddr := fmt.Sprintf("%s/preview", frontendURL)
+	previewSrvAddr := fmt.Sprintf("%s/preview", appCfg.FrontendURL)
 
-	err := webApp.storage.Startup(ctx)
+	err := webStorage.Startup(ctx)
 
 	if err != nil {
 		log.Fatalf("unable to initialize storage %v", err)
 	}
 
-	err = webApp.executor.Startup(ctx, assets.MimedbJson, previewSrvAddr)
+	err = webExecutor.Startup(ctx, assets.MimedbJson, previewSrvAddr)
 
 	if err != nil {
 		log.Fatalf("unable to initialize executor %v", err)
 	}
 
-	authSvc := auth.NewAuthService(
-		params.AppName,
-		params.Env == "PROD",
-		jwtSecret,
-		cfTurnstileSecret,
-		webApp.storage,
-		mailer)
-
-	apiRouter := api.NewApi(params.AppName, frontendURL, webApp.storage, webApp.executor, webApp.exporter, authSvc)
-	authRouter := auth.NewAuthRouter(frontendURL, backendURL, authSvc, params.Env == "PROD")
+	apiRouter := api.NewApi(appCfg, webStorage, webExecutor, webExporter, authSvc)
+	authRouter := auth.NewAuthRouter(appCfg, authSvc)
 
 	mux := http.NewServeMux()
 
-	appConfigRouter := config.NewAppConfigController(internal.VERSION, "/api/v1", "/auth", webApp.storage, enbleDemoLogins)
+	appConfigRouter := clientconfig.NewClientConfigController(
+		internal.VERSION,
+		appCfg.AuthConfig.EnableDemo,
+		webStorage,
+	)
 
 	mux.Handle("/config.json", appConfigRouter.Routes())
 
@@ -159,11 +110,11 @@ func InitializeWebApp(
 
 	mux.Handle("/api/v1/", http.StripPrefix("/api/v1", apiRouter.Routes()))
 
-	previewHandler := webApp.executor.GetPreviewHandler()
+	previewHandler := webExecutor.GetPreviewHandler()
 
 	mux.Handle("/preview/{id}/", apiRouter.ProtectedRoute(apiRouter.PreviewHandler(previewHandler)))
 
-	if params.Env == "PROD" {
+	if appCfg.Env == "PROD" {
 		subFs, err := fs.Sub(assets.Assets, filepath.Join("static", "browser"))
 
 		if err != nil {
@@ -184,20 +135,51 @@ func InitializeWebApp(
 
 	srv := &http.Server{
 		Addr:    srvAddr,
-		Handler: withCORS(mux, frontendURL, backendURL),
+		Handler: withCORS(mux, appCfg.FrontendURL, appCfg.BackendURL),
 	}
 
-	webApp.cleanupWG.Add(1)
+	//cron
+	s, err := gocron.NewScheduler()
+
+	if err != nil {
+		log.Fatalln("failed to schedule cron jobs")
+	}
+
+	j, err := s.NewJob(
+		gocron.DurationJob(10*time.Minute),
+		gocron.NewTask(func(svc *auth.AuthService) {
+			log.Printf("[CronJob]: Clean up job started")
+
+			err := svc.CleanupDemoUsers()
+
+			if err != nil {
+				log.Printf("[CronJob]: clean up job failed %v\n", err)
+			}
+
+			log.Printf("[CronJob]: clean up job ended")
+
+		}, authSvc),
+	)
+
+	if err != nil {
+		log.Fatalln("failed to start cleanup job")
+	}
+
+	log.Printf("Job #%s demo user cleanup scheduled for every 10 min\n", j.ID())
+
+	s.Start()
+
+	cleanupWG.Add(1)
 
 	go func() {
-		defer webApp.cleanupWG.Done()
+		defer cleanupWG.Done()
 
 		if err := srv.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
 			log.Fatalf("Serve(): %v", err)
 		}
 
-		webApp.storage.Shutdown()
-		webApp.executor.Shutdown()
+		webStorage.Shutdown()
+		webExecutor.Shutdown()
 		log.Println(`[WebApp] Server Shutdown finished`)
 	}()
 
@@ -213,5 +195,11 @@ func InitializeWebApp(
 		log.Printf("[WebApp] Server forced to shutdown: %v", err)
 	}
 
-	webApp.cleanupWG.Wait()
+	err = s.Shutdown()
+
+	if err != nil {
+		log.Println("failed to shutdown cron scheduler")
+	}
+
+	cleanupWG.Wait()
 }

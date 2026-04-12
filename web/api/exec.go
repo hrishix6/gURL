@@ -9,6 +9,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"path/filepath"
 )
 
 func (api *Api) SendHttpReq(w http.ResponseWriter, r *http.Request) {
@@ -29,6 +30,23 @@ func (api *Api) SendHttpReq(w http.ResponseWriter, r *http.Request) {
 	}
 
 	gurlRes, err := api.executor.SendHttpReq(r.Context(), dto)
+
+	if err != nil {
+		log.Printf("[api/SendHttpReq] error:%v \n", err)
+		wrappedErrResponse := api.WrapErrorResponse(r, webModels.RequestError{
+			Message: "failed to execute http request",
+			Details: err.Error(),
+		})
+
+		api.ServerCooked(w, wrappedErrResponse)
+		return
+	}
+
+	tempPath := filepath.Join(api.tmpDir, gurlRes.Body.Filename)
+
+	err = api.storage.ReqRepo.UpdateDraftFields(r.Context(), dto.Id, models.UpdateDraftFieldsDTO{
+		LastTmpResponsePath: &tempPath,
+	})
 
 	if err != nil {
 		log.Printf("[api/SendHttpReq] error:%v \n", err)
@@ -99,7 +117,7 @@ func (api *Api) GetSavedResponsesSrc(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	src := api.executor.GetSavedResponsesSrc(r.Context(), dto.SavedResPath)
+	src := api.executor.GetSavedResponsesSrc(r.Context(), dto.Name)
 	api.Ok(w, api.WrapSuccessResponse(r, src))
 }
 
@@ -161,5 +179,7 @@ func (api *Api) DownloadTempFile(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Disposition", attachment)
 	w.Header().Set("Content-Type", dto.MimeType)
 
-	http.ServeFile(w, r, dto.Path)
+	srcPath := filepath.Join(api.tmpDir, dto.Name)
+
+	http.ServeFile(w, r, srcPath)
 }

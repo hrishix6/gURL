@@ -9,6 +9,8 @@ import (
 	"gurl/shared/models"
 	"gurl/shared/utils"
 	"gurl/web/internal"
+	"gurl/web/internal/config"
+	"gurl/web/storage"
 	"log"
 	"net/http"
 	"os"
@@ -18,8 +20,7 @@ import (
 )
 
 type WebExecutor struct {
-	db             *gorm.DB
-	mimeRepo       *dbPkg.MimeRepository
+	storage        *storage.WebStorage
 	httpExecutor   *internalExec.HttpExecutor
 	previewSrvAddr string
 	tmpDir         string
@@ -125,31 +126,23 @@ func CleanupWebTempDir(dbConn *gorm.DB, webTempDir string) error {
 }
 
 func NewWebExecutor(
-	db *gorm.DB,
-	appName string,
-	tmpDir string,
-	savedResDir string,
-	webTmpDir string,
-
+	appCfg *config.WebApplicationConfig,
+	storage *storage.WebStorage,
 ) *WebExecutor {
-
-	mimeRepo := dbPkg.NewMimeRepository(db)
-
 	return &WebExecutor{
-		db:             db,
-		mimeRepo:       mimeRepo,
+		storage:        storage,
 		previewSrvAddr: "",
-		tmpDir:         tmpDir,
+		tmpDir:         appCfg.BaseTmpDir,
 		httpExecutor: internalExec.NewHttpExecutor(
-			appName,
-			tmpDir,
-			savedResDir,
-			mimeRepo,
+			appCfg.AppName,
+			appCfg.BaseTmpDir,
+			appCfg.BaseSavedResponsesDir,
+			storage.MimeRepo,
 			internal.TEMP_RESPONSE_PREFIX,
 			internal.SAVED_RESPONSES_PREFIX,
 			internal.MAX_RESPONSE_LIMIT_BYTES,
 		),
-		webTmpDir: webTmpDir,
+		webTmpDir: appCfg.BaseUploadsDir,
 	}
 }
 
@@ -157,7 +150,7 @@ func (we *WebExecutor) Startup(ctx context.Context, mimeDbJson []byte, previewSr
 	log.Println("[WebExecutor] Initialization Started")
 
 	//populate mime db if doesn't exist
-	count, err := we.mimeRepo.GetRecordCount(ctx)
+	count, err := we.storage.MimeRepo.GetRecordCount(ctx)
 
 	if err != nil {
 		return err
@@ -172,16 +165,12 @@ func (we *WebExecutor) Startup(ctx context.Context, mimeDbJson []byte, previewSr
 			return err
 		}
 
-		err = we.mimeRepo.BulkAddMimeRecords(ctx, m, 500)
+		err = we.storage.MimeRepo.BulkAddMimeRecords(ctx, m, 500)
 
 		if err != nil {
 			return err
 		}
 	}
-
-	_ = CleanupWebTempDir(we.db, we.webTmpDir)
-
-	log.Println("[WebExecutor] Cleaned up Web Temp Dir")
 
 	we.previewSrvAddr = previewSrvAddr
 
@@ -197,13 +186,25 @@ func (we *WebExecutor) Startup(ctx context.Context, mimeDbJson []byte, previewSr
 func (we *WebExecutor) Shutdown() {
 	log.Println("[WebExecutor] Shutdown started")
 
-	log.Println("[WebExecutor] Cleaning up tmp directory started")
-	_ = utils.CleanupTempDir(we.tmpDir)
-
 	log.Println("[WebExecutor] Shutdown Finished")
 }
 
 func (we *WebExecutor) SendHttpReq(ctx context.Context, r models.GurlReq) (*models.GurlRes, error) {
+	//In Web client for multipart bodies, Filepath is only file name, this is by design to not expose file system to web client side
+	//frontend will only pass temp file name that was uploaded, we append temp uploads directory path before passing it to executor.
+	if r.BodyType == "multipart" && len(r.MultiPartForm) > 0 {
+
+		for i := range r.MultiPartForm {
+			if r.MultiPartForm[i].IsFile {
+				r.MultiPartForm[i].Value = filepath.Join(we.webTmpDir, r.MultiPartForm[i].Value)
+			}
+		}
+	}
+
+	if r.BodyType == "binary" && r.BinaryFile != "" {
+		r.BinaryFile = filepath.Join(we.webTmpDir, r.BinaryFile)
+	}
+
 	return we.httpExecutor.SendHttpReq(ctx, r)
 }
 
@@ -215,8 +216,7 @@ func (we *WebExecutor) ParseCookieRaw(text string) ([]models.GurlKeyValItem, err
 	return we.httpExecutor.ParseCookieRaw(text)
 }
 
-func (we *WebExecutor) GetSavedResponsesSrc(ctx context.Context, savedResPath string) string {
-	filename := filepath.Base(savedResPath)
+func (we *WebExecutor) GetSavedResponsesSrc(ctx context.Context, filename string) string {
 	userId := utils.UserIdFromContext(ctx)
 	return fmt.Sprintf("%s/%s/%s/%s", we.previewSrvAddr, userId, internal.SAVED_RESPONSES_PREFIX, filename)
 }
@@ -253,7 +253,7 @@ func (we *WebExecutor) UploadWebTempFile(id string, data []byte) models.UploadWe
 	return models.UploadWebTempFileRes{
 		Success: true,
 		ErrMsg:  "",
-		Data:    tmpF.Name(),
+		Data:    filepath.Base(tmpF.Name()),
 	}
 }
 

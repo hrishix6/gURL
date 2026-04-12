@@ -174,7 +174,7 @@ func (api *Api) GetEnvDraftbyId(w http.ResponseWriter, r *http.Request) {
 
 func (api *Api) CreateFreshEnvDraft(w http.ResponseWriter, r *http.Request) {
 
-	var dto models.AddEnvironmentDraftDTO
+	var dto models.AddFreshEnvDraftDTO
 
 	err := json.NewDecoder(r.Body).Decode(&dto)
 
@@ -189,7 +189,7 @@ func (api *Api) CreateFreshEnvDraft(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = api.storage.EnvRepo.AddFreshEnvDraft(r.Context(), dto.DraftId)
+	err = api.storage.EnvRepo.AddFreshEnvDraft(r.Context(), dto)
 
 	if err != nil {
 		log.Printf("[api/CreateFreshEnvDraft] error:%v \n", err)

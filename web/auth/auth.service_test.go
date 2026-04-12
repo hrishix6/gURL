@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"gurl/shared/utils"
+	"gurl/web/internal/config"
 	"os"
 	"testing"
 	"time"
@@ -13,7 +14,15 @@ var wantUserId = "user-123"
 
 func TestMain(m *testing.M) {
 
-	authSvc = NewAuthService("gurl", false, "j3zfJOXhLrVYpxNbtxwn/NTlbOrKp6csk63bkNZu8ik=", "", nil, nil)
+	cfg := config.WebApplicationConfig{
+		AppName: "gurl",
+		Env:     "DEV",
+		AuthConfig: &config.AuthConfig{
+			JwtSecret: "j3zfJOXhLrVYpxNbtxwn/NTlbOrKp6csk63bkNZu8ik=",
+		},
+	}
+
+	authSvc = NewAuthService(&cfg, nil, nil, nil)
 
 	exitVal := m.Run()
 

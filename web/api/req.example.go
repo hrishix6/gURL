@@ -26,7 +26,7 @@ func (api *Api) CreateReqExample(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = api.storage.ReqExampleRepo.AddReqExample(r.Context(), dto.Example, dto.RenderMetadata, api.storage.SavedResponsesDir)
+	err = api.storage.ReqExampleRepo.AddReqExample(r.Context(), dto.Example, dto.RenderMetadata, api.tmpDir, api.savedResDir)
 
 	if err != nil {
 		log.Printf("[api/CreateReqExample] error:%v \n", err)

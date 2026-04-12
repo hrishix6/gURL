@@ -3,98 +3,84 @@ package main
 import (
 	"fmt"
 	"gurl/shared/db"
-	"gurl/shared/models"
 	"gurl/shared/utils"
 	"gurl/web/internal"
+	"gurl/web/internal/config"
 	"log"
 	"os"
 	"path/filepath"
-	"strconv"
+	"slices"
 )
 
 func main() {
 
-	env, ok := os.LookupEnv("ENV")
+	cfgFile, ok := os.LookupEnv("CFG_FILE")
 
 	if !ok {
-		env = "PROD"
+		log.Fatalln("CFG_FILE not configured")
 	}
 
-	gurl_fe_url, ok := os.LookupEnv("GURL_FRONTEND_URL")
+	appCfg := config.LoadWebAppConfig(cfgFile)
 
-	if !ok {
-		log.Printf("GURL_FRONTEND_URL not set, using localhost. This might not work correctly you want if app is running behind any kind of proxy")
+	if !slices.Contains([]string{"DEV", "PROD"}, appCfg.Env) {
+		appCfg.Env = "PROD"
 	}
 
-	gurl_be_url, ok := os.LookupEnv("GURL_BACKEND_URL")
+	log.Printf("[Gurl] env is %s\n", appCfg.Env)
 
-	if !ok {
-		log.Printf("GURL_BACKEND_URL not set, using localhost. This might not work correctly you want if app is running behind any kind of proxy")
+	if appCfg.FrontendURL == "" {
+		log.Printf("frontend URL is not set, using localhost. This might not work correctly you want if app is running behind any kind of proxy")
 	}
 
-	portStr, ok := os.LookupEnv("PORT")
-
-	port := 80
-
-	if ok {
-		if portNum, err := strconv.Atoi(portStr); err == nil {
-			port = portNum
-		}
+	if appCfg.BackendURL == "" {
+		log.Printf("backend URL is not set, using localhost. This might not work correctly you want if app is running behind any kind of proxy")
 	}
 
-	appName := fmt.Sprintf("%s_%s", internal.APP_NAME, internal.VERSION)
-
-	log.Printf("[Gurl] env is %s\n", env)
-
-	tmpDir, err := utils.InitTempDir(internal.APP_NAME)
-
-	if err != nil {
-		log.Fatalf("unable to initialize temp directory : %v", err)
+	if appCfg.Port == 0 {
+		appCfg.Port = 80
 	}
 
-	log.Printf("[Gurl] tmp location: %s \n", tmpDir)
+	appCfg.AppName = fmt.Sprintf("%s_%s", internal.APP_NAME, internal.VERSION)
 
 	baseDataDir := ""
 
-	if env == "PROD" {
+	if appCfg.Env == "PROD" {
 		baseDataDir = filepath.Join("/", "usr", "local", "src", internal.APP_NAME)
 	} else {
 		baseDataDir = "appData"
 	}
 
-	err = utils.InitDataDir(baseDataDir)
-
-	if err != nil {
+	if err := utils.InitDataDir(baseDataDir); err != nil {
 		log.Fatalf("unable to initialize data directory : %v", err)
 	}
 
 	log.Printf("[Gurl] data location: %s \n", baseDataDir)
 
-	webTmpDir, err := utils.InitWebTempDir(baseDataDir)
-
-	if err != nil {
-		log.Fatalf("unable to initialize web temp directory : %v", err)
-	}
-
-	log.Printf("[Gurl] Web uploads tmp location: %s \n", webTmpDir)
-
-	savedResponsesDir, err := utils.InitSavedResponsesDir(baseDataDir, internal.SAVED_RESPONSES_LOCATION)
-
-	if err != nil {
-		log.Fatalf("unable to initialize saved responses directory : %v", err)
-	}
-
-	log.Printf("[Gurl] saved responses location: %s \n", savedResponsesDir)
-
-	dsn := ""
-
-	if d, ok := os.LookupEnv("DATABASE_URL"); !ok || d == "" {
-		log.Fatalf("DATABASE_URL environment variable not configured")
+	if tmpDir, err := utils.InitTempDir(baseDataDir, internal.TEMP_RESPONSES_LOCATION); err != nil {
+		log.Fatalf("unable to initialize temp directory : %v", err)
 	} else {
-		dsn = d
+		appCfg.BaseTmpDir = tmpDir
 	}
 
-	dbConn, err := db.InitWebDb(dsn)
+	log.Printf("[Gurl] tmp location: %s \n", appCfg.BaseTmpDir)
+
+	if webTmpDir, err := utils.InitWebTempDir(baseDataDir, internal.TEMP_UPLOADS_LOCATION); err != nil {
+		log.Fatalf("unable to initialize web uploads directory : %v", err)
+	} else {
+		appCfg.BaseUploadsDir = webTmpDir
+	}
+
+	log.Printf("[Gurl] Web uploads tmp location: %s \n", appCfg.BaseUploadsDir)
+
+	if savedResponsesDir, err := utils.InitSavedResponsesDir(baseDataDir, internal.SAVED_RESPONSES_LOCATION); err != nil {
+		log.Fatalf("unable to initialize saved responses directory : %v", err)
+	} else {
+		appCfg.BaseSavedResponsesDir = savedResponsesDir
+	}
+
+	log.Printf("[Gurl] saved responses location: %s \n", appCfg.BaseSavedResponsesDir)
+
+	dbConn, err := db.InitWebDb(appCfg.DatabaseURL)
 
 	if err != nil {
 		log.Fatalf("unable to establish postgres connection %v", err)
@@ -102,19 +88,5 @@ func main() {
 
 	log.Println("[Gurl] Db connection established")
 
-	appInitParams := models.WebAppInitParams{
-		AppInitParams: models.AppInitParams{
-			Db:                dbConn,
-			AppName:           appName,
-			SavedResponsesDir: savedResponsesDir,
-			TempDir:           tmpDir,
-			Env:               env,
-		},
-		WebTempDir:  webTmpDir,
-		BackendURL:  gurl_be_url,
-		FrontendURL: gurl_fe_url,
-		Port:        port,
-	}
-
-	InitializeWebApp(appInitParams)
+	InitializeWebApp(&appCfg, dbConn)
 }

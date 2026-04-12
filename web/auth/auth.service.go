@@ -6,13 +6,16 @@ import (
 	internalModels "gurl/shared/models"
 	"gurl/shared/nanoid"
 	"gurl/shared/utils"
+	"gurl/web/exporter"
 	"gurl/web/internal"
+	"gurl/web/internal/config"
 	"gurl/web/internal/emailx"
 	"gurl/web/internal/models"
 	"gurl/web/storage"
 	"log"
 	"net/http"
 	"net/url"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -28,7 +31,6 @@ var (
 )
 
 type AuthService struct {
-	secret            string
 	mode              string
 	issuer            string
 	audience          string
@@ -36,7 +38,8 @@ type AuthService struct {
 	csrfCookieName    string
 	storage           *storage.WebStorage
 	mailer            *emailx.Mailer
-	cfTurnstileSecret string
+	cfg               *config.AuthConfig
+	exporter          *exporter.WebExporter
 }
 
 type GurlJwtClaims struct {
@@ -45,38 +48,37 @@ type GurlJwtClaims struct {
 }
 
 func NewAuthService(
-	appName string,
-	isProd bool,
-	jwtSecret string,
-	cfTurnstileSecret string,
+	appCfg *config.WebApplicationConfig,
 	storage *storage.WebStorage,
+	exporter *exporter.WebExporter,
 	mailer *emailx.Mailer,
 ) *AuthService {
 
 	mode := "prod"
 
-	if !isProd {
+	if appCfg.Env == "DEV" {
 		mode = "local"
 	}
+
 	return &AuthService{
-		secret:            jwtSecret,
 		mode:              mode,
-		issuer:            fmt.Sprintf("%s-jwt-issuer", appName),
-		audience:          fmt.Sprintf("%s-%s", appName, "web-client"),
+		issuer:            fmt.Sprintf("%s-jwt-issuer", appCfg.AppName),
+		audience:          fmt.Sprintf("%s-%s", appCfg.AppName, "web-client"),
 		sessionCookieName: "_gurl_session_",
 		csrfCookieName:    "_gurl_csrf_",
 		storage:           storage,
+		exporter:          exporter,
 		mailer:            mailer,
-		cfTurnstileSecret: cfTurnstileSecret,
+		cfg:               appCfg.AuthConfig,
 	}
 }
 
 func (authSvc *AuthService) VerifyCFTurnstileToken(ctx context.Context, token string) error {
 	f := url.Values{}
-	f.Add("secret", authSvc.cfTurnstileSecret)
+	f.Add("secret", authSvc.cfg.CfTurnstileSecret)
 	f.Add("response", token)
 
-	req, err := http.NewRequestWithContext(ctx, "POST", internal.CF_TURNSTILE_CHALLENGE_URL, strings.NewReader(f.Encode()))
+	req, err := http.NewRequestWithContext(ctx, "POST", authSvc.cfg.CfTurnstyleURL, strings.NewReader(f.Encode()))
 
 	if err != nil {
 		log.Printf("cf verify error : %v\n", err)
@@ -95,7 +97,7 @@ func (authSvc *AuthService) VerifyCFTurnstileToken(ctx context.Context, token st
 
 func (authSvc *AuthService) generateToken(userId string, expiry time.Time) (string, error) {
 
-	signer, err := jose.NewSigner(jose.SigningKey{Algorithm: jose.HS256, Key: []byte(authSvc.secret)}, nil)
+	signer, err := jose.NewSigner(jose.SigningKey{Algorithm: jose.HS256, Key: []byte(authSvc.cfg.JwtSecret)}, nil)
 
 	if err != nil {
 		return "", err
@@ -133,7 +135,7 @@ func (authSvc *AuthService) ParseToken(token string) (*GurlJwtClaims, error) {
 
 	cl := GurlJwtClaims{}
 
-	if err := parsed.Claims([]byte(authSvc.secret), &cl); err != nil {
+	if err := parsed.Claims([]byte(authSvc.cfg.JwtSecret), &cl); err != nil {
 		log.Printf("jwt_parse_err: %v\n", err)
 		return nil, err
 	}
@@ -163,8 +165,6 @@ func (authSvc *AuthService) DemoUserLogin(ctx context.Context) (string, error) {
 	newDemoUserId := fmt.Sprintf("%s_%s", internal.DEMO_USER_ID_PREFIX, id)
 	newDemoUserWorkspaceId := fmt.Sprintf("%s_%s", internal.DEMO_USER_WORKSPACE_PREFIX, id)
 	newDemoUserUIStateId := fmt.Sprintf("%s_%s", internal.DEMO_USER_UISTATE_PREFIX, id)
-	newDemoEnvId := fmt.Sprintf("%s_%s", internal.DEMO_USER_ENV_PREFIX, id)
-	newDemoCollectionId := fmt.Sprintf("%s_%s", internal.DEMO_USER_COLLECTION_PREFIX, id)
 
 	newDemoUserCtx := utils.ContextWithUserId(ctx, newDemoUserId)
 
@@ -197,20 +197,27 @@ func (authSvc *AuthService) DemoUserLogin(ctx context.Context) (string, error) {
 		return "", fmt.Errorf("failed to set demo workspace as active ui state")
 	}
 
-	err = authSvc.storage.EnvRepo.AddEnvironment(newDemoUserCtx, internalModels.AddEnvironmentDTO{
-		Id:          newDemoEnvId,
-		Name:        internal.DEMO_USER_ENV_PREFIX,
+	envId, err := authSvc.exporter.ImportDemoEnvironment(newDemoUserCtx, internalModels.WebImportDTO{
 		WorkspaceId: newDemoUserWorkspaceId,
+		Filepath:    filepath.Join("demo", "demo.env.json"),
 	})
 
 	if err != nil {
 		return "", err
 	}
 
-	err = authSvc.storage.CollectionRepo.AddCollection(newDemoUserCtx, internalModels.CreateCollectionDTO{
-		Id:        newDemoCollectionId,
-		Name:      internal.DEMO_USER_COLLECTION_PREFIX,
-		Workspace: newDemoUserWorkspaceId,
+	//update active environment in workspace
+	err = authSvc.storage.WorkspaceRepo.UpdateWorkspace(newDemoUserCtx, newDemoUserWorkspaceId, internalModels.UpdateWorkspaceDTO{
+		ActiveEnv: &envId,
+	})
+
+	if err != nil {
+		return "", err
+	}
+
+	_, err = authSvc.exporter.ImportDemoCollection(newDemoUserCtx, internalModels.WebImportDTO{
+		WorkspaceId: newDemoUserWorkspaceId,
+		Filepath:    filepath.Join("demo", "demo.collection.json"),
 	})
 
 	if err != nil {
@@ -429,6 +436,52 @@ func (authSvc *AuthService) InviteUser(ctx context.Context, baseURL *url.URL, us
 	log.Printf("magic link generated : %s", magicLink)
 
 	go authSvc.mailer.SendInviteLink(userEmail, magicLink)
+
+	return nil
+}
+
+func (authSvc *AuthService) PurgeDemoUser(ctx context.Context, sessionCookie *http.Cookie) {
+
+	claims, err := authSvc.ParseToken(sessionCookie.Value)
+
+	if err != nil {
+		log.Printf("PurgeDemoUser: error extracting claims %v\n", err)
+		return
+	}
+
+	isDemoUser := strings.HasPrefix(claims.UserId, internal.DEMO_USER_ID_PREFIX)
+
+	if isDemoUser {
+		err := authSvc.storage.UserRepo.DeleteUserById(ctx, claims.UserId)
+
+		if err != nil {
+			log.Printf("PurgeDemoUser: error deleting demo user %v\n", err)
+		}
+	}
+}
+
+func (authSvc *AuthService) CleanupDemoUsers() error {
+
+	users, err := authSvc.storage.UserRepo.FindExpiredDemoUsers()
+
+	if err != nil {
+		log.Printf("[AuthSvc/CleanupDemoUsers]: failed to fetch expired users due to %v\n", err)
+		return err
+	}
+
+	if len(users) == 0 {
+		log.Println("[AuthSvc/CleanupDemoUsers]: No expired users found")
+		return nil
+	}
+
+	for _, user := range users {
+		if err := authSvc.storage.UserRepo.DeleteUser(&user); err != nil {
+			log.Printf("[AuthSvc/CleanupDemoUsers]: failed to delete  expired user %s due to %v\n", user.Id, err)
+			continue
+		}
+
+		log.Printf("[AuthSvc/CleanupDemoUsers]: Deleted  expired user %s\n", user.Id)
+	}
 
 	return nil
 }

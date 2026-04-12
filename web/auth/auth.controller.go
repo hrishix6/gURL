@@ -3,6 +3,7 @@ package auth
 import (
 	"encoding/json"
 	"errors"
+	"gurl/web/internal/config"
 	"gurl/web/internal/httpx"
 	"gurl/web/internal/models"
 	"log"
@@ -19,19 +20,17 @@ type AuthRouter struct {
 }
 
 func NewAuthRouter(
-	frontendURL string,
-	backendURL string,
+	appCfg *config.WebApplicationConfig,
 	authSvc *AuthService,
-	isProd bool,
 ) *AuthRouter {
 
-	f, err := url.Parse(frontendURL)
+	f, err := url.Parse(appCfg.FrontendURL)
 
 	if err != nil {
 		log.Fatalf("expected valid FE url: %v", err)
 	}
 
-	b, err := url.Parse(backendURL)
+	b, err := url.Parse(appCfg.BackendURL)
 
 	if err != nil {
 		log.Fatalf("expected valid BE url: %v", err)
@@ -39,7 +38,7 @@ func NewAuthRouter(
 
 	mode := "local"
 
-	if isProd {
+	if appCfg.Env == "PROD" {
 		mode = "prod"
 	}
 
@@ -89,6 +88,7 @@ func (api *AuthRouter) DemoSession(w http.ResponseWriter, r *http.Request) {
 
 	err := r.ParseForm()
 	if err != nil {
+		log.Printf("/auth/demo-session body is bad failed %v\n", err)
 		loginBaseURL := api.FrontendURL.JoinPath("login")
 		q := loginBaseURL.Query()
 		q.Add("code", "err_demo_session_fail")
@@ -101,6 +101,7 @@ func (api *AuthRouter) DemoSession(w http.ResponseWriter, r *http.Request) {
 	token := r.FormValue("token")
 
 	if token == "" {
+		log.Printf("/auth/demo-session no token failed %v\n", err)
 		loginBaseURL := api.FrontendURL.JoinPath("login")
 		q := loginBaseURL.Query()
 		q.Add("code", "err_demo_session_fail")
@@ -113,6 +114,7 @@ func (api *AuthRouter) DemoSession(w http.ResponseWriter, r *http.Request) {
 	err = api.authSvc.VerifyCFTurnstileToken(r.Context(), token)
 
 	if err != nil {
+		log.Printf("/auth/demo-session turnstile verification failed %v\n", err)
 		loginBaseURL := api.FrontendURL.JoinPath("login")
 		q := loginBaseURL.Query()
 		q.Add("code", "err_demo_session_fail")
@@ -125,6 +127,7 @@ func (api *AuthRouter) DemoSession(w http.ResponseWriter, r *http.Request) {
 	demo_user_token, err := api.authSvc.DemoUserLogin(r.Context())
 
 	if err != nil {
+		log.Printf("/auth/demo-session failed to create demo user data %v\n", err)
 		loginBaseURL := api.FrontendURL.JoinPath("login")
 		q := loginBaseURL.Query()
 		q.Add("code", "err_demo_session_fail")
@@ -187,6 +190,12 @@ func (api *AuthRouter) RegisterAdmin(w http.ResponseWriter, r *http.Request) {
 }
 
 func (api *AuthRouter) Logout(w http.ResponseWriter, r *http.Request) {
+
+	sessionCookie, err := api.authSvc.ExtractSessionCookie(r)
+
+	if err == nil {
+		api.authSvc.PurgeDemoUser(r.Context(), sessionCookie)
+	}
 
 	clearCookie := api.authSvc.ClearSessionCookie(api.mode)
 	http.SetCookie(w, &clearCookie)

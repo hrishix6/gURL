@@ -5,12 +5,10 @@ import (
 	"context"
 	"embed"
 	"fmt"
+	"gurl/web/internal/config"
 	"gurl/web/internal/models"
 	"html/template"
 	"log"
-	"os"
-	"slices"
-	"strconv"
 	"time"
 
 	"github.com/mailgun/mailgun-go/v5"
@@ -26,131 +24,15 @@ func init() {
 	mailTemplates = template.Must(template.ParseFS(templatesFS, "templates/*.html"))
 }
 
-type MailApiConfig struct {
-	Domain string
-	ApiKey string
-}
-
-type MailSmtpConfig struct {
-	Host     string
-	Port     int
-	User     string
-	Password string
-	Domain   string
-}
-
 type Mailer struct {
-	delivery    string
-	FromAddress string
-	apiConfig   *MailApiConfig
-	smtpConfig  *MailSmtpConfig
+	cfg *config.MailConfig
 }
 
-func SetMailConfig(mailer *Mailer) error {
+func NewMailer(mailCfg *config.MailConfig) *Mailer {
 
-	mailDelivery, ok := os.LookupEnv("MAIL_DELIVERY")
-
-	if !ok || !slices.Contains([]string{"api", "smtp"}, mailDelivery) {
-		return fmt.Errorf("MAIL_DELIVERY not configured or incorrect, valid values - 'api' or 'smtp'")
+	return &Mailer{
+		cfg: mailCfg,
 	}
-
-	mailer.delivery = mailDelivery
-
-	fromAddress, ok := os.LookupEnv("MAIL_FROM_EMAIL")
-
-	if !ok || fromAddress == "" {
-		return fmt.Errorf("MAIL_FROM_EMAIL not configured or incorrect")
-	}
-
-	mailer.FromAddress = fromAddress
-
-	if mailDelivery == "api" {
-		apiCfg, err := ReadApiMailConfig()
-
-		if err != nil {
-			return err
-		}
-
-		mailer.apiConfig = apiCfg
-	}
-
-	if mailDelivery == "smtp" {
-		smtpCfg, err := ReadSmtpMailConfig()
-
-		if err != nil {
-			return err
-		}
-
-		mailer.smtpConfig = smtpCfg
-	}
-
-	return nil
-}
-
-func ReadApiMailConfig() (*MailApiConfig, error) {
-
-	config := &MailApiConfig{}
-
-	if domain, ok := os.LookupEnv("MAIL_DOMAIN"); !ok || domain == "" {
-		return nil, fmt.Errorf("MAIL_DOMAIN is required ")
-	} else {
-		config.Domain = domain
-	}
-
-	if apiKey, ok := os.LookupEnv("MAIL_API_KEY"); !ok || apiKey == "" {
-		return nil, fmt.Errorf("MAIL_API_KEY is required ")
-	} else {
-		config.ApiKey = apiKey
-	}
-
-	return config, nil
-}
-
-func ReadSmtpMailConfig() (*MailSmtpConfig, error) {
-
-	config := &MailSmtpConfig{}
-
-	if host, ok := os.LookupEnv("SMTP_HOST"); !ok || host == "" {
-		return nil, fmt.Errorf("smtp host is missing or invalid")
-	} else {
-		config.Host = host
-	}
-
-	if portStr, ok := os.LookupEnv("SMTP_PORT"); !ok {
-		return nil, fmt.Errorf("smtp port is missing")
-	} else {
-		if portNum, err := strconv.Atoi(portStr); err != nil {
-			return nil, fmt.Errorf("smtp port is invalid")
-		} else {
-			config.Port = portNum
-		}
-	}
-
-	if user, ok := os.LookupEnv("SMTP_USERNAME"); !ok || user == "" {
-		return nil, fmt.Errorf("smtp user is missing or invalid")
-	} else {
-		config.User = user
-	}
-
-	if pass, ok := os.LookupEnv("SMTP_PASSWORD"); !ok || pass == "" {
-		return nil, fmt.Errorf("smtp password is missing or invalid")
-	} else {
-		config.Password = pass
-	}
-
-	return config, nil
-}
-
-func NewMailer() *Mailer {
-	mailer := &Mailer{}
-
-	err := SetMailConfig(mailer)
-
-	if err != nil {
-		log.Fatalf("email configuration failed: %v\n", err)
-	}
-
-	return mailer
 }
 
 func (mail *Mailer) SendInviteLink(to string, link string) {
@@ -197,11 +79,11 @@ func (mail *Mailer) sendMail(to string, subject string, plainText string, html b
 
 	var err error
 
-	if mail.delivery == "api" {
+	if mail.cfg.Delivery == "api" {
 		err = mail.sendMailViaAPI(to, subject, plainText, html)
 	}
 
-	if mail.delivery == "smtp" {
+	if mail.cfg.Delivery == "smtp" {
 		err = mail.sendMailViaSMTP(to, subject, plainText, html)
 	}
 
@@ -210,14 +92,14 @@ func (mail *Mailer) sendMail(to string, subject string, plainText string, html b
 
 func (mail *Mailer) sendMailViaSMTP(to string, subject string, plainText string, html bytes.Buffer) error {
 	m := gomail.NewMessage()
-	m.SetHeader("From", mail.FromAddress)
+	m.SetHeader("From", mail.cfg.FromAddr)
 	m.SetHeader("To", to)
 	m.SetHeader("Subject", subject)
 
 	m.SetBody("text/plain", plainText)
 	m.AddAlternative("text/html", html.String())
 
-	d := gomail.NewDialer(mail.smtpConfig.Host, mail.smtpConfig.Port, mail.smtpConfig.User, mail.smtpConfig.Password)
+	d := gomail.NewDialer(mail.cfg.SmtpConfig.Host, mail.cfg.SmtpConfig.Port, mail.cfg.SmtpConfig.User, mail.cfg.SmtpConfig.Password)
 
 	// Send the email to Bob, Cora and Dan.
 	if err := d.DialAndSend(m); err != nil {
@@ -229,9 +111,9 @@ func (mail *Mailer) sendMailViaSMTP(to string, subject string, plainText string,
 
 func (mail *Mailer) sendMailViaAPI(to string, subject string, plainText string, html bytes.Buffer) error {
 
-	mg := mailgun.NewMailgun(mail.apiConfig.ApiKey)
+	mg := mailgun.NewMailgun(mail.cfg.ApiConfig.ApiKey)
 
-	message := mailgun.NewMessage(mail.apiConfig.Domain, mail.FromAddress, subject, plainText, to)
+	message := mailgun.NewMessage(mail.cfg.ApiConfig.Domain, mail.cfg.FromAddr, subject, plainText, to)
 
 	message.SetHTML(html.String())
 

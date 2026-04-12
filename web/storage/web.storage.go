@@ -21,6 +21,7 @@ type WebStorage struct {
 	WorkspaceRepo     *dbPkg.WorkspaceRepository
 	UserRepo          *dbPkg.UserRepository
 	AppSetupRepo      *dbPkg.AppSetupRepo
+	MimeRepo          *dbPkg.MimeRepository
 }
 
 func NewWebStorage(db *gorm.DB, savedResponsesDir string) *WebStorage {
@@ -35,33 +36,14 @@ func NewWebStorage(db *gorm.DB, savedResponsesDir string) *WebStorage {
 		WorkspaceRepo:     dbPkg.NewWorkspaceRepository(db),
 		UserRepo:          dbPkg.NewUserRepository(db),
 		AppSetupRepo:      dbPkg.NewAppSetupRepo(db),
+		MimeRepo:          dbPkg.NewMimeRepository(db),
 	}
 }
 
 func (ws *WebStorage) Startup(ctx context.Context) error {
 	log.Println("[WebStorage] Initialization Started")
 
-	err := ws.db.AutoMigrate(
-		&dbPkg.AppSetup{},
-		&dbPkg.User{},
-		&dbPkg.MimeRecord{},
-		&dbPkg.UIState{},
-		&dbPkg.Workspace{},
-		&dbPkg.Collection{},
-		&dbPkg.Request{},
-		&dbPkg.RequestDraft{},
-		&dbPkg.RequestExample{},
-		&dbPkg.Environment{},
-		&dbPkg.EnvironmentDraft{},
-	)
-
-	if err != nil {
-		return err
-	}
-
-	log.Println("[WebStorage] Db Migrated")
-
-	_, err = ws.AppSetupRepo.GetAppSetup(ctx)
+	_, err := ws.AppSetupRepo.GetAppSetup(ctx)
 
 	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
 
