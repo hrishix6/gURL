@@ -19,14 +19,14 @@ import (
 
 type Api struct {
 	httpx.BaseController
-	domainURL   *url.URL
-	version     string
-	tmpDir      string
-	savedResDir string
-	storage     *storage.WebStorage
-	executor    *executor.WebExecutor
-	exporter    *exporter.WebExporter
-	authSvc     *auth.AuthService
+	domainURL  *url.URL
+	version    string
+	tmpDir     string
+	persistDir string
+	storage    *storage.WebStorage
+	executor   *executor.WebExecutor
+	exporter   *exporter.WebExporter
+	authSvc    *auth.AuthService
 }
 
 func NewApi(
@@ -44,14 +44,14 @@ func NewApi(
 	}
 
 	return &Api{
-		domainURL:   d,
-		storage:     store,
-		executor:    exec,
-		exporter:    export,
-		version:     "v1",
-		authSvc:     authSvc,
-		tmpDir:      cfg.BaseTmpDir,
-		savedResDir: cfg.BaseSavedResponsesDir,
+		domainURL:  d,
+		storage:    store,
+		executor:   exec,
+		exporter:   export,
+		version:    "v1",
+		authSvc:    authSvc,
+		tmpDir:     cfg.BaseTmpDir,
+		persistDir: cfg.BaseSavedResponsesDir,
 	}
 }
 
@@ -134,17 +134,20 @@ func (api *Api) Routes() http.Handler {
 
 	//collections
 	apiMux.Get("/collections", api.GetAllCollections)
+	apiMux.Get("/collections/{id}", api.GetCollectionById)
 	apiMux.Post("/collections", api.ProtectFromDemoUser(api.CreateCollection))
 	apiMux.Delete("/collections/{id}", api.ProtectFromDemoUser(api.DeleteCollection))
 	apiMux.Post("/collections/{id}/clear", api.ClearCollection)
-	apiMux.Delete("/collections/{id}/drafts", api.SoftDeleteReqDraftsUnderCollection)
 	apiMux.Post("/collections/{id}/rename", api.ProtectFromDemoUser(api.RenameCollection))
+	apiMux.Post("/collections/{id}/mockserver", api.CreateMockServer)
+	apiMux.Patch("/collections/{id}/mockserver/enable", api.EnableMockServer)
+	apiMux.Patch("/collections/{id}/mockserver/disable", api.DisableMockServer)
 
 	//reqs
 	apiMux.Get("/reqs", api.GetRequests)
+	apiMux.Get("/reqs/{id}", api.GetReqById)
 	apiMux.Delete("/reqs/{id}", api.DeleteReq)
 	apiMux.Post("/reqs/{id}", api.CopyRequest)
-	apiMux.Delete("/reqs/{id}/drafts", api.SoftDeleteReqDraftsUnderReq)
 	apiMux.Post("/reqs/{id}/drafts", api.CreateDraftFromRequest)
 
 	//req-drafts
@@ -159,7 +162,20 @@ func (api *Api) Routes() http.Handler {
 	apiMux.Get("/req-examples", api.GetReqExamples)
 	apiMux.Post("/req-examples", api.CreateReqExample)
 	apiMux.Get("/req-examples/{id}", api.GetReqExampleById)
-	apiMux.Delete("/req-examples/{id}", api.DeleteReqExample)
+	apiMux.Post("/req-examples/{id}/mock", api.CreateMockFromExample)
+	apiMux.Delete("/req-examples/{id}", api.ProtectFromDemoUser(api.DeleteReqExample))
+
+	//mocks
+	apiMux.Get("/mock-drafts/{id}", api.ProtectFromDemoUser(api.GetMockDraftById))
+	apiMux.Post("/mock-drafts/{id}", api.ProtectFromDemoUser(api.SaveMockDraftAsMock))
+	apiMux.Delete("/mock-drafts/{id}", api.ProtectFromDemoUser(api.DeleteMockDraft))
+	apiMux.Patch("/mock-drafts/{id}", api.ProtectFromDemoUser(api.UpdateMockDraftFields))
+	apiMux.Post("/mock-drafts-fresh", api.ProtectFromDemoUser(api.CreateFreshMockDraft))
+	apiMux.Get("/mocks", api.ProtectFromDemoUser(api.GetMocks))
+	apiMux.Get("/mocks/{id}", api.ProtectFromDemoUser(api.GetMockById))
+	apiMux.Post("/mocks/{id}/copy", api.ProtectFromDemoUser(api.CopyMockWithId))
+	apiMux.Delete("/mocks/{id}", api.ProtectFromDemoUser(api.DeleteMock))
+	apiMux.Post("/mocks/{id}/drafts", api.ProtectFromDemoUser(api.CreateMockDraftFromMock))
 
 	//env
 	apiMux.Get("/envs", api.GetEnvironments)
@@ -178,6 +194,7 @@ func (api *Api) Routes() http.Handler {
 
 	//exec
 	apiMux.Post("/exec", api.SendHttpReq)
+	apiMux.Post("/exec/interpolate", api.GetInterpolatedReq)
 	apiMux.Put("/exec/{id}/cancel", api.CancelReq)
 	apiMux.Post("/exec/parse_cookie", api.ParseCookieRaw)
 	apiMux.Post("/exec/src_path", api.GetSavedResponsesSrc)

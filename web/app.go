@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"gurl/shared/assets"
+	mockserver "gurl/shared/mock-server"
 	"gurl/web/api"
 	"gurl/web/auth"
 	clientconfig "gurl/web/client_config"
@@ -61,12 +62,6 @@ func InitializeWebApp(
 
 	var cleanupWG sync.WaitGroup
 
-	mailer := emailx.NewMailer(appCfg.EmailConfig)
-	webStorage := storage.NewWebStorage(dbConn, appCfg.BaseSavedResponsesDir)
-	webExecutor := executor.NewWebExecutor(appCfg, webStorage)
-	webExporter := exporter.NewWebExporter(dbConn, appCfg.BaseUploadsDir)
-	authSvc := auth.NewAuthService(appCfg, webStorage, webExporter, mailer)
-
 	ctx := context.Background()
 
 	srvAddr := fmt.Sprintf(":%d", appCfg.Port)
@@ -79,7 +74,13 @@ func InitializeWebApp(
 		appCfg.FrontendURL = appCfg.BackendURL
 	}
 
-	previewSrvAddr := fmt.Sprintf("%s/preview", appCfg.FrontendURL)
+	mailer := emailx.NewMailer(appCfg.EmailConfig)
+	webStorage := storage.NewWebStorage(dbConn)
+	webExecutor := executor.NewWebExecutor(appCfg, webStorage)
+	webExporter := exporter.NewWebExporter(dbConn)
+	authSvc := auth.NewAuthService(appCfg, webStorage, webExporter, mailer)
+
+	mockSrv := mockserver.NewMockServer(dbConn)
 
 	err := webStorage.Startup(ctx)
 
@@ -87,12 +88,12 @@ func InitializeWebApp(
 		log.Fatalf("unable to initialize storage %v", err)
 	}
 
-	err = webExecutor.Startup(ctx, assets.MimedbJson, previewSrvAddr)
-
+	err = webExecutor.Startup(ctx, assets.MimedbJson)
 	if err != nil {
 		log.Fatalf("unable to initialize executor %v", err)
 	}
 
+	previewHandler := webExecutor.GetPreviewHandler()
 	apiRouter := api.NewApi(appCfg, webStorage, webExecutor, webExporter, authSvc)
 	authRouter := auth.NewAuthRouter(appCfg, authSvc)
 
@@ -100,19 +101,15 @@ func InitializeWebApp(
 
 	appConfigRouter := clientconfig.NewClientConfigController(
 		internal.VERSION,
-		appCfg.AuthConfig.EnableDemo,
+		appCfg,
 		webStorage,
 	)
 
-	mux.Handle("/config.json", appConfigRouter.Routes())
-
-	mux.Handle("/auth/", http.StripPrefix("/auth", authRouter.Routes()))
-
-	mux.Handle("/api/v1/", http.StripPrefix("/api/v1", apiRouter.Routes()))
-
-	previewHandler := webExecutor.GetPreviewHandler()
-
-	mux.Handle("/preview/{id}/", apiRouter.ProtectedRoute(apiRouter.PreviewHandler(previewHandler)))
+	mux.Handle("/config.json", withCORS(appConfigRouter.Routes(), appCfg.FrontendURL, appCfg.BackendURL))
+	mux.Handle("/auth/", withCORS(http.StripPrefix("/auth", authRouter.Routes()), appCfg.FrontendURL, appCfg.BackendURL))
+	mux.Handle("/api/v1/", withCORS(http.StripPrefix("/api/v1", apiRouter.Routes()), appCfg.FrontendURL, appCfg.BackendURL))
+	mux.Handle("/preview/{id}/", withCORS(apiRouter.ProtectedRoute(apiRouter.PreviewHandler(previewHandler)), appCfg.FrontendURL, appCfg.BackendURL))
+	mux.Handle("/mocksvc/{id}/", http.StripPrefix("/mocksvc/", mockserver.MockServerCORS(mockSrv.CollectionChecksHandler(mockSrv.MockHandler))))
 
 	if appCfg.Env == "PROD" {
 		subFs, err := fs.Sub(assets.Assets, filepath.Join("static", "browser"))
@@ -135,7 +132,7 @@ func InitializeWebApp(
 
 	srv := &http.Server{
 		Addr:    srvAddr,
-		Handler: withCORS(mux, appCfg.FrontendURL, appCfg.BackendURL),
+		Handler: mux,
 	}
 
 	//cron

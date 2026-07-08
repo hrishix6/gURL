@@ -197,7 +197,7 @@ func (authSvc *AuthService) DemoUserLogin(ctx context.Context) (string, error) {
 		return "", fmt.Errorf("failed to set demo workspace as active ui state")
 	}
 
-	envId, err := authSvc.exporter.ImportDemoEnvironment(newDemoUserCtx, internalModels.WebImportDTO{
+	envId, err := authSvc.exporter.ImportEnvironment(newDemoUserCtx, internalModels.WebImportDTO{
 		WorkspaceId: newDemoUserWorkspaceId,
 		Filepath:    filepath.Join("demo", "demo.env.json"),
 	})
@@ -215,7 +215,7 @@ func (authSvc *AuthService) DemoUserLogin(ctx context.Context) (string, error) {
 		return "", err
 	}
 
-	_, err = authSvc.exporter.ImportDemoCollection(newDemoUserCtx, internalModels.WebImportDTO{
+	_, err = authSvc.exporter.ImportCollection(newDemoUserCtx, internalModels.WebImportDTO{
 		WorkspaceId: newDemoUserWorkspaceId,
 		Filepath:    filepath.Join("demo", "demo.collection.json"),
 	})

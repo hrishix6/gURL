@@ -17,9 +17,13 @@ func (api *Api) GetRequests(w http.ResponseWriter, r *http.Request) {
 
 	queryParams := r.URL.Query()
 
-	workspaceId := queryParams.Get("workspace_id")
+	workspaceId := queryParams.Get("workspaceId")
+	collectionId := queryParams.Get("collectionId")
 
-	reqs, err := api.storage.ReqRepo.GetSavedRequests(r.Context(), workspaceId)
+	reqs, err := api.storage.ReqRepo.GetSavedRequests(r.Context(), models.ReqQueryDTO{
+		WorkspaceId:  workspaceId,
+		CollectionId: collectionId,
+	})
 
 	if err != nil {
 		log.Printf("[api/GetRequests] error:%v \n", err)
@@ -33,6 +37,35 @@ func (api *Api) GetRequests(w http.ResponseWriter, r *http.Request) {
 	}
 
 	api.Ok(w, api.WrapSuccessResponse(r, reqs))
+}
+
+func (api *Api) GetReqById(w http.ResponseWriter, r *http.Request) {
+
+	id := r.PathValue("id")
+
+	req, err := api.storage.ReqRepo.GetSavedRequestById(r.Context(), id)
+
+	if err != nil {
+		log.Printf("[api/GetReqById] error:%v \n", err)
+
+		wrappedErr := webModels.RequestError{
+			Message: fmt.Sprintf("failed to req with id %s from db", id),
+			Details: err.Error(),
+		}
+
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			wrappedErr.Message = fmt.Sprintf("req with id %s not found", id)
+			wrappedErrResponse := api.WrapErrorResponse(r, wrappedErr)
+			api.NotFound(w, wrappedErrResponse)
+			return
+		}
+
+		wrappedErrResponse := api.WrapErrorResponse(r, wrappedErr)
+		api.ServerCooked(w, wrappedErrResponse)
+		return
+	}
+
+	api.Ok(w, api.WrapSuccessResponse(r, req))
 }
 
 func (api *Api) CopyRequest(w http.ResponseWriter, r *http.Request) {
@@ -53,7 +86,7 @@ func (api *Api) CopyRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = api.storage.ReqRepo.SaveRequestCopy(r.Context(), id, dto)
+	cpyId, err := api.storage.ReqRepo.SaveRequestCopy(r.Context(), id, dto)
 
 	if err != nil {
 		log.Printf("[api/CopyRequest] error:%v \n", err)
@@ -66,7 +99,7 @@ func (api *Api) CopyRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	api.Ok(w, api.WrapSuccessResponse(r, nil))
+	api.Ok(w, api.WrapSuccessResponse(r, cpyId))
 }
 
 func (api *Api) DeleteReq(w http.ResponseWriter, r *http.Request) {
@@ -78,6 +111,19 @@ func (api *Api) DeleteReq(w http.ResponseWriter, r *http.Request) {
 		log.Printf("[api/DeleteReq] error:%v \n", err)
 		wrappedErrResponse := api.WrapErrorResponse(r, webModels.RequestError{
 			Message: fmt.Sprintf("failed to delete req with id: %s", id),
+			Details: err.Error(),
+		})
+
+		api.ServerCooked(w, wrappedErrResponse)
+		return
+	}
+
+	err = api.storage.ReqRepo.DeleteRequestDrafts(r.Context(), id)
+
+	if err != nil {
+		log.Printf("[api/DeleteReq] error:%v \n", err)
+		wrappedErrResponse := api.WrapErrorResponse(r, webModels.RequestError{
+			Message: fmt.Sprintf("failed to remove drafts -> req reference with id: %s", id),
 			Details: err.Error(),
 		})
 
@@ -121,25 +167,6 @@ func (api *Api) CreateDraftFromRequest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	api.Created(w, api.WrapSuccessResponse(r, nil))
-}
-
-func (api *Api) SoftDeleteReqDraftsUnderReq(w http.ResponseWriter, r *http.Request) {
-
-	id := r.PathValue("id")
-	err := api.storage.ReqRepo.DeleteRequestDrafts(r.Context(), id)
-
-	if err != nil {
-		log.Printf("[api/SoftDeleteReqDraftsUnderReq] error:%v \n", err)
-		wrappedErrResponse := api.WrapErrorResponse(r, webModels.RequestError{
-			Message: "failed to soft delete req-drafts in db",
-			Details: err.Error(),
-		})
-
-		api.ServerCooked(w, wrappedErrResponse)
-		return
-	}
-
-	api.Ok(w, api.WrapSuccessResponse(r, nil))
 }
 
 // req-drafts
@@ -313,7 +340,7 @@ func (api *Api) SaveDraftAsRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = api.storage.ReqRepo.SaveDraftAsRequest(r.Context(), id, dto)
+	o, err := api.storage.ReqRepo.SaveDraftAsRequest(r.Context(), id, dto)
 
 	if err != nil {
 		log.Printf("[api/SaveDraftAsRequest] error:%v \n", err)
@@ -326,6 +353,6 @@ func (api *Api) SaveDraftAsRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	api.Created(w, api.WrapSuccessResponse(r, nil))
+	api.Created(w, api.WrapSuccessResponse(r, o))
 
 }

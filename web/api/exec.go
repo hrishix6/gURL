@@ -14,7 +14,7 @@ import (
 
 func (api *Api) SendHttpReq(w http.ResponseWriter, r *http.Request) {
 
-	var dto models.GurlReq
+	var dto models.WebHttpReqConfigPayload
 
 	err := json.NewDecoder(r.Body).Decode(&dto)
 
@@ -29,7 +29,7 @@ func (api *Api) SendHttpReq(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	gurlRes, err := api.executor.SendHttpReq(r.Context(), dto)
+	gurlRes, err := api.executor.SendHttpReq(r.Context(), dto.Req, dto.EnvId)
 
 	if err != nil {
 		log.Printf("[api/SendHttpReq] error:%v \n", err)
@@ -44,7 +44,7 @@ func (api *Api) SendHttpReq(w http.ResponseWriter, r *http.Request) {
 
 	tempPath := filepath.Join(api.tmpDir, gurlRes.Body.Filename)
 
-	err = api.storage.ReqRepo.UpdateDraftFields(r.Context(), dto.Id, models.UpdateDraftFieldsDTO{
+	err = api.storage.ReqRepo.UpdateDraftFields(r.Context(), dto.Req.Id, models.UpdateDraftFieldsDTO{
 		LastTmpResponsePath: &tempPath,
 	})
 
@@ -60,6 +60,39 @@ func (api *Api) SendHttpReq(w http.ResponseWriter, r *http.Request) {
 	}
 
 	api.Ok(w, api.WrapSuccessResponse(r, gurlRes))
+}
+
+func (api *Api) GetInterpolatedReq(w http.ResponseWriter, r *http.Request) {
+
+	var dto models.WebHttpReqConfigPayload
+
+	err := json.NewDecoder(r.Body).Decode(&dto)
+
+	if err != nil {
+		log.Printf("[api/GetInterpolatedReq] error:%v \n", err)
+		wrappedErrResponse := api.WrapErrorResponse(r, webModels.RequestError{
+			Message: "failed to parse request config",
+			Details: err.Error(),
+		})
+
+		api.Bad(w, wrappedErrResponse)
+		return
+	}
+
+	interpolated, err := api.executor.GetInterpolatedReq(r.Context(), &dto.Req, dto.EnvId)
+
+	if err != nil {
+		log.Printf("[api/GetInterpolatedReq] error:%v \n", err)
+		wrappedErrResponse := api.WrapErrorResponse(r, webModels.RequestError{
+			Message: "failed to interpolate request",
+			Details: err.Error(),
+		})
+
+		api.ServerCooked(w, wrappedErrResponse)
+		return
+	}
+
+	api.Ok(w, api.WrapSuccessResponse(r, interpolated))
 }
 
 func (api *Api) CancelReq(w http.ResponseWriter, r *http.Request) {
@@ -165,7 +198,7 @@ func (api *Api) DownloadTempFile(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&dto)
 
 	if err != nil {
-		log.Printf("[api/SendHttpReq] error:%v \n", err)
+		log.Printf("[api/DownloadTempFile] error:%v \n", err)
 		wrappedErrResponse := api.WrapErrorResponse(r, webModels.RequestError{
 			Message: "failed to parse request config",
 			Details: err.Error(),

@@ -26,7 +26,7 @@ func (api *Api) CreateReqExample(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = api.storage.ReqExampleRepo.AddReqExample(r.Context(), dto.Example, dto.RenderMetadata, api.tmpDir, api.savedResDir)
+	err = api.storage.ReqExampleRepo.AddReqExample(r.Context(), dto.Example, dto.RenderMetadata, api.tmpDir, api.persistDir)
 
 	if err != nil {
 		log.Printf("[api/CreateReqExample] error:%v \n", err)
@@ -66,9 +66,13 @@ func (api *Api) GetReqExamples(w http.ResponseWriter, r *http.Request) {
 
 	queryParams := r.URL.Query()
 
-	workspaceId := queryParams.Get("workspace_id")
+	workspaceId := queryParams.Get("workspaceId")
+	collectionId := queryParams.Get("collectionId")
 
-	examples, err := api.storage.ReqExampleRepo.GetReqExamples(r.Context(), workspaceId)
+	examples, err := api.storage.ReqExampleRepo.GetReqExamples(r.Context(), models.ReqExampleQueryDTO{
+		WorkspaceId:  workspaceId,
+		CollectionId: collectionId,
+	})
 
 	if err != nil {
 		log.Printf("[api/GetReqExamples] error:%v \n", err)
@@ -102,4 +106,39 @@ func (api *Api) DeleteReqExample(w http.ResponseWriter, r *http.Request) {
 	}
 
 	api.Ok(w, api.WrapSuccessResponse(r, nil))
+}
+
+func (api *Api) CreateMockFromExample(w http.ResponseWriter, r *http.Request) {
+
+	exampleId := r.PathValue("id")
+
+	var dto models.CreateMockDTO
+
+	err := json.NewDecoder(r.Body).Decode(&dto)
+
+	if err != nil {
+		log.Printf("[api/CreateMockFromExample] error:%v \n", err)
+		wrappedErrResponse := api.WrapErrorResponse(r, webModels.RequestError{
+			Message: "unable to parse body",
+			Details: err.Error(),
+		})
+
+		api.Bad(w, wrappedErrResponse)
+		return
+	}
+
+	mock, err := api.storage.ReqMockRepo.CreateMockFromExample(r.Context(), dto, exampleId)
+
+	if err != nil {
+		log.Printf("[api/CreateMockFromExample] error:%v \n", err)
+		wrappedErrResponse := api.WrapErrorResponse(r, webModels.RequestError{
+			Message: "failed to create mock from request example",
+			Details: err.Error(),
+		})
+
+		api.ServerCooked(w, wrappedErrResponse)
+		return
+	}
+
+	api.Created(w, api.WrapSuccessResponse(r, mock))
 }

@@ -17,9 +17,11 @@ func (api *Api) GetEnvironments(w http.ResponseWriter, r *http.Request) {
 
 	queryParams := r.URL.Query()
 
-	workspaceId := queryParams.Get("workspace_id")
+	workspaceId := queryParams.Get("workspaceId")
 
-	envs, err := api.storage.EnvRepo.GetEnvironments(r.Context(), workspaceId)
+	envs, err := api.storage.EnvRepo.GetEnvironments(r.Context(), models.EnvsQueryDTO{
+		WorkspaceId: workspaceId,
+	})
 
 	if err != nil {
 		log.Printf("[api/GetEnvironments] error:%v \n", err)

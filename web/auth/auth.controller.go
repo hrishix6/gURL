@@ -15,6 +15,7 @@ type AuthRouter struct {
 	FrontendURL *url.URL
 	BackendURL  *url.URL
 	mode        string
+	deployment  string
 	httpx.BaseController
 	authSvc *AuthService
 }
@@ -47,6 +48,7 @@ func NewAuthRouter(
 		BackendURL:  b,
 		authSvc:     authSvc,
 		mode:        mode,
+		deployment:  appCfg.Deployment,
 	}
 }
 
@@ -69,8 +71,13 @@ func (api *AuthRouter) Login(w http.ResponseWriter, r *http.Request) {
 	magicLink := api.authSvc.TryLogin(r.Context(), api.BackendURL, loginDto)
 
 	if api.mode == "prod" {
-		api.Ok(w, api.WrapSuccessResponse(r, "Ok"))
-		return
+		if api.deployment == "public" {
+			api.Ok(w, api.WrapSuccessResponse(r, "Ok"))
+			return
+		} else {
+			api.Ok(w, api.WrapSuccessResponse(r, magicLink))
+			return
+		}
 	}
 
 	if magicLink != "" {

@@ -11,32 +11,32 @@ import (
 )
 
 type WebStorage struct {
-	db                *gorm.DB
-	SavedResponsesDir string
-	EnvRepo           *dbPkg.EnvironmentRepository
-	CollectionRepo    *dbPkg.CollectionRepository
-	ReqRepo           *dbPkg.RequestRepository
-	ReqExampleRepo    *dbPkg.ReqExampleRepository
-	UiStateRepo       *dbPkg.UiStateRepository
-	WorkspaceRepo     *dbPkg.WorkspaceRepository
-	UserRepo          *dbPkg.UserRepository
-	AppSetupRepo      *dbPkg.AppSetupRepo
-	MimeRepo          *dbPkg.MimeRepository
+	db             *gorm.DB
+	EnvRepo        *dbPkg.EnvironmentRepository
+	CollectionRepo *dbPkg.CollectionRepository
+	ReqRepo        *dbPkg.RequestRepository
+	ReqExampleRepo *dbPkg.ReqExampleRepository
+	UiStateRepo    *dbPkg.UiStateRepository
+	WorkspaceRepo  *dbPkg.WorkspaceRepository
+	UserRepo       *dbPkg.UserRepository
+	AppSetupRepo   *dbPkg.AppSetupRepo
+	MimeRepo       *dbPkg.MimeRepository
+	ReqMockRepo    *dbPkg.RequestMockRepository
 }
 
-func NewWebStorage(db *gorm.DB, savedResponsesDir string) *WebStorage {
+func NewWebStorage(db *gorm.DB) *WebStorage {
 	return &WebStorage{
-		db:                db,
-		SavedResponsesDir: savedResponsesDir,
-		EnvRepo:           dbPkg.NewEnvironmentRepository(db),
-		CollectionRepo:    dbPkg.NewCollectionRepository(db),
-		ReqRepo:           dbPkg.NewRequestRepository(db),
-		ReqExampleRepo:    dbPkg.NewReqExampleRepository(db),
-		UiStateRepo:       dbPkg.NewUiStateRepository(db),
-		WorkspaceRepo:     dbPkg.NewWorkspaceRepository(db),
-		UserRepo:          dbPkg.NewUserRepository(db),
-		AppSetupRepo:      dbPkg.NewAppSetupRepo(db),
-		MimeRepo:          dbPkg.NewMimeRepository(db),
+		db:             db,
+		EnvRepo:        dbPkg.NewEnvironmentRepository(db),
+		CollectionRepo: dbPkg.NewCollectionRepository(db),
+		ReqRepo:        dbPkg.NewRequestRepository(db),
+		ReqExampleRepo: dbPkg.NewReqExampleRepository(db),
+		UiStateRepo:    dbPkg.NewUiStateRepository(db),
+		WorkspaceRepo:  dbPkg.NewWorkspaceRepository(db),
+		UserRepo:       dbPkg.NewUserRepository(db),
+		AppSetupRepo:   dbPkg.NewAppSetupRepo(db),
+		MimeRepo:       dbPkg.NewMimeRepository(db),
+		ReqMockRepo:    dbPkg.NewRequestMockRepository(db),
 	}
 }
 

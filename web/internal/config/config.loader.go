@@ -137,10 +137,10 @@ type WebApplicationConfig struct {
 	AppName               string
 	BaseTmpDir            string
 	BaseSavedResponsesDir string
-	BaseUploadsDir        string
 	FrontendURL           string      `json:"frontend_url"`
 	BackendURL            string      `json:"backend_url"`
 	Env                   string      `json:"env"`
+	Deployment            string      `json:"deployment"`
 	AuthConfig            *AuthConfig `json:"auth_config"`
 	DatabaseURL           string      `json:"database_url"`
 	EmailConfig           *MailConfig `json:"mail_cfg"`
@@ -168,6 +168,10 @@ func LoadWebAppConfig(path string) WebApplicationConfig {
 	}
 
 	var errors []string
+
+	if cfg.Deployment == "" {
+		cfg.Deployment = "public"
+	}
 
 	if cfg.EmailConfig == nil {
 		errors = append(errors, fmt.Sprintf("%s: mail config is required", mailCfgSuffix))

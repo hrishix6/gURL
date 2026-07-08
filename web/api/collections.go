@@ -2,20 +2,25 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"gurl/shared/models"
 	webModels "gurl/web/internal/models"
 	"log"
 	"net/http"
+
+	"gorm.io/gorm"
 )
 
 func (api *Api) GetAllCollections(w http.ResponseWriter, r *http.Request) {
 
 	queryParams := r.URL.Query()
 
-	workspaceId := queryParams.Get("workspace_id")
+	queryDTO := models.CollectionsQueryDTO{}
 
-	collections, err := api.storage.CollectionRepo.GetAllCollections(r.Context(), workspaceId)
+	queryDTO.WorkspaceId = queryParams.Get("workspaceId")
+
+	collections, err := api.storage.CollectionRepo.GetAllCollections(r.Context(), queryDTO)
 
 	if err != nil {
 		log.Printf("[api/GetAllCollections] error:%v \n", err)
@@ -29,6 +34,35 @@ func (api *Api) GetAllCollections(w http.ResponseWriter, r *http.Request) {
 	}
 
 	api.Ok(w, api.WrapSuccessResponse(r, collections))
+}
+
+func (api *Api) GetCollectionById(w http.ResponseWriter, r *http.Request) {
+
+	id := r.PathValue("id")
+
+	c, err := api.storage.CollectionRepo.GetCollectionById(r.Context(), id)
+
+	if err != nil {
+		log.Printf("[api/GetCollectionById] error:%v \n", err)
+
+		wrappedErr := webModels.RequestError{
+			Message: fmt.Sprintf("failed to find collection with id %s from db", id),
+			Details: err.Error(),
+		}
+
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			wrappedErr.Message = fmt.Sprintf("collection with id %s not found", id)
+			wrappedErrResponse := api.WrapErrorResponse(r, wrappedErr)
+			api.NotFound(w, wrappedErrResponse)
+			return
+		}
+
+		wrappedErrResponse := api.WrapErrorResponse(r, wrappedErr)
+		api.ServerCooked(w, wrappedErrResponse)
+		return
+	}
+
+	api.Ok(w, api.WrapSuccessResponse(r, c))
 }
 
 func (api *Api) CreateCollection(w http.ResponseWriter, r *http.Request) {
@@ -114,6 +148,32 @@ func (api *Api) DeleteCollection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	err = api.storage.ReqRepo.DeleteDraftsUnderCollection(r.Context(), id)
+
+	if err != nil {
+		log.Printf("[api/DeleteCollection] error:%v \n", err)
+		wrappedErrResponse := api.WrapErrorResponse(r, webModels.RequestError{
+			Message: fmt.Sprintf("failed to remove drafts -> collection reference id: %s", id),
+			Details: err.Error(),
+		})
+
+		api.ServerCooked(w, wrappedErrResponse)
+		return
+	}
+
+	err = api.storage.ReqMockRepo.DeleteDraftsUnderCollection(r.Context(), id)
+
+	if err != nil {
+		log.Printf("[api/DeleteCollection] error:%v \n", err)
+		wrappedErrResponse := api.WrapErrorResponse(r, webModels.RequestError{
+			Message: fmt.Sprintf("failed to remove mocks -> collection reference id: %s", id),
+			Details: err.Error(),
+		})
+
+		api.ServerCooked(w, wrappedErrResponse)
+		return
+	}
+
 	api.Ok(w, api.WrapSuccessResponse(r, nil))
 }
 
@@ -133,19 +193,12 @@ func (api *Api) ClearCollection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	api.Ok(w, api.WrapSuccessResponse(r, nil))
-}
-
-func (api *Api) SoftDeleteReqDraftsUnderCollection(w http.ResponseWriter, r *http.Request) {
-
-	id := r.PathValue("id")
-
-	err := api.storage.ReqRepo.DeleteDraftsUnderCollection(r.Context(), id)
+	err = api.storage.ReqRepo.DeleteDraftsUnderCollection(r.Context(), id)
 
 	if err != nil {
-		log.Printf("[api/SoftDeleteReqDraftsUnderCollection] error:%v \n", err)
+		log.Printf("[api/ClearCollection] error:%v \n", err)
 		wrappedErrResponse := api.WrapErrorResponse(r, webModels.RequestError{
-			Message: "failed to delete req-draft under collection in db",
+			Message: fmt.Sprintf("failed to remove drafts -> collection reference with id: %s", id),
 			Details: err.Error(),
 		})
 
@@ -154,4 +207,64 @@ func (api *Api) SoftDeleteReqDraftsUnderCollection(w http.ResponseWriter, r *htt
 	}
 
 	api.Ok(w, api.WrapSuccessResponse(r, nil))
+}
+
+func (api *Api) CreateMockServer(w http.ResponseWriter, r *http.Request) {
+
+	id := r.PathValue("id")
+
+	c, err := api.storage.CollectionRepo.CreateMockServer(r.Context(), id)
+
+	if err != nil {
+		log.Printf("[api/CreateMockServer] error:%v \n", err)
+		wrappedErrResponse := api.WrapErrorResponse(r, webModels.RequestError{
+			Message: fmt.Sprintf("failed to create mock server for collection id: %s", id),
+			Details: err.Error(),
+		})
+
+		api.ServerCooked(w, wrappedErrResponse)
+		return
+	}
+
+	api.Ok(w, api.WrapSuccessResponse(r, c))
+}
+
+func (api *Api) EnableMockServer(w http.ResponseWriter, r *http.Request) {
+
+	id := r.PathValue("id")
+
+	c, err := api.storage.CollectionRepo.UpdateMockServer(r.Context(), id, true)
+
+	if err != nil {
+		log.Printf("[api/EnableMockServer] error:%v \n", err)
+		wrappedErrResponse := api.WrapErrorResponse(r, webModels.RequestError{
+			Message: fmt.Sprintf("failed to enable mock server for collection id: %s", id),
+			Details: err.Error(),
+		})
+
+		api.ServerCooked(w, wrappedErrResponse)
+		return
+	}
+
+	api.Ok(w, api.WrapSuccessResponse(r, c))
+}
+
+func (api *Api) DisableMockServer(w http.ResponseWriter, r *http.Request) {
+
+	id := r.PathValue("id")
+
+	c, err := api.storage.CollectionRepo.UpdateMockServer(r.Context(), id, false)
+
+	if err != nil {
+		log.Printf("[api/EnableMockServer] error:%v \n", err)
+		wrappedErrResponse := api.WrapErrorResponse(r, webModels.RequestError{
+			Message: fmt.Sprintf("failed to disable mock server for collection id: %s", id),
+			Details: err.Error(),
+		})
+
+		api.ServerCooked(w, wrappedErrResponse)
+		return
+	}
+
+	api.Ok(w, api.WrapSuccessResponse(r, c))
 }
