@@ -10,4 +10,5 @@ const (
 	TEMP_RESPONSES_LOCATION  = "tmp"
 	DEFAULT_USER_ID          = "gurl_default_user"
 	DB_NAME                  = "gurl.db"
+	SERVER_PORT              = 7393
 )

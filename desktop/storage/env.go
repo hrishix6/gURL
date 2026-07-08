@@ -4,8 +4,8 @@ import (
 	"gurl/shared/models"
 )
 
-func (s *DesktopStorage) GetEnvironments(workspaceId string) ([]models.EnvironmentDTO, error) {
-	return s.envRepo.GetEnvironments(s.appCtx, workspaceId)
+func (s *DesktopStorage) GetEnvironments(query models.EnvsQueryDTO) ([]models.EnvironmentDTO, error) {
+	return s.envRepo.GetEnvironments(s.appCtx, query)
 }
 
 func (s *DesktopStorage) AddEnvironment(dto models.AddEnvironmentDTO) error {

@@ -19,31 +19,33 @@ import (
 )
 
 type DesktopStorage struct {
-	db                *gorm.DB
-	appCtx            context.Context
-	tmpDir            string
-	savedResponsesDir string
-	envRepo           *dbPkg.EnvironmentRepository
-	collectionRepo    *dbPkg.CollectionRepository
-	reqRepo           *dbPkg.RequestRepository
-	reqExampleRepo    *dbPkg.ReqExampleRepository
-	uiStateRepo       *dbPkg.UiStateRepository
-	workspaceRepo     *dbPkg.WorkspaceRepository
-	userRepo          *dbPkg.UserRepository
+	db             *gorm.DB
+	appCtx         context.Context
+	tmpDir         string
+	persistDir     string
+	envRepo        *dbPkg.EnvironmentRepository
+	collectionRepo *dbPkg.CollectionRepository
+	reqRepo        *dbPkg.RequestRepository
+	reqExampleRepo *dbPkg.ReqExampleRepository
+	uiStateRepo    *dbPkg.UiStateRepository
+	workspaceRepo  *dbPkg.WorkspaceRepository
+	userRepo       *dbPkg.UserRepository
+	reqMockRepo    *dbPkg.RequestMockRepository
 }
 
 func NewStorage(db *gorm.DB, tmpDir string, savedResponsesDir string) DesktopStorage {
 	return DesktopStorage{
-		db:                db,
-		savedResponsesDir: savedResponsesDir,
-		tmpDir:            tmpDir,
-		envRepo:           dbPkg.NewEnvironmentRepository(db),
-		collectionRepo:    dbPkg.NewCollectionRepository(db),
-		reqRepo:           dbPkg.NewRequestRepository(db),
-		reqExampleRepo:    dbPkg.NewReqExampleRepository(db),
-		uiStateRepo:       dbPkg.NewUiStateRepository(db),
-		workspaceRepo:     dbPkg.NewWorkspaceRepository(db),
-		userRepo:          dbPkg.NewUserRepository(db),
+		db:             db,
+		persistDir:     savedResponsesDir,
+		tmpDir:         tmpDir,
+		envRepo:        dbPkg.NewEnvironmentRepository(db),
+		collectionRepo: dbPkg.NewCollectionRepository(db),
+		reqRepo:        dbPkg.NewRequestRepository(db),
+		reqExampleRepo: dbPkg.NewReqExampleRepository(db),
+		uiStateRepo:    dbPkg.NewUiStateRepository(db),
+		workspaceRepo:  dbPkg.NewWorkspaceRepository(db),
+		userRepo:       dbPkg.NewUserRepository(db),
+		reqMockRepo:    dbPkg.NewRequestMockRepository(db),
 	}
 }
 
@@ -142,10 +144,42 @@ func (s *DesktopStorage) ChooseFile() (*models.FileStats, error) {
 		return nil, err
 	}
 
-	return utils.GetFileStats(file)
+	srcF, err := os.Open(file)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer srcF.Close()
+
+	copyFName := fmt.Sprintf("gurl-req-f-%s%s", nanoid.Must(), filepath.Ext(file))
+
+	srcName := filepath.Base(file)
+
+	copyFPath := filepath.Join(s.persistDir, copyFName)
+
+	copyF, err := os.Create(copyFPath)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer copyF.Close()
+
+	n, err := io.Copy(copyF, srcF)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &models.FileStats{
+		Name: srcName,
+		Size: n,
+		Path: copyFPath,
+	}, nil
 }
 
-func (s *DesktopStorage) SaveFile(dto models.DownloadTmpFileDTO) error {
+func (s *DesktopStorage) DownloadResponseFile(dto models.DownloadTmpFileDTO) error {
 
 	dialogueOptions := runtime.SaveDialogOptions{
 		Title:           "Choose location to store response",

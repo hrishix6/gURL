@@ -5,15 +5,31 @@ import (
 )
 
 func (s *DesktopStorage) DeleteSavedReq(id string) error {
-	return s.reqRepo.DeleteSavedReq(s.appCtx, id)
+	err := s.reqRepo.DeleteSavedReq(s.appCtx, id)
+
+	if err != nil {
+		return err
+	}
+
+	return s.reqRepo.DeleteRequestDrafts(s.appCtx, id)
 }
 
 func (s *DesktopStorage) RemoveDraft(id string) error {
 	return s.reqRepo.RemoveDraft(s.appCtx, id)
 }
 
-func (s *DesktopStorage) GetSavedRequests(workspaceId string) ([]models.RequestLightDTO, error) {
-	return s.reqRepo.GetSavedRequests(s.appCtx, workspaceId)
+func (s *DesktopStorage) GetSavedRequestById(id string) (models.RequestLightDTO, error) {
+	r, err := s.reqRepo.GetSavedRequestById(s.appCtx, id)
+
+	if err != nil {
+		return models.RequestLightDTO{}, err
+	}
+
+	return *r, nil
+}
+
+func (s *DesktopStorage) GetSavedRequests(query models.ReqQueryDTO) ([]models.RequestLightDTO, error) {
+	return s.reqRepo.GetSavedRequests(s.appCtx, query)
 }
 
 func (s *DesktopStorage) FindDraftById(id string) (*models.RequestDraftDTO, error) {
@@ -32,19 +48,11 @@ func (s *DesktopStorage) AddDraftFromRequest(id string, dto models.AddDraftDTO) 
 	return s.reqRepo.AddDraftFromRequest(s.appCtx, id, dto)
 }
 
-func (s *DesktopStorage) DeleteDraftsUnderCollection(collectionId string) error {
-	return s.reqRepo.DeleteDraftsUnderCollection(s.appCtx, collectionId)
-}
-
-func (s *DesktopStorage) DeleteRequestDrafts(requestId string) error {
-	return s.reqRepo.DeleteRequestDrafts(s.appCtx, requestId)
-}
-
-func (s *DesktopStorage) SaveDraftAsRequest(id string, dto models.SaveDraftAsReqDTO) error {
+func (s *DesktopStorage) SaveDraftAsRequest(id string, dto models.SaveDraftAsReqDTO) (*models.RequestDraftDTO, error) {
 	return s.reqRepo.SaveDraftAsRequest(s.appCtx, id, dto)
 }
 
-func (s *DesktopStorage) SaveRequestCopy(id string, dto models.SaveRequestCopyDTO) error {
+func (s *DesktopStorage) SaveRequestCopy(id string, dto models.SaveRequestCopyDTO) (string, error) {
 	return s.reqRepo.SaveRequestCopy(s.appCtx, id, dto)
 }
 

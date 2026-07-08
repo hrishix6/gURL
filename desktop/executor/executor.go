@@ -2,7 +2,6 @@ package executor
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"gurl/desktop/internal"
 	dbPkg "gurl/shared/db"
@@ -10,11 +9,9 @@ import (
 	"gurl/shared/models"
 	"gurl/shared/utils"
 	"log"
-	"net"
 	"net/http"
 	"path/filepath"
 	"strings"
-	"sync"
 
 	"gorm.io/gorm"
 )
@@ -24,27 +21,34 @@ type DesktopExecutor struct {
 	appCtx         context.Context
 	mimeRepo       *dbPkg.MimeRepository
 	reqRepo        *dbPkg.RequestRepository
-	httpExecutor   *httpExecutor.HttpExecutor
+	envRepo        *dbPkg.EnvironmentRepository
+	HttpExecutor   *httpExecutor.HttpExecutor
 	savedResDir    string
-	previewSrv     *http.Server
-	cleanupWG      *sync.WaitGroup
 	tmpDir         string
 	previewSrvAddr string
 }
 
-func NewExecutor(db *gorm.DB, appName string, tmpDir string, savedResponsesDir string) DesktopExecutor {
+func NewExecutor(
+	db *gorm.DB,
+	appName string,
+	tmpDir string,
+	savedResponsesDir string,
+) DesktopExecutor {
 	mimeRepo := dbPkg.NewMimeRepository(db)
+	previewSrvAddr := fmt.Sprintf("http://localhost:%d/preview", internal.SERVER_PORT)
+
 	return DesktopExecutor{
-		mimeRepo:     mimeRepo,
-		reqRepo:      dbPkg.NewRequestRepository(db),
-		httpExecutor: httpExecutor.NewHttpExecutor(appName, tmpDir, savedResponsesDir, mimeRepo, internal.TEMP_RESPONSE_PREFIX, internal.SAVED_RESPONSES_PREFIX, internal.MAX_RESPONSE_LIMIT_BYTES),
-		savedResDir:  savedResponsesDir,
-		cleanupWG:    &sync.WaitGroup{},
-		tmpDir:       tmpDir,
+		previewSrvAddr: previewSrvAddr,
+		mimeRepo:       mimeRepo,
+		reqRepo:        dbPkg.NewRequestRepository(db),
+		envRepo:        dbPkg.NewEnvironmentRepository(db),
+		HttpExecutor:   httpExecutor.NewHttpExecutor(appName, tmpDir, savedResponsesDir, mimeRepo, internal.TEMP_RESPONSE_PREFIX, internal.SAVED_RESPONSES_PREFIX, internal.MAX_RESPONSE_LIMIT_BYTES, previewSrvAddr),
+		savedResDir:    savedResponsesDir,
+		tmpDir:         tmpDir,
 	}
 }
 
-func withCORS(next http.Handler) http.Handler {
+func ExecutorCORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		origin := r.Header.Get("Origin")
@@ -66,7 +70,7 @@ func withCORS(next http.Handler) http.Handler {
 	})
 }
 
-func Startup(e *DesktopExecutor, ctx context.Context, mimeDbJson []byte) error {
+func Startup(e *DesktopExecutor, ctx context.Context, mimeDbJson []byte, mux *http.ServeMux) error {
 	log.Println("[DesktopExecutor] Initialization Started")
 	e.appCtx = ctx
 
@@ -93,44 +97,11 @@ func Startup(e *DesktopExecutor, ctx context.Context, mimeDbJson []byte) error {
 		}
 	}
 
-	//start a preview server for response preview
-	listner, err := net.Listen("tcp", "127.0.0.1:0")
-
-	log.Println("[DesktopExecutor] Starting Preview HTTP server at ", listner.Addr().String())
-
-	if err != nil {
-		return err
-	}
-
-	previewHandler := e.httpExecutor.GetPreviewHandler()
-
-	previewMux := http.NewServeMux()
+	previewHandler := e.HttpExecutor.GetPreviewHandler()
 
 	userId := utils.UserIdFromContext(e.appCtx)
 
-	previewMux.Handle("/preview/{id}/", PreviewUserPrefix(previewHandler, userId))
-
-	previewServer := &http.Server{
-		Handler: withCORS(previewMux),
-	}
-
-	previewSrvAddr := fmt.Sprintf("http://%s/preview", listner.Addr().String())
-
-	e.previewSrv = previewServer
-	e.previewSrvAddr = previewSrvAddr
-	e.httpExecutor.SetPreviewSrvAddr(previewSrvAddr)
-
-	e.cleanupWG.Add(1)
-
-	go func() {
-		defer e.cleanupWG.Done()
-
-		if err := e.previewSrv.Serve(listner); !errors.Is(err, http.ErrServerClosed) {
-			log.Fatalf("Serve(): %v", err)
-		}
-
-		log.Println(`[DesktopExecutor] Preview Server Shutdown finished`)
-	}()
+	mux.Handle("/preview/{id}/", ExecutorCORS(PreviewUserPrefix(previewHandler, userId)))
 
 	log.Println("[DesktopExecutor] Initialization Completed")
 
@@ -140,17 +111,20 @@ func Startup(e *DesktopExecutor, ctx context.Context, mimeDbJson []byte) error {
 func Shutdown(e *DesktopExecutor, appCtx context.Context) {
 	log.Println("[DesktopExecutor] Shutdown started")
 
-	log.Println("[DesktopExecutor] Preview Server Shutdown started")
-	e.previewSrv.Shutdown(appCtx)
-
-	log.Println("[DesktopExecutor] Finished cleaning up tmp directory")
-	e.cleanupWG.Wait()
-
 	log.Println("[DesktopExecutor] Shutdown Finished")
 }
 
-func (e *DesktopExecutor) SendHttpReq(r models.GurlReq) (*models.GurlRes, error) {
-	res, err := e.httpExecutor.SendHttpReq(e.appCtx, r)
+func (e *DesktopExecutor) SendHttpReq(r models.GurlReq, envId string) (*models.GurlRes, error) {
+
+	env, err := e.envRepo.GetEnvironmentById(e.appCtx, envId)
+
+	envData := ""
+
+	if err == nil {
+		envData = string(env.Data)
+	}
+
+	res, err := e.HttpExecutor.SendHttpReq(e.appCtx, r, envData)
 
 	if err != nil {
 		return nil, err
@@ -169,12 +143,23 @@ func (e *DesktopExecutor) SendHttpReq(r models.GurlReq) (*models.GurlRes, error)
 	return res, nil
 }
 
+func (e *DesktopExecutor) GetInterpolatedReq(r models.GurlReq, envId string) (*models.GurlReq, error) {
+
+	env, err := e.envRepo.GetEnvironmentById(e.appCtx, envId)
+
+	if err == nil {
+		return e.HttpExecutor.InterpolateReq(&r, string(env.Data))
+	}
+
+	return &r, nil
+}
+
 func (e *DesktopExecutor) CancelReq(id string) {
-	e.httpExecutor.CancelReq(id)
+	e.HttpExecutor.CancelReq(id)
 }
 
 func (e *DesktopExecutor) ParseCookieRaw(text string) ([]models.GurlKeyValItem, error) {
-	return e.httpExecutor.ParseCookieRaw(text)
+	return e.HttpExecutor.ParseCookieRaw(text)
 }
 
 func (e *DesktopExecutor) GetSavedResponsesSrc(fileName string) string {
