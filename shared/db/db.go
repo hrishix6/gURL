@@ -36,6 +36,8 @@ func InitDesktopDb(dsn string) (*gorm.DB, error) {
 		&RequestExample{},
 		&Environment{},
 		&EnvironmentDraft{},
+		&Mock{},
+		&MockDraft{},
 	)
 
 	if err != nil {
@@ -78,6 +80,8 @@ func InitWebDb(dsn string) (*gorm.DB, error) {
 		&RequestExample{},
 		&Environment{},
 		&EnvironmentDraft{},
+		&Mock{},
+		&MockDraft{},
 	)
 
 	if err != nil {

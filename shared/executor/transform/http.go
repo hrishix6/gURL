@@ -6,6 +6,7 @@ import (
 	"fmt"
 	dbPkg "gurl/shared/db"
 	"gurl/shared/models"
+	"gurl/shared/nanoid"
 	"gurl/shared/utils"
 	"io"
 	"log"
@@ -19,7 +20,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/wailsapp/mimetype"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )
@@ -49,6 +49,10 @@ func (htf *HttpTransformer) toTextBody(r *models.GurlReq) io.Reader {
 }
 
 func (htf *HttpTransformer) toBinaryBody(r *models.GurlReq) (io.Reader, error) {
+	if r.BinaryFile == "" {
+		return nil, nil
+	}
+
 	f, err := os.Open(r.BinaryFile)
 
 	if err != nil {
@@ -118,6 +122,10 @@ func (htf *HttpTransformer) prepareHttpBody(r *models.GurlReq) (io.Reader, strin
 
 	var body io.Reader
 	var cType string
+
+	if r.Method == "GET" {
+		return nil, "", nil
+	}
 
 	switch r.BodyType {
 	case "json":
@@ -198,7 +206,6 @@ func applyAuth(r *models.GurlReq, req *http.Request) {
 
 func (htf *HttpTransformer) TransformToHttp(ctx context.Context, r *models.GurlReq, defaultAgent string) (*http.Request, error) {
 
-	//query
 	queryParams := url.Values{}
 
 	for _, q := range r.Query {
@@ -207,7 +214,6 @@ func (htf *HttpTransformer) TransformToHttp(ctx context.Context, r *models.GurlR
 		}
 	}
 
-	//url
 	parsedUrl, err := url.Parse(r.Url)
 
 	if err != nil {
@@ -232,24 +238,20 @@ func (htf *HttpTransformer) TransformToHttp(ctx context.Context, r *models.GurlR
 		return nil, err
 	}
 
-	//set User Defined headers
 	for _, header := range r.Headers {
 		if header.Enabled == "on" && header.Key != "" {
 			req.Header.Add(header.Key, header.Value)
 		}
 	}
 
-	//set Content-Type if not set
-	if body != nil && req.Header.Get("content-type") == "" {
+	if body != nil && req.Header.Get("content-type") == "" && cType != "" {
 		req.Header.Set("content-type", cType)
 	}
 
-	//set User-Agent if not set
 	if req.Header.Get("user-agent") == "" {
 		req.Header.Set("user-agent", defaultAgent)
 	}
 
-	//cookies
 	if v := req.Header.Get("Cookie"); v == "" {
 		for _, cookie := range r.Cookies {
 			if cookie.Enabled == "on" {
@@ -261,7 +263,6 @@ func (htf *HttpTransformer) TransformToHttp(ctx context.Context, r *models.GurlR
 		}
 	}
 
-	//auth
 	applyAuth(r, req)
 
 	return req, nil
@@ -279,10 +280,10 @@ func (htf *HttpTransformer) TempStoreResponse(ctx context.Context, id string, re
 
 	defer res.Body.Close()
 
-	// tmpF, err := os.CreateTemp(baseDir, fmt.Sprintf("gurl-%s*", id))
-	tmpF, err := os.Create(filepath.Join(baseDir, fmt.Sprintf("gurl-%s", id)))
+	tmpF, err := os.CreateTemp(baseDir, fmt.Sprintf("gurl-%s-*", id))
 
 	if err != nil {
+		log.Printf("[Transformer] failed to create tmp file to write response due to %v\n", err)
 		return nil, err
 	}
 
@@ -298,6 +299,7 @@ func (htf *HttpTransformer) TempStoreResponse(ctx context.Context, id string, re
 	writtenBytes, err := io.Copy(tmpF, limitReader)
 
 	if err != nil {
+		log.Printf("[Transformer] failed to write response to tmp file due to %v\n", err)
 		return nil, err
 	}
 
@@ -307,10 +309,10 @@ func (htf *HttpTransformer) TempStoreResponse(ctx context.Context, id string, re
 
 	log.Printf("[Transformer] stored response at %s in %dms", tmpF.Name(), dlMs)
 
-	mimetype.SetLimit(512)
-	detectedCtype, err := mimetype.DetectFile(tmpF.Name())
+	detectedCtype, err := utils.DetectMimeType(tmpF.Name())
 
 	if err != nil {
+		log.Printf("[Transformer] failed to detect  response type due to %v\n", err)
 		return nil, err
 	}
 
@@ -320,11 +322,11 @@ func (htf *HttpTransformer) TempStoreResponse(ctx context.Context, id string, re
 
 	normalizedCtype := utils.NormalizeContentType(detectedCtype.String())
 
-	mimeRecord, err := htf.mimeRepo.FindMimeRecord(ctx, normalizedCtype)
-
 	defaultExt := ".bin"
 	mimeTypeLibExt := detectedCtype.Extension()
 	mimeDbExt := ""
+
+	mimeRecord, err := htf.mimeRepo.FindMimeRecord(ctx, normalizedCtype)
 
 	if err != nil {
 		log.Println("[Transformer] Unable to fetch mime record")
@@ -397,8 +399,10 @@ func (htf *HttpTransformer) TransformHttpResponse(
 	for k, v := range res.Header {
 		for _, c := range v {
 			gres.ResHeaders = append(gres.ResHeaders, models.GurlKeyValItem{
-				Key:   k,
-				Value: c,
+				Id:      nanoid.Must(),
+				Key:     k,
+				Value:   c,
+				Enabled: "on",
 			})
 		}
 	}
@@ -439,7 +443,17 @@ func (htf *HttpTransformer) TransformHttpResponse(
 		canRender = true
 	}
 
-	if strings.HasPrefix(cType, "text/") || cType == "application/json" || cType == "application/xml" {
+	if cType == "application/json" {
+		html5Tag = "json"
+		canRender = true
+	}
+
+	if cType == "application/xml" {
+		html5Tag = "xml"
+		canRender = true
+	}
+
+	if strings.HasPrefix(cType, "text/") {
 		html5Tag = "text"
 		canRender = true
 	}

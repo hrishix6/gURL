@@ -34,12 +34,15 @@ type WebAppInitParams struct {
 }
 
 type GurlClientConfig struct {
-	Mode          string `json:"mode"`
-	ApiBaseURL    string `json:"api_url"`
-	AuthBaseURL   string `json:"auth_url"`
-	AppVersion    string `json:"appVersion"`
-	SetupRequired bool   `json:"setup_required"`
-	DemoEnabled   bool   `json:"demo_enabled"`
+	Mode           string `json:"mode"`
+	ApiBaseURL     string `json:"api_url"`
+	AuthBaseURL    string `json:"auth_url"`
+	AppVersion     string `json:"appVersion"`
+	SetupRequired  bool   `json:"setup_required"`
+	DemoEnabled    bool   `json:"demo_enabled"`
+	Env            string `json:"env"`
+	Deployment     string `json:"deployment"`
+	MockSrvBaseURL string `json:"mockSrvBaseUrl"`
 }
 
 type ParseCookieTextDTO struct {
@@ -64,4 +67,9 @@ type DownloadTmpFileDTO struct {
 type WebImportDTO struct {
 	WorkspaceId string `json:"workspace_id"`
 	Filepath    string `json:"file_path"`
+}
+
+type WebHttpReqConfigPayload struct {
+	Req   GurlReq `json:"req"`
+	EnvId string  `json:"envId"`
 }

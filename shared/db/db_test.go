@@ -117,14 +117,18 @@ func TestGetCollections(t *testing.T) {
 		t.Error(err)
 	}
 
-	collections, err := collctionRepo.GetAllCollections(user1Ctx, wantWorkspace)
+	collections, err := collctionRepo.GetAllCollections(user1Ctx, models.CollectionsQueryDTO{
+		WorkspaceId: wantWorkspace,
+	})
 
 	if len(collections) != 2 {
 		t.Errorf("expected 2 collections to be found for user1 got %d", len(collections))
 	}
 
 	//expect to get all collections under workspace if user is not non-nill in the context
-	allCollections, err := collctionRepo.GetAllCollections(context.Background(), wantWorkspace)
+	allCollections, err := collctionRepo.GetAllCollections(context.Background(), models.CollectionsQueryDTO{
+		WorkspaceId: wantWorkspace,
+	})
 
 	if len(allCollections) != 3 {
 		t.Errorf("expected 3 collections to be found under common workspace got %d", len(allCollections))
