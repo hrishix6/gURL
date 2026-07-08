@@ -1,24 +1,16 @@
 import { NgClass } from "@angular/common";
 import { Component, inject, input } from "@angular/core";
-import {
-	Building,
-	Check,
-	ChevronsUpDown,
-	FileDown,
-	LucideAngularModule,
-	SquarePen,
-	Trash2,
-} from "lucide-angular";
+import { SystemIconComponent } from "@/common/components/icon";
 import { AppService } from "@/services";
 
 @Component({
-	selector: "gurl-workspace",
+	selector: "gurl-workspace-options",
 	template: `
       <div class="dropdown dropdown-{{align()}}">
 				<button tabindex="0" class="btn btn-primary btn-soft btn-sm">
-					<lucide-angular [img]="WorkspaceIcon" class="size-4 mr-0.5" />
+					<i gurl-icon [icon]="'Workspace'" [className]="'size-4 mr-0.5'" ></i>
 					{{appSvc.activeWorkSpace().displayName}}
-					<lucide-angular [img]="DropdownIcon" class="size-4 ml-0.5" />
+					<i gurl-icon [icon]="'Dropdown'" [className]="'size-4 ml-0.5'" ></i>
 				</button>
 			<ul
 			tabindex="-1"
@@ -34,10 +26,10 @@ import { AppService } from "@/services";
 							[ngClass]="{ 'menu-active': item.id === appSvc.activeWorkSpace().id}"
 							(click)="handleWorkspaceSwitch(item.id)"
 							>
-							<lucide-angular [img]="WorkspaceIcon" class="size-4"  /> 
+							<i gurl-icon [icon]="'Workspace'" [className]="'size-4'" ></i>
 							<span class="truncate">{{ item.displayName }}</span>
 							@if(item.id == appSvc.activeWorkSpace().id) {
-							<lucide-angular [img]="CheckedIcon" class="size-4 ml-auto" />
+							<i gurl-icon [icon]="'Tick'" [className]="'size-4 ml-auto'" ></i>
 							}
 						</a>
                   </li>
@@ -47,30 +39,23 @@ import { AppService } from "@/services";
 				</li>
 				<li class="my-0.5 menu-disabled">
 					<a href="#" (click)="handleOperation('export')" role="link" aria-disabled="true">
-						<lucide-angular [img]="ExportIcon" class="size-4"  /> 
+						<i gurl-icon [icon]="'Export'" [className]="'size-4'" ></i>
 						Export 
 					</a>
 				</li>
 				<li class="my-0.5 menu-disabled">
 					<a href="#" (click)="handleOperation('delete')" role="link" aria-disabled="true">
-						<lucide-angular [img]="DeleteIcon" class="size-4" /> 
+						<i gurl-icon [icon]="'Delete'" [className]="'size-4'" ></i>
 						Delete
 					</a>
 				</li>
 			</ul>
 	</div>
   `,
-	imports: [LucideAngularModule, NgClass],
+	imports: [NgClass, SystemIconComponent],
 })
 export class WorkspaceOptions {
 	align = input.required<"start" | "end">();
-
-	protected readonly DropdownIcon = ChevronsUpDown;
-	protected readonly ExportIcon = FileDown;
-	protected readonly DeleteIcon = Trash2;
-	protected readonly CheckedIcon = Check;
-	protected readonly WorkspaceIcon = Building;
-	protected readonly RenameIcon = SquarePen;
 
 	protected readonly appSvc = inject(AppService);
 

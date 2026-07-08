@@ -1,23 +1,19 @@
 import { NgClass } from "@angular/common";
 import { Component, HostBinding, inject } from "@angular/core";
 import {
-	Building,
-	ChevronsUpDown,
-	Container,
-	FileDown,
-	Layers,
-	LucideAngularModule,
-	Plus,
-	RadioTower,
-} from "lucide-angular";
-import { GlobalModalsService, UserAuthService } from "@/services";
+	AppService,
+	GlobalModalsService,
+	TabsService,
+	UserAuthService,
+} from "@/services";
 import { getAppConfig } from "./app.config";
+import { SystemIconComponent } from "./common/components/icon";
 
 @Component({
 	selector: `div[gurl-entity-creation]`,
 	template: `
     <div tabindex="0" role="button" class="btn btn-soft btn-sm btn-primary">
-		<lucide-angular [img]="PlusIcon" class="size-4" />
+		 <i gurl-icon [icon]="'Plus'" [className]="'size-4'" ></i>
 		<span class="hidden xl:inline-block">Create</span>
 	</div>
 	@switch (config.mode) {
@@ -30,7 +26,7 @@ import { getAppConfig } from "./app.config";
 					'menu-disabled': !!userAuthSvc.userInfo()?.isDemoUser,
 				}">
 					<a role="link" [ariaDisabled]="!!userAuthSvc.userInfo()?.isDemoUser" (click)="toggleWorkspaceModal()">
-						<lucide-angular [img]="WorkspaceIcon" class="size-4"  />
+						<i gurl-icon [icon]="'Workspace'" [className]="'size-4'" ></i>
 						Workspace
 					</a>
 				</li>
@@ -38,7 +34,7 @@ import { getAppConfig } from "./app.config";
 					'menu-disabled': !!userAuthSvc.userInfo()?.isDemoUser,
 				}">
 					<a (click)="toggleCollectionModal()">
-						<lucide-angular [img]="CollectionsIcon" class="size-4"  />
+						<i gurl-icon [icon]="'Collection'" [className]="'size-4'" ></i>
 						Collection
 					</a>
 				</li>
@@ -46,16 +42,28 @@ import { getAppConfig } from "./app.config";
 					'menu-disabled': !!userAuthSvc.userInfo()?.isDemoUser,
 				}">
 					<a (click)="toggleEnvModal()">
-						<lucide-angular [img]="EnvironmentIcon" class="size-4"  />
+						<i gurl-icon [icon]="'Environment'" [className]="'size-4'" ></i>
 						Environment
 					</a>
 				</li>
 				<li>
 					<a (click)="toggleReqModal()">
-						<lucide-angular [img]="RequestsIcon" class="size-4"  />
+						<i gurl-icon [icon]="'Request'" [className]="'size-4'" ></i>
 						Request
 					</a>
 				</li>
+				@if(appSvc.collections().length){
+				<li
+					[ngClass]="{
+					'menu-disabled': !!userAuthSvc.userInfo()?.isDemoUser,
+				}"
+				>
+					<a (click)="handleCreateMock()">
+						<i gurl-icon [icon]="'Mock'" [className]="'size-4'" ></i>
+						Mock
+					</a>
+				</li>
+			}
 		</ul>
 		}
 		@case ("desktop") {
@@ -65,33 +73,41 @@ import { getAppConfig } from "./app.config";
 				>
 					<li>
 						<a role="link" (click)="toggleWorkspaceModal()">
-							<lucide-angular [img]="WorkspaceIcon" class="size-4"  />
+							<i gurl-icon [icon]="'Workspace'" [className]="'size-4'" ></i>
 							Workspace
 						</a>
 					</li>
 					<li>
 						<a role="link" (click)="toggleCollectionModal()">
-							<lucide-angular [img]="CollectionsIcon" class="size-4"  />
+							<i gurl-icon [icon]="'Collection'" [className]="'size-4'" ></i>
 							Collection
 						</a>
 					</li>
 					<li>
 						<a role="link" (click)="toggleEnvModal()">
-							<lucide-angular [img]="EnvironmentIcon" class="size-4"  />
+							<i gurl-icon [icon]="'Environment'" [className]="'size-4'" ></i>
 							Environment
 						</a>
 					</li>
 					<li>
 						<a role="link" (click)="toggleReqModal()">
-							<lucide-angular [img]="RequestsIcon" class="size-4"  />
+							<i gurl-icon [icon]="'Request'" [className]="'size-4'" ></i>
 							Request
 						</a>
 					</li>
+					@if(appSvc.collections().length){
+					<li>
+						<a role="link" (click)="handleCreateMock()">
+							<i gurl-icon [icon]="'Mock'" [className]="'size-4'" ></i>
+							Mock
+						</a>
+					</li>
+					}
 			</ul>
 		}
 	}
   `,
-	imports: [LucideAngularModule, NgClass],
+	imports: [NgClass, SystemIconComponent],
 })
 export class EntityCreationButton {
 	@HostBinding("class")
@@ -99,15 +115,8 @@ export class EntityCreationButton {
 	private readonly modalsSvc = inject(GlobalModalsService);
 	protected readonly config = getAppConfig();
 	protected readonly userAuthSvc = inject(UserAuthService);
-
-	protected readonly WorkspaceIcon = Building;
-	protected readonly DropdownIcon = ChevronsUpDown;
-
-	protected readonly PlusIcon = Plus;
-	protected readonly CollectionsIcon = Layers;
-	protected readonly EnvironmentIcon = Container;
-	protected readonly RequestsIcon = RadioTower;
-	protected readonly ImportIcon = FileDown;
+	protected readonly tabSvc = inject(TabsService);
+	protected readonly appSvc = inject(AppService);
 
 	protected toggleWorkspaceModal() {
 		const activeElement = document.activeElement as HTMLAnchorElement;
@@ -131,5 +140,11 @@ export class EntityCreationButton {
 		const activeElement = document.activeElement as HTMLAnchorElement;
 		activeElement?.blur();
 		this.modalsSvc.handleOpenCreateReqModal();
+	}
+
+	protected handleCreateMock() {
+		const activeElement = document.activeElement as HTMLAnchorElement;
+		activeElement?.blur();
+		this.tabSvc.createFreshMockTab();
 	}
 }

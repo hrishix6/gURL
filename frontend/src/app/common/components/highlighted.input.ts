@@ -8,14 +8,15 @@ import {
 	HostListener,
 	inject,
 	input,
+	type OnInit,
 	output,
 	signal,
 	viewChild,
 } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { debounceTime, Subject } from "rxjs";
-import { AppService, FormService } from "@/services";
 import type { InputToken } from "@/types";
+import { TooltipDirective } from "./tooltip";
 
 @Component({
 	selector: `div[gurl-highlighted-input]`,
@@ -25,11 +26,13 @@ import type { InputToken } from "@/types";
 				type="text"
 				[placeholder]="placeHolder()"
 				[ngClass]="{
-					'input input-sm flex-1 input-ghost bg-base-300 input-primary xl:input-md': true,
+					'input input-md flex-1 input-ghost bg-base-300 input-primary': true,
+					'input-error': invalid()
 				}"
 				[value]="text()"
 				[disabled]="disabled()"
 				[readOnly]="readonly()"
+				
         	/>
 		}
 		@else {
@@ -37,7 +40,7 @@ import type { InputToken } from "@/types";
 				type="text"
 				[placeholder]="placeHolder()"
 				[ngClass]="{
-					'input input-sm flex-1 input-ghost bg-base-300 input-primary xl:input-md': true,
+					'input input-md flex-1 input-ghost bg-base-300 input-primary': true,
 				}"
 				[value]="text()"
 				(blur)="handleBlur()"
@@ -47,14 +50,16 @@ import type { InputToken } from "@/types";
         	/>
 			<div
 				[ngClass]="{
-					'absolute text-sm xl:text-md top-0 left-0 w-full h-full flex rounded-box items-center overflow-hidden z-10 px-3 border border-base-300 bg-base-300': true,
+					'absolute top-0 left-0 w-full h-full flex rounded-box items-center overflow-hidden z-10 px-3 border bg-base-300': true,
 					'opacity-0 pointer-events-none': editMode(),
 					'opacity-100': !editMode(),
+					'border-base-300': !invalid(),
+					'border-red-500': invalid()
 				}"
         	>   
 			<div
 				[ngClass]="{
-					'overflow-x-auto no-scrollbar whitespace-nowrap flex': true,
+					'input-md overflow-x-auto no-scrollbar whitespace-nowrap flex': true,
 			}"
 			#overlayEl
 			>
@@ -67,7 +72,9 @@ import type { InputToken } from "@/types";
 										'text-primary': token.valid,
 										'text-error': !token.valid
 									}"
-									[title]="token.valid && token.interpolated? token.interpolated: 'undefined'"
+									gurlTooltip
+									[tooltip]="token.valid && token.interpolated? token.interpolated: 'undefined'"
+									[position]="'bottom'"
 									>{{token.value}}</span>
 						}@else {
 							<span class="whitespace-pre">{{token.value}}</span>
@@ -80,9 +87,9 @@ import type { InputToken } from "@/types";
         	</div>
 		}
     `,
-	imports: [NgClass],
+	imports: [NgClass, TooltipDirective],
 })
-export class GurlHighlightedInput {
+export class GurlHighlightedInput implements OnInit {
 	@HostBinding("class")
 	def = "flex-1 flex relative";
 
@@ -100,11 +107,14 @@ export class GurlHighlightedInput {
 	}
 
 	placeHolder = input<string>("value");
+	extractTokensFn = input.required<(v: string) => InputToken[]>();
+	activeEnvSub = input.required<Subject<void>>();
 	text = input.required<string>();
 	disabled = input.required<boolean>();
 	readonly = input<boolean>(false);
 	onBlur = output<void>();
 	onInput = output<string>();
+	invalid = input<boolean>(false);
 
 	constructor() {
 		effect(() => {
@@ -119,8 +129,10 @@ export class GurlHighlightedInput {
 					this.initializeTokens();
 				},
 			});
+	}
 
-		this.appSvc.activeEnvChange$
+	ngOnInit(): void {
+		this.activeEnvSub()
 			.pipe(takeUntilDestroyed(this.destroyRef))
 			.subscribe({
 				next: () => {
@@ -130,8 +142,6 @@ export class GurlHighlightedInput {
 	}
 
 	protected editMode = signal<boolean>(false);
-	private readonly appSvc = inject(AppService);
-	private readonly formSvc = inject(FormService);
 	private readonly tokenUpdate$ = new Subject<void>();
 	private readonly destroyRef = inject(DestroyRef);
 	protected _tokens = signal<InputToken[]>([]);
@@ -160,6 +170,7 @@ export class GurlHighlightedInput {
 
 	protected initializeTokens() {
 		const v = this.text();
-		this._tokens.set(this.formSvc.extractTokens(v));
+		// this._tokens.set(this.formSvc.extractTokens(v));
+		this._tokens.set(this.extractTokensFn()(v));
 	}
 }

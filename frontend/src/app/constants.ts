@@ -3,6 +3,8 @@ import {
 	type AppTheme,
 	type DropDownItem,
 	FormLayout,
+	type MockBodyType,
+	type MockTabId,
 	type ReqBodyType,
 	type ReqTabId,
 	type RequestAuthType,
@@ -91,6 +93,44 @@ export const RES_DETAILS_TABS: readonly TabItem<ResTabId>[] = [
 	},
 ];
 
+export const MOCK_DETAILS_TABS: readonly TabItem<MockTabId>[] = [
+	{
+		id: "mock_meta",
+		Name: "Metadata",
+	},
+	{
+		id: "mock_body",
+		Name: "Body",
+	},
+	{
+		id: "mock_vars",
+		Name: "Variables",
+	},
+];
+
+export const MOCK_BODY_TYPES: readonly DropDownItem<MockBodyType>[] = [
+	{
+		id: "none",
+		displayName: "None",
+	},
+	{
+		id: "binary",
+		displayName: "File",
+	},
+	{
+		id: "json",
+		displayName: "Json",
+	},
+	{
+		id: "xml",
+		displayName: "Xml",
+	},
+	{
+		id: "plaintext",
+		displayName: "Plain",
+	},
+];
+
 export const REQ_BODY_TYPES: readonly DropDownItem<ReqBodyType>[] = [
 	{
 		id: "none",
@@ -122,7 +162,7 @@ export const REQ_BODY_TYPES: readonly DropDownItem<ReqBodyType>[] = [
 	},
 ];
 
-export const REQ_METHODS: readonly DropDownItem<RequestMethod>[] = [
+export const REQ_METHODS: DropDownItem<RequestMethod>[] = [
 	{
 		id: "GET",
 		displayName: "Get",
@@ -190,8 +230,11 @@ export const API_KEY_LOCATION: readonly DropDownItem<APIKeyLocation>[] = [
 	},
 ];
 
+export const BULK_EDIT_ENV_INSTRUCTION =
+	"Keep each entry on new line\nKey & value are delimited by ' = '\nStart value with ' # ' to keep it secret";
+
 export const BULK_EDIT_INSTRUCTION =
-	"Keep each entry on new line\nKey & value are delimited by ' : '\nStart row with ' # ' to keep entry disabled";
+	"Keep each entry on new line\nKey & value are delimited by ' = '\nStart row with ' # ' to keep entry disabled";
 export const BULK_EDIT_COOKIES_INSTRUCTION =
 	"Keep entries separated by ' ; '\nName & Value are delimited by ' = '";
 
@@ -201,6 +244,7 @@ export const DEFAULT_RES_TAB: ResTabId = "res_body";
 export const NO_ENV_ID = "no_env";
 export const ENV_TOKEN_REGEX = /({{.*?}})/g;
 export const ENV_VAR_REGEX = /{{(.*?)}}/;
+export const ENV_VAR_REGEX2 = /\{\{(.*?)\}\}/g;
 export const PATH_TOKEN_REGEX = /({.*?})/g;
 export const PATH_VAR_REGEX = /{(.*?)}/;
 
@@ -213,11 +257,14 @@ export const MULTIPART_ID_PLACEHOLDER = "mid_default";
 export const URLENCODED_ID_PLACEHOLDER = "uid_default";
 export const ENV_ID_PLACEHOLDER = "eid_default";
 
+export const APP_CONFIG_PATH = "/config.json";
+
 export const DL_LIMIT_BYTES = 300_000_000;
 export const CF_TURNSTILE_SITE_KEY = "0x4AAAAAAC1FmrUCFKoOASfz";
 export const CF_TURNSTILE_SCRIPT_SRC =
 	"https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
 export const DEMO_USER_SESSION_MAX_MINS = 5;
+export const HEALTH_CHECK_INTERVAL_SECONDS = 10;
 
 export const LOGIN_CODES_MSGS: Record<string, string> = {
 	err_link_invalid: "Magic Link is invalid, try requesting a new one.",
@@ -227,4 +274,11 @@ export const LOGIN_CODES_MSGS: Record<string, string> = {
 	ok_magic_link: "If account exists you will receive magic link in your inbox.",
 	err_magic_link: "Failed to send magic link, try again later",
 	err_demo_session_fail: "Failed to initialize demo session at this time.",
+	ok_session_expired: "Your session has ended, login again.",
+	err_server_disconnected: "App is facing connectivity issues.",
+	err_app_init: "Unable to initialize your workspace.",
 };
+
+export const APP_COLLECTIONS_FETCH_ENTITY = "app_collections";
+export const APP_ENVS_FETCH_ENTITY = "app_envs";
+export const APP_MOCKSVCS_FETCH_ENTITY = "app_mock_servers";

@@ -6,8 +6,10 @@ import {
 	signal,
 } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { Router } from "@angular/router";
 import type { models } from "@wailsjs/go/models";
 import { AppService, TabsService, UserAuthService } from "@/services";
+import type { MockCallingInfo } from "@/types";
 
 @Injectable({
 	providedIn: "root",
@@ -17,6 +19,7 @@ export class GlobalModalsService {
 	private readonly tabSvc = inject(TabsService);
 	private readonly authSvc = inject(UserAuthService);
 	private readonly destroyRef = inject(DestroyRef);
+	private readonly router = inject(Router);
 
 	constructor() {
 		this.appSvc.initiateDefaultWorkspaceCreation$
@@ -63,9 +66,15 @@ export class GlobalModalsService {
 	public async handleCreateDefaultWorkspace(name: string) {
 		try {
 			this._defaultWorkspaceCreateProgress.set(true);
-			await this.appSvc.createDefaultWorkspace(name);
+			const w = await this.appSvc.createDefaultWorkspace(name);
+			this.router.navigate([`/workspaces/${w}`], { replaceUrl: true });
 		} catch (error) {
 			console.error(error);
+			this.router.navigate(["/error"], {
+				queryParams: {
+					code: "err_app_init",
+				},
+			});
 		} finally {
 			this._defaultWorkspaceCreateProgress.set(false);
 			this.handleCloseCreateDefaultWorkspaceModal();
@@ -582,7 +591,6 @@ export class GlobalModalsService {
 			const data = this._deleteReqExampleInfo();
 			if (data) {
 				await this.appSvc.deleteReqExample(data.id);
-				this.tabSvc.closeExampleTab(data.id);
 			}
 		} catch (error) {
 			console.error(error);
@@ -592,4 +600,69 @@ export class GlobalModalsService {
 		}
 	}
 	//#endregion request-example
+
+	//#region delete-mock
+	private _deleteMockInfo = signal<models.MockLightDTO | null>(null);
+
+	public deleteMockModalTitle = computed(() => {
+		const data = this._deleteMockInfo();
+		if (data) {
+			return `Delete Mock '${data.name}' ?`;
+		}
+
+		return "";
+	});
+
+	public deleteMockModalMessage = computed(() => {
+		return `This action is irreversible, Mock will be deleted.`;
+	});
+
+	private _isDeleteMockModalOpen = signal<boolean>(false);
+	public isDeleteMockModalOpen = computed(() => this._isDeleteMockModalOpen());
+
+	private _deleteMockInProgress = signal<boolean>(false);
+	public deleteMockInProgress = computed(() => this._deleteMockInProgress());
+
+	public handleOpenDeleteMockModal(data: models.MockLightDTO) {
+		this._deleteMockInfo.set(data);
+		this._isDeleteMockModalOpen.set(true);
+	}
+
+	public handleCloseDeleteMockModal() {
+		this._isDeleteMockModalOpen.set(false);
+		this._deleteMockInfo.set(null);
+	}
+
+	public async handleDeleteMock() {
+		try {
+			this._deleteMockInProgress.set(true);
+			const data = this._deleteMockInfo();
+			if (data) {
+				await this.appSvc.deleteMock(data.id);
+			}
+		} catch (error) {
+			console.error(error);
+		} finally {
+			this._deleteMockInProgress.set(false);
+			this.handleCloseDeleteMockModal();
+		}
+	}
+	//#endregion delete-mock
+
+	private _openMockInfo = signal<MockCallingInfo | null>(null);
+
+	public openMockServerInfo = computed(() => this._openMockInfo());
+
+	private _isMockInfoModalOpen = signal<boolean>(false);
+	public isMockInfoModalOpen = computed(() => this._isMockInfoModalOpen());
+
+	public handleOpenMockInfoModal(data: MockCallingInfo) {
+		this._openMockInfo.set(data);
+		this._isMockInfoModalOpen.set(true);
+	}
+
+	public handleCloseMockInfoModal() {
+		this._isMockInfoModalOpen.set(false);
+		this._openMockInfo.set(null);
+	}
 }

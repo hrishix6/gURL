@@ -1,213 +1,82 @@
-import {
-	Component,
-	DestroyRef,
-	HostBinding,
-	inject,
-	signal,
-} from "@angular/core";
-import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import {
-	ChevronRightIcon,
-	Container,
-	Layers,
-	LucideAngularModule,
-	RadioTower,
-	ScrollText,
-} from "lucide-angular";
-import {
-	AppService,
-	getEnvRepository,
-	getReqRepository,
-	TabsService,
-} from "@/services";
-import { AppTabType } from "./types";
-
-enum CrumbType {
-	Req = "Request",
-	Collections = "Collection",
-	Env = "Environment",
-	ReqExample = "Request_Example",
-}
+import { Component, HostBinding, inject } from "@angular/core";
+import { TabsService } from "@/services";
+import { SystemIconComponent } from "./common/components/icon";
 
 @Component({
 	selector: "div[gurl-breadcrumbs]",
 	template: `
-        @if (crumbs().length > 0) {
+        @if (tabSvc.crumbs().length > 0) {
             <ul class="flex items-center gap-2">
-                @for (crumb of crumbs(); track $index) {
+                @for (crumb of tabSvc.crumbs(); track $index) {
                     <li class="text-sm">
                         <a class="flex items-center gap-2 hover:decoration-0 hover:cursor-default">
                             @switch (crumb.type) {
+								@case ("MockServer") {
+									 <i gurl-icon
+									 [className]="'size-4'"
+									 [icon]="'MockServer'"
+									 >
+									</i>
+                                }
                                 @case ("Collection") {
-                                    <lucide-angular [img]="CollectionsIcon" class="size-4" />
+									 <i gurl-icon
+									 [className]="'size-4'"
+									 [icon]="'Collection'"
+									 >
+									</i>
                                 }
                                 @case ("Environment") {
-                                    <lucide-angular [img]="EnvironmentIcon" class="size-4" />
+                                    
+									 <i gurl-icon
+									 [className]="'size-4'"
+									 [icon]="'Environment'"
+									 >
+									</i>
                                 }
                                 @case ("Request") {
-                                    <lucide-angular [img]="RequestsIcon" class="size-4" />
+                                    
+									  <i gurl-icon
+									 [className]="'size-4'"
+									 [icon]="'Request'"
+									 >
+									 </i>
                                 }
 								@case ("Request_Example") {
-									<lucide-angular [img]="ExampleIcon" class="size-4" />
+									
+									  <i gurl-icon
+									 [className]="'size-4'"
+									 [icon]="'RequestExample'"
+									 >
+									 </i>
 								}
+
+								@case ("Mock") {
+									 <i gurl-icon
+									 [className]="'size-4'"
+									 [icon]="'Mock'"
+									 >
+									</i>
+                                }
                             }
                             <p class="font-semibold">{{crumb.name}}</p>
                         </a>
                     </li>
-					@if($index < (crumbs().length - 1)){
-						<lucide-angular [img]="ChevronRightIcon" class="size-4 text-base-content/50" />
+					@if($index < (tabSvc.crumbs().length - 1)){
+						   <i gurl-icon
+									 [className]="'size-4 text-base-content/50'"
+									 [icon]="'ChevronRight'"
+									 >
+							</i>
 					}
                 }
             </ul>
         }
     `,
-	imports: [LucideAngularModule],
+	imports: [SystemIconComponent],
 })
 export class Breadcrumbs {
 	@HostBinding("class")
 	readonly hostClass = "overflow-x-auto whitespace-nowrap";
 
-	constructor() {
-		this.tabSvc.activeTabChanges$
-			.pipe(takeUntilDestroyed(this.destroyRef))
-			.subscribe((tabId: string) => {
-				this.loadCrumbs(tabId);
-			});
-
-		this.tabSvc.refreshNotifier
-			.pipe(takeUntilDestroyed(this.destroyRef))
-			.subscribe((tabType: AppTabType) => {
-				const currentTabId = this.tabid();
-				if (currentTabId) {
-					const tab = this.tabSvc.getTabById(currentTabId);
-					if (tab && tab.entityType === tabType) {
-						this.loadCrumbs(currentTabId);
-					}
-				}
-			});
-
-		this.appSvc.refreshBreadcrumb$
-			.pipe(takeUntilDestroyed(this.destroyRef))
-			.subscribe(() => {
-				const currentTabId = this.tabid();
-				if (currentTabId) {
-					this.loadCrumbs(currentTabId);
-				}
-			});
-	}
-
-	ngOnInit(): void {
-		const activeTabId = this.tabSvc.activeTab();
-		if (activeTabId) {
-			this.loadCrumbs(activeTabId);
-		}
-	}
-
-	private reqRepo = getReqRepository();
-	private envRepo = getEnvRepository();
-	private destroyRef = inject(DestroyRef);
-	private readonly tabSvc = inject(TabsService);
-	private readonly appSvc = inject(AppService);
-	private tabid = signal<string>("");
-	protected crumbs = signal<{ type: CrumbType; name: string }[]>([]);
-
-	protected readonly CollectionsIcon = Layers;
-	protected readonly EnvironmentIcon = Container;
-	protected readonly RequestsIcon = RadioTower;
-	protected readonly ChevronRightIcon = ChevronRightIcon;
-	protected readonly ExampleIcon = ScrollText;
-
-	protected loadCrumbs(tabId: string) {
-		this.tabid.set(tabId);
-		const tab = this.tabSvc.getTabById(tabId);
-		if (tab) {
-			switch (tab.entityType) {
-				case AppTabType.Req: {
-					this.reqRepo
-						.findDraftById(tab.entityId)
-						.then((draft) => {
-							if (draft) {
-								const { parentCollectionId, parentRequestId } = draft;
-								if (parentRequestId) {
-									const req = this.appSvc
-										.savedRequests()
-										.find((r) => r.id === parentRequestId)?.name;
-									const collection = this.appSvc
-										.collections()
-										.find((c) => c.id === parentCollectionId)?.name;
-									this.crumbs.set([
-										{
-											type: CrumbType.Collections,
-											name: collection || "Unnamed Collection",
-										},
-										{ type: CrumbType.Req, name: req || "Unnamed Request" },
-									]);
-								} else {
-									this.crumbs.set([{ type: CrumbType.Req, name: tab.name }]);
-								}
-							}
-						})
-						.catch((err) => {
-							console.error(err);
-						});
-					break;
-				}
-				case AppTabType.Env: {
-					this.envRepo
-						.findEnvDraft(tab.entityId)
-						.then((draft) => {
-							if (draft) {
-								const env = this.appSvc
-									.environments()
-									.find((e) => e.id === draft.parentEnvId)?.name;
-								this.crumbs.set([
-									{ type: CrumbType.Env, name: env || tab.name },
-								]);
-							}
-						})
-						.catch((err) => {
-							console.error(err);
-						});
-					break;
-				}
-				case AppTabType.ReqExample: {
-					this.reqRepo
-						.getReqExampleById(tab.entityId)
-						.then((example) => {
-							if (example) {
-								const exName = this.appSvc
-									.savedExamples()
-									.find((e) => e.id === example.id)?.name;
-
-								const reqName = this.appSvc
-									.savedRequests()
-									.find((r) => r.id === example.requestId)?.name;
-								const collectionName = this.appSvc
-									.collections()
-									.find((c) => c.id === example.collectionId)?.name;
-
-								if (exName && reqName && collectionName) {
-									this.crumbs.set([
-										{ type: CrumbType.Collections, name: collectionName },
-										{ type: CrumbType.Req, name: reqName },
-										{ type: CrumbType.ReqExample, name: exName },
-									]);
-								} else {
-									this.crumbs.set([
-										{ type: CrumbType.ReqExample, name: tab.name },
-									]);
-								}
-							}
-						})
-						.catch((err) => {
-							console.error(err);
-						});
-					break;
-				}
-				default: {
-					this.crumbs.set([]);
-				}
-			}
-		}
-	}
+	protected readonly tabSvc = inject(TabsService);
 }

@@ -3,6 +3,7 @@ import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import type { models } from "@wailsjs/go/models";
 import { nanoid } from "nanoid";
 import { debounceTime, Subject } from "rxjs";
+import { keyValToBulkEditText } from "@/common/utils/text";
 import {
 	MULTIPART_ID_PLACEHOLDER,
 	REQ_BODY_TYPES,
@@ -19,7 +20,8 @@ export class BodyService {
 	private multipartDbSync$ = new Subject<MultipartItem[]>();
 	private urlEncodedDbSync$ = new Subject<models.GurlKeyValItem[]>();
 	private binaryBDbSync$ = new Subject<models.FileStats | null>();
-	private textBDbSync$ = new Subject<string>();
+	private textDbSync$ = new Subject<string>();
+	public formatText$ = new Subject<void>();
 
 	public init(draft: models.RequestDraftDTO) {
 		const { bodyType, multipart, urlencoded, binary, text } = draft;
@@ -232,12 +234,10 @@ export class BodyService {
 	}
 
 	public bulkUrlEncodedFormText = computed(() => {
-		return this._urlEncodedParams().reduce((prev, curr) => {
-			if (curr.id !== URLENCODED_ID_PLACEHOLDER) {
-				prev += `${curr.enabled === "on" ? "" : "#"}${curr.key}:${curr.val}\n`;
-			}
-			return prev;
-		}, "");
+		return keyValToBulkEditText(
+			this._urlEncodedParams(),
+			URLENCODED_ID_PLACEHOLDER,
+		);
 	});
 
 	public _bulkUpdateUrlEncodedForm(items: models.GurlKeyValItem[]) {
@@ -357,7 +357,7 @@ export class BodyService {
 	public textBody = computed(() => this._textBody());
 	public _setTextBody(v: string) {
 		this._textBody.set(v);
-		this.textBDbSync$.next(v);
+		this.textDbSync$.next(v);
 	}
 	//#endregion Text
 
@@ -408,7 +408,7 @@ export class BodyService {
 			});
 
 		//text body
-		this.textBDbSync$
+		this.textDbSync$
 			.pipe(takeUntilDestroyed(this.destroyRef), debounceTime(500))
 			.subscribe({
 				next: (v) => {

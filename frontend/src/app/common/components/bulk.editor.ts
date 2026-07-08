@@ -8,14 +8,13 @@ import {
 	signal,
 } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import type { models } from "@wailsjs/go/models";
 import { debounceTime, Subject } from "rxjs";
 
 @Component({
 	selector: `gurl-bulk-editor`,
 	template: `
         <textarea
-        class="textarea textarea-ghost textarea-primary bg-base-300 xl:textarea-lg w-full h-full"
+        class="textarea textarea-ghost textarea-primary bg-base-300 w-full h-full"
         [placeholder]="editInstructions()"
         [value]="text()"
         (input)="handleInput($event)"
@@ -23,14 +22,14 @@ import { debounceTime, Subject } from "rxjs";
         </textarea>
     `,
 })
-export class BulkKeyValEditor implements OnInit {
+export class BulkKeyValEditor<T> implements OnInit {
 	initialValue = input<string>("");
-	onChange = output<models.GurlKeyValItem[]>();
+	onChange = output<T[]>();
 	text = signal<string>("");
 	notifier$ = new Subject<string>();
 	destroyRef = inject(DestroyRef);
 	editInstructions = input.required<string>();
-	parseFn = input.required<(t: string) => Promise<models.GurlKeyValItem[]>>();
+	parseFn = input.required<(t: string) => Promise<T[]>>();
 
 	ngOnInit(): void {
 		this.text.set(this.initialValue());

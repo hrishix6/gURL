@@ -3,7 +3,7 @@ import {
 	provideAppInitializer,
 	provideBrowserGlobalErrorListeners,
 } from "@angular/core";
-import { provideRouter } from "@angular/router";
+import { provideRouter, withComponentInputBinding } from "@angular/router";
 import { routes } from "../main.router";
 import { getAppConfig, isConfigError, loadConfig } from "./app.config";
 
@@ -27,7 +27,7 @@ async function initializeApp() {
 export const config: ApplicationConfig = {
 	providers: [
 		provideBrowserGlobalErrorListeners(),
-		provideRouter(routes),
+		provideRouter(routes, withComponentInputBinding()),
 		provideAppInitializer(initializeApp),
 	],
 };

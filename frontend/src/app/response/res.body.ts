@@ -1,10 +1,5 @@
-import { Component, HostBinding, inject } from "@angular/core";
-import {
-	Ban,
-	CircleAlert,
-	LucideAngularModule,
-	MessageCircleOff,
-} from "lucide-angular";
+import { Component, inject } from "@angular/core";
+import { SystemIconComponent } from "@/common/components/icon";
 import { FormService } from "@/services";
 import { ResPreview } from "./res.preview";
 
@@ -15,7 +10,7 @@ import { ResPreview } from "./res.preview";
             <!-- IDLE / NOT SENT -->
             @case ("idle") {
                 <div class="flex-1 flex items-center justify-center opacity-10">
-                        <lucide-angular [img]="NoneIcon" class="size-16 -z-10" />
+                        <i gurl-icon [icon]="'Empty'" [className]="'size-16 -z-10'" ></i>
                 </div>
             }
             <!-- IN PROGRESS -->
@@ -32,27 +27,20 @@ import { ResPreview } from "./res.preview";
             <!-- FAILED -->
             @case("error") {
                 <div class="flex-1 flex items-center justify-center opacity-10">
-                        <lucide-angular [img]="FailedIcon" class="size-16 -z-10" />
+                           <i gurl-icon [icon]="'Failed'" [className]="'size-16 -z-10'" ></i>
                 </div>
             }
 
             <!-- ABORTED -->
             @case("aborted"){
                 <div class="flex-1 flex items-center justify-center opacity-10">
-                        <lucide-angular [img]="AbortedIcon" class="size-16 -z-10" />
+                           <i gurl-icon [icon]="'Aborted'" [className]="'size-16 -z-10'" ></i>
                 </div>
             }
-
         }
     `,
-	imports: [LucideAngularModule, ResPreview],
+	imports: [ResPreview, SystemIconComponent],
 })
 export class ResBody {
-	@HostBinding("class")
-	def = "flex-1 flex overflow-hidden";
-
-	protected readonly NoneIcon = Ban;
-	protected readonly AbortedIcon = MessageCircleOff;
-	protected readonly FailedIcon = CircleAlert;
 	protected readonly formSvc = inject(FormService);
 }

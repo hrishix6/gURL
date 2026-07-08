@@ -1,16 +1,20 @@
-import { Component, effect, HostBinding, input, signal } from "@angular/core";
+import {
+	Component,
+	effect,
+	HostBinding,
+	inject,
+	input,
+	signal,
+} from "@angular/core";
+import { Subject } from "rxjs";
 import { Alert } from "@/common/components/alert";
-import type { Alert as AlertData } from "@/types";
+import { CodeEditor } from "@/common/components/code-editor";
+import { FormService } from "@/services";
+import type { Alert as AlertData, ReqBodyType } from "@/types";
 
 @Component({
 	selector: "div[gurl-res-text-preview]",
 	template: `
-		<textarea
-		class="textarea textarea-lg focus:outline-0 textarea-ghost bg-base-300 flex-1"
-		[value]="text()"
-		readonly
-		>
-		</textarea>
 		@if(errAlert()){
 			<div class="absolute top-0 left-0 h-full w-full bg-base-300 flex items-center justify-center">
 				<gurl-alert [data]="errAlert()!"  />
@@ -18,24 +22,36 @@ import type { Alert as AlertData } from "@/types";
 		}
 		@if(loading()){
 			<div class="absolute top-0 left-0 h-full w-full bg-base-300 flex items-center justify-center">
-				<span class="loading loading-ring text-primary loading-sm xl:loading-lg"></span>
+				<span class="loading loading-bars loading-sm xl:loading-lg text-primary"></span>
 			</div>
+		}@else {
+			<gurl-code-editor 
+				[mode]="mode()"
+				[readonly]="true"
+				[text]="text()"
+				[disableVariableHighlight]="true"
+				[envChange$]="forceChange$"
+				[formatText$]="formSvc.formatResponseText$"
+			/>
 		}
 	`,
-	imports: [Alert],
+	imports: [Alert, CodeEditor],
 })
 export class ResponseTextPreview {
 	@HostBinding("class")
-	def = "relative";
+	def = "flex-1 flex flex-col relative";
 
-	src = input<string>();
 	text = signal("");
-	loading = signal(false);
+	mode = input.required<ReqBodyType>();
+	loading = signal(true);
 	errAlert = signal<AlertData | null>(null);
+	forceChange$ = new Subject<void>();
+
+	protected readonly formSvc = inject(FormService);
 
 	constructor() {
 		effect((onCleanup) => {
-			const url = this.src();
+			const url = this.formSvc.res()?.body?.src;
 
 			if (!url) {
 				this.text.set("");
@@ -66,7 +82,9 @@ export class ResponseTextPreview {
 						type: "error",
 					});
 				})
-				.finally(() => this.loading.set(false));
+				.finally(() => {
+					this.loading.set(false);
+				});
 		});
 	}
 }

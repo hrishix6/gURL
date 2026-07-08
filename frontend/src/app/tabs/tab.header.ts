@@ -6,7 +6,7 @@ import {
 	input,
 	output,
 } from "@angular/core";
-import { Container, LucideAngularModule, ScrollText, X } from "lucide-angular";
+import { SystemIconComponent } from "@/common/components/icon";
 import { ReqMethodTag } from "@/request/method.tag";
 import { TabsService } from "@/services";
 import type { ApplicationTab } from "@/types";
@@ -17,13 +17,19 @@ import type { ApplicationTab } from "@/types";
     <div class="flex flex-1 items-center gap-1.5 overflow-hidden">
 	   @switch (data().entityType) {
 		   	@case("req") {
+				<i gurl-icon [icon]="'Request'" [className]="'size-4'" ></i>
 				<div gurl-req-tag  [size]="'xs'" [method]="data().tag"></div>
 			}
 			@case("env") {
-				<lucide-angular [img]="EnvironmentIcon" class="size-4" />
+				<i gurl-icon [icon]="'Environment'" [className]="'size-4'" ></i>
 			}
 			@case("req_example") {
-				<lucide-angular [img]="ReqExampleIcon" class="size-4" />
+				<i gurl-icon [icon]="'RequestExample'" [className]="'size-4'" ></i>
+				<div gurl-req-tag  [size]="'xs'" [method]="data().tag"></div>
+			}
+			@case("mock") {
+				<i gurl-icon [icon]="'Mock'" [className]="'size-4'" ></i>
+				<div gurl-req-tag  [size]="'xs'" [method]="data().tag"></div>
 			}
 	    }
 	  	@if(data().isModified) {
@@ -38,13 +44,13 @@ import type { ApplicationTab } from "@/types";
 		(click)="handleClose($event)"
 		[disabled]="tabSvc.tabCount() === 1"
 		>
-		<lucide-angular [img]="CancelIcon" class="size-3" />
+		<i gurl-icon [icon]="'Cancel'" [className]="'size-3'" ></i>
 	</button>
 	@if(isActive()){
 		<div class="absolute top-0 left-0 w-full h-0.5 bg-primary/75"></div>
 	}
   `,
-	imports: [LucideAngularModule, ReqMethodTag],
+	imports: [ReqMethodTag, SystemIconComponent],
 })
 export class TabHeader {
 	@HostBinding("class") get def() {
@@ -92,9 +98,6 @@ export class TabHeader {
 	onSelectTab = output();
 
 	protected readonly tabSvc = inject(TabsService);
-	protected readonly CancelIcon = X;
-	protected readonly ReqExampleIcon = ScrollText;
-	protected readonly EnvironmentIcon = Container;
 
 	protected handleClose(e: Event) {
 		e.stopPropagation();

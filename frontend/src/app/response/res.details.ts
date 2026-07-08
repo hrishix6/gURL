@@ -1,18 +1,7 @@
 import { Component, HostBinding, inject } from "@angular/core";
-import {
-	Ban,
-	ChevronDown,
-	ChevronUp,
-	EllipsisVertical,
-	Eraser,
-	FileDown,
-	LucideAngularModule,
-	MessageCircleWarning,
-	Save,
-	ShieldBanIcon,
-	Trash2,
-} from "lucide-angular";
 import { Tab } from "@/common/components";
+import { SystemIconComponent } from "@/common/components/icon";
+import { ResDetailsTabContentDirective } from "@/common/directives/res.details.content";
 import { RES_DETAILS_TABS } from "@/constants";
 import { FormService } from "@/services";
 import type { ResTabId } from "@/types";
@@ -36,34 +25,24 @@ import { ResHeaders } from "./res.headers";
                   @if(formSvc.tabType() === "req"){ 
 					@if(formSvc.draftParentData().parentRequestId){
 						<button class="btn btn-sm btn-soft join-item" (click)="formSvc.handleOpenSaveExampleModal()">
-							<lucide-angular [img]="SaveIcon" class="size-4" />
-							<!-- Save -->
+							<i gurl-icon [icon]="'Save'" [className]="'size-4'" ></i>
 						</button>
 					}
 					<button class="btn btn-sm btn-soft join-item" (click)="formSvc.saveToFile()">
-						<lucide-angular [img]="DownloadIcon"  class="size-4"/>
-						<!-- Download -->
+							<i gurl-icon [icon]="'Export'" [className]="'size-4'" ></i>
 					</button>
 					<button class="btn btn-sm btn-soft join-item" (click)="formSvc.clearResponse()">
-						<lucide-angular [img]="ClearIcon"  class="size-4"/>
-						<!-- Clear -->
+						<i gurl-icon [icon]="'Clear'" [className]="'size-4'" ></i>
 					</button>
                   }
         </div>
 	}
     </header>
 	
-    <div class="flex-1 flex flex-col overflow-hidden relative p-2 mt-2">
-      @switch (formSvc.activeResTab()) { 
-        @case ("res_headers") { 
-        <gurl-res-headers />
-      } @case ("res_body"){ 
-        <gurl-res-body />
-      }
-      @case("res_cookies"){
-        <gurl-res-cookies />
-      }
-    }
+    <div class="flex-1 flex flex-col overflow-hidden relative p-2">
+			<gurl-res-headers res-details-tab-content [active]="formSvc.activeResTab() === 'res_headers'"/>
+			<gurl-res-body res-details-tab-content [active]="formSvc.activeResTab() === 'res_body'"/>
+			<gurl-res-cookies res-details-tab-content [active]="formSvc.activeResTab() === 'res_cookies'" />
     </div>
     @if(formSvc.res()) {
           <gurl-res-footer
@@ -73,36 +52,19 @@ import { ResHeaders } from "./res.headers";
   `,
 	imports: [
 		Tab,
-		LucideAngularModule,
 		ResHeaders,
 		ResCookies,
 		ResFooter,
 		ResBody,
+		SystemIconComponent,
+		ResDetailsTabContentDirective,
 	],
 })
 export class ResponseDetails {
 	@HostBinding("class")
 	hostClass = "flex-1 flex flex-col overflow-hidden";
-
-	protected readonly OpenIcon = ChevronDown;
-	protected readonly CloseIcon = ChevronUp;
-	protected readonly RequestOptsIcon = EllipsisVertical;
-	protected readonly DeleteIcon = Trash2;
-	protected readonly ClearIcon = Eraser;
-	protected readonly SaveIcon = Save;
-	protected readonly DownloadIcon = FileDown;
-	protected readonly NoneIcon = Ban;
-	protected readonly AbortedIcon = ShieldBanIcon;
-	protected readonly ErroredReqIcon = MessageCircleWarning;
 	protected readonly formSvc = inject(FormService);
 	protected readonly resDetailsTabs = RES_DETAILS_TABS;
-
-	getPlaceHolderForEditor() {
-		return JSON.stringify({
-			name: "hrishi",
-			age: 10,
-		});
-	}
 
 	protected handleTabChange(id: ResTabId) {
 		this.formSvc.setActiveResTab(id);

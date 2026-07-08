@@ -1,4 +1,4 @@
-import { environment } from "@src/environments/environment";
+import { APP_CONFIG_PATH } from "./constants";
 import type { AppConfig } from "./types";
 
 let config_error = false;
@@ -7,7 +7,7 @@ let appConfig: AppConfig | null = null;
 
 export async function loadConfig() {
 	try {
-		const res = await fetch(environment.CONFIG_PATH);
+		const res = await fetch(APP_CONFIG_PATH);
 		if (!res.ok) {
 			config_error = true;
 			return;

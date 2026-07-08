@@ -25,12 +25,28 @@ export class WebReqRepository implements RequestRepository {
 		return WebReqRepository.webReqRepo;
 	}
 
+	async createMockFromExample(
+		exampleId: string,
+		dto: models.CreateMockDTO,
+	): Promise<models.MockLightDTO> {
+		const result = await this.restClient.post<models.MockLightDTO>(
+			`${this._reqExampleBaseUrl}/${exampleId}/mock`,
+			dto,
+		);
+
+		if (!result.success) {
+			throw new Error("Failed to create mock");
+		}
+
+		return result.data;
+	}
+
 	//reqs
 	async getSavedRequests(
-		workspace: string,
+		q: models.ReqQueryDTO,
 	): Promise<Array<models.RequestLightDTO> | undefined> {
 		const query = new URLSearchParams({
-			workspace_id: workspace,
+			...q,
 		});
 		const result = await this.restClient.get<Array<models.RequestLightDTO>>(
 			this._reqBaseUrl,
@@ -44,11 +60,25 @@ export class WebReqRepository implements RequestRepository {
 		return result.data;
 	}
 
+	async getSavedReqById(
+		id: string,
+	): Promise<models.RequestLightDTO | undefined> {
+		const result = await this.restClient.get<models.RequestLightDTO>(
+			`${this._reqBaseUrl}/${id}`,
+		);
+
+		if (!result.success) {
+			throw new Error("Failed to save request copy");
+		}
+
+		return result.data;
+	}
+
 	async saveRequestCopy(
 		sourceId: string,
 		arg1: models.SaveRequestCopyDTO,
-	): Promise<void> {
-		const result = await this.restClient.post<void>(
+	): Promise<string> {
+		const result = await this.restClient.post<string>(
 			`${this._reqBaseUrl}/${sourceId}`,
 			arg1,
 		);
@@ -67,18 +97,6 @@ export class WebReqRepository implements RequestRepository {
 
 		if (!result.success) {
 			throw new Error("Failed to delete request");
-		}
-
-		return result.data;
-	}
-
-	async deleteRequestDrafts(id: string): Promise<void> {
-		const result = await this.restClient.delete<void>(
-			`${this._reqBaseUrl}/${id}/drafts`,
-		);
-
-		if (!result.success) {
-			throw new Error("Failed to delete request drafts");
 		}
 
 		return result.data;
@@ -152,8 +170,8 @@ export class WebReqRepository implements RequestRepository {
 	async saveDraftAsRequest(
 		draftId: string,
 		arg1: models.SaveDraftAsReqDTO,
-	): Promise<void> {
-		const result = await this.restClient.post<void>(
+	): Promise<models.RequestDraftDTO | undefined | null> {
+		const result = await this.restClient.post<models.RequestDraftDTO>(
 			`${this._reqDraftsBaseUrl}/${draftId}`,
 			arg1,
 		);
@@ -198,10 +216,10 @@ export class WebReqRepository implements RequestRepository {
 	}
 
 	async getReqExamples(
-		workspace: string,
+		q: models.ReqExampleQueryDTO,
 	): Promise<Array<models.ReqExampleLightDTO> | null | undefined> {
 		const query = new URLSearchParams({
-			workspace_id: workspace,
+			...q,
 		});
 		const result = await this.restClient.get<Array<models.ReqExampleLightDTO>>(
 			this._reqExampleBaseUrl,

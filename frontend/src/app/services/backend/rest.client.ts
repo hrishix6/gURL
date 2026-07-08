@@ -1,4 +1,3 @@
-import { environment } from "@src/environments/environment";
 import { getAppConfig } from "@/app.config";
 import type { ApiResponse, UserInfo } from "@/types";
 
@@ -48,12 +47,10 @@ export class RestClient {
 			`${this.apiBaseURL}/${path}${query ? `?${query.toString()}` : ""}`,
 			{
 				method,
+				credentials: "include",
 				...(ignoreTimeout
 					? {}
 					: { signal: AbortSignal.timeout(this.timeoutMS) }),
-				...(environment.origin === "same"
-					? { credentials: "same-origin" }
-					: { credentials: "include" }),
 			},
 		);
 
@@ -76,12 +73,10 @@ export class RestClient {
 					"Content-Type": "application/json",
 				},
 				body: JSON.stringify(body),
+				credentials: "include",
 				...(ignoreTimeout
 					? {}
 					: { signal: AbortSignal.timeout(this.timeoutMS) }),
-				...(environment.origin === "same"
-					? { credentials: "same-origin" }
-					: { credentials: "include" }),
 			},
 		);
 
@@ -156,12 +151,10 @@ export class RestClient {
 			{
 				method: "PUT",
 				body: file,
+				credentials: "include",
 				...(ignoreTimeout
 					? {}
 					: { signal: AbortSignal.timeout(this.fileULTimeoutMS) }),
-				...(environment.origin === "same"
-					? { credentials: "same-origin" }
-					: { credentials: "include" }),
 			},
 		);
 
@@ -177,12 +170,10 @@ export class RestClient {
 		const res = await fetch(
 			`${this.apiBaseURL}/${path}${query ? `?${query.toString()}` : ""}`,
 			{
+				credentials: "include",
 				...(ignoreTimeout
 					? {}
 					: { signal: AbortSignal.timeout(this.fileDlTimeoutMS) }),
-				...(environment.origin === "same"
-					? { credentials: "same-origin" }
-					: { credentials: "include" }),
 			},
 		);
 
@@ -207,12 +198,10 @@ export class RestClient {
 					"Content-Type": "application/json",
 				},
 				body: JSON.stringify(body),
+				credentials: "include",
 				...(ignoreTimeout
 					? {}
 					: { signal: AbortSignal.timeout(this.fileDlTimeoutMS) }),
-				...(environment.origin === "same"
-					? { credentials: "same-origin" }
-					: { credentials: "include" }),
 			},
 		);
 

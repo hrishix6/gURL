@@ -4,8 +4,10 @@ import {models} from '../models';
 
 export function CancelReq(arg1:string):Promise<void>;
 
+export function GetInterpolatedReq(arg1:models.GurlReq,arg2:string):Promise<models.GurlReq>;
+
 export function GetSavedResponsesSrc(arg1:string):Promise<string>;
 
 export function ParseCookieRaw(arg1:string):Promise<Array<models.GurlKeyValItem>>;
 
-export function SendHttpReq(arg1:models.GurlReq):Promise<models.GurlRes>;
+export function SendHttpReq(arg1:models.GurlReq,arg2:string):Promise<models.GurlRes>;

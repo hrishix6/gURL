@@ -46,6 +46,26 @@ export function CopyEnvironment(arg1, arg2) {
   return window['go']['storage']['DesktopStorage']['CopyEnvironment'](arg1, arg2);
 }
 
+export function CopyMockWithId(arg1) {
+  return window['go']['storage']['DesktopStorage']['CopyMockWithId'](arg1);
+}
+
+export function CreateAndStartMockServer(arg1) {
+  return window['go']['storage']['DesktopStorage']['CreateAndStartMockServer'](arg1);
+}
+
+export function CreateFreshMockDraft(arg1) {
+  return window['go']['storage']['DesktopStorage']['CreateFreshMockDraft'](arg1);
+}
+
+export function CreateMockDraftFromMock(arg1, arg2) {
+  return window['go']['storage']['DesktopStorage']['CreateMockDraftFromMock'](arg1, arg2);
+}
+
+export function CreateMockFromExample(arg1, arg2) {
+  return window['go']['storage']['DesktopStorage']['CreateMockFromExample'](arg1, arg2);
+}
+
 export function CreateWorkspace(arg1) {
   return window['go']['storage']['DesktopStorage']['CreateWorkspace'](arg1);
 }
@@ -54,24 +74,32 @@ export function DeleteCollection(arg1) {
   return window['go']['storage']['DesktopStorage']['DeleteCollection'](arg1);
 }
 
-export function DeleteDraftsUnderCollection(arg1) {
-  return window['go']['storage']['DesktopStorage']['DeleteDraftsUnderCollection'](arg1);
-}
-
 export function DeleteEnvDraftsUnderEnv(arg1) {
   return window['go']['storage']['DesktopStorage']['DeleteEnvDraftsUnderEnv'](arg1);
+}
+
+export function DeleteMockById(arg1) {
+  return window['go']['storage']['DesktopStorage']['DeleteMockById'](arg1);
+}
+
+export function DeleteMockDraftById(arg1) {
+  return window['go']['storage']['DesktopStorage']['DeleteMockDraftById'](arg1);
+}
+
+export function DeleteMockServer(arg1) {
+  return window['go']['storage']['DesktopStorage']['DeleteMockServer'](arg1);
 }
 
 export function DeleteReqExample(arg1) {
   return window['go']['storage']['DesktopStorage']['DeleteReqExample'](arg1);
 }
 
-export function DeleteRequestDrafts(arg1) {
-  return window['go']['storage']['DesktopStorage']['DeleteRequestDrafts'](arg1);
-}
-
 export function DeleteSavedReq(arg1) {
   return window['go']['storage']['DesktopStorage']['DeleteSavedReq'](arg1);
+}
+
+export function DownloadResponseFile(arg1) {
+  return window['go']['storage']['DesktopStorage']['DownloadResponseFile'](arg1);
 }
 
 export function FindDraftById(arg1) {
@@ -90,8 +118,24 @@ export function GetAllWorkspaces() {
   return window['go']['storage']['DesktopStorage']['GetAllWorkspaces']();
 }
 
+export function GetCollectionById(arg1) {
+  return window['go']['storage']['DesktopStorage']['GetCollectionById'](arg1);
+}
+
 export function GetEnvironments(arg1) {
   return window['go']['storage']['DesktopStorage']['GetEnvironments'](arg1);
+}
+
+export function GetMockById(arg1) {
+  return window['go']['storage']['DesktopStorage']['GetMockById'](arg1);
+}
+
+export function GetMockDraftById(arg1) {
+  return window['go']['storage']['DesktopStorage']['GetMockDraftById'](arg1);
+}
+
+export function GetMocks(arg1) {
+  return window['go']['storage']['DesktopStorage']['GetMocks'](arg1);
 }
 
 export function GetReqExampleById(arg1) {
@@ -100,6 +144,10 @@ export function GetReqExampleById(arg1) {
 
 export function GetReqExamples(arg1) {
   return window['go']['storage']['DesktopStorage']['GetReqExamples'](arg1);
+}
+
+export function GetSavedRequestById(arg1) {
+  return window['go']['storage']['DesktopStorage']['GetSavedRequestById'](arg1);
 }
 
 export function GetSavedRequests(arg1) {
@@ -138,8 +186,8 @@ export function SaveEnvDraftAsEnv(arg1, arg2) {
   return window['go']['storage']['DesktopStorage']['SaveEnvDraftAsEnv'](arg1, arg2);
 }
 
-export function SaveFile(arg1) {
-  return window['go']['storage']['DesktopStorage']['SaveFile'](arg1);
+export function SaveMockDraftAsMock(arg1, arg2) {
+  return window['go']['storage']['DesktopStorage']['SaveMockDraftAsMock'](arg1, arg2);
 }
 
 export function SaveRequestCopy(arg1, arg2) {
@@ -152,6 +200,14 @@ export function UpdateDraftFields(arg1, arg2) {
 
 export function UpdateEnvDraftData(arg1, arg2) {
   return window['go']['storage']['DesktopStorage']['UpdateEnvDraftData'](arg1, arg2);
+}
+
+export function UpdateMockDraftFields(arg1, arg2) {
+  return window['go']['storage']['DesktopStorage']['UpdateMockDraftFields'](arg1, arg2);
+}
+
+export function UpdateMockServer(arg1, arg2) {
+  return window['go']['storage']['DesktopStorage']['UpdateMockServer'](arg1, arg2);
 }
 
 export function UpdateUIState(arg1) {

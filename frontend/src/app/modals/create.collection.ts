@@ -8,8 +8,8 @@ import {
 	signal,
 	viewChild,
 } from "@angular/core";
-import { FileDown, LucideAngularModule, Plus, X } from "lucide-angular";
 import { getAppConfig } from "@/app.config";
+import { SystemIconComponent } from "@/common/components/icon";
 import { AlertService } from "@/services";
 
 @Component({
@@ -20,22 +20,23 @@ import { AlertService } from "@/services";
         <div class="flex justify-between">  
              <h3 class="text-lg font-bold">New Collection</h3>
              <button class="btn btn-sm btn-square btn-ghost" (click)="handleCancel()">
-                <lucide-angular [img]="CancelIcon" class="size-4" />
+                <i gurl-icon [icon]="'Cancel'" [className]="'size-4'" ></i>
              </button>
         </div>
         <div class="flex gap-4 justify-center mt-4">
           <button class="btn btn-soft btn-primary xl:btn-lg" (click)="handleEmptyCreation()">
-            <lucide-angular [img]="CreeateIcon" class="size-6" />
+            <i gurl-icon [icon]="'Plus'" [className]="'size-6'" ></i>
             <span>New</span>
           </button>
           @if(mode === "web") {
               <input type="file" accept=".json" class="hidden" #webFileInp (input)="handleWebCollectionImport($event)"   />
           }
           <button class="btn btn-soft btn-primary xl:btn-lg" (click)="handleImport()">
-            <lucide-angular [img]="ImportIcon" class="size-6" />
+            <i gurl-icon [icon]="'Import'" [className]="'size-4'" ></i>
             <span>Import</span>
           </button>
-          <button class="btn btn-soft btn-primary xl:btn-lg">
+		  <!-- TODO: Open API Collection -->
+          <!-- <button class="btn btn-soft btn-primary xl:btn-lg">
             <svg
               fill="currentColor"
               class="size-6"
@@ -48,7 +49,7 @@ import { AlertService } from "@/services";
               />
             </svg>
             <span>Open API</span>
-          </button>
+          </button> -->
         </div>
       </div>
     </div>
@@ -56,7 +57,7 @@ import { AlertService } from "@/services";
       <button (click)="handleCancel()">close</button>
     </div>
   `,
-	imports: [LucideAngularModule],
+	imports: [SystemIconComponent],
 })
 export class CreateCollectionModal {
 	@HostBinding("class")
@@ -77,10 +78,6 @@ export class CreateCollectionModal {
 	protected readonly mode = getAppConfig().mode;
 
 	private readonly alertSvc = inject(AlertService);
-	protected readonly ImportIcon = FileDown;
-	protected readonly CancelIcon = X;
-	protected readonly CreeateIcon = Plus;
-
 	protected error = signal<boolean>(false);
 
 	protected handleEmptyCreation() {

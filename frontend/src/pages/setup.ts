@@ -3,11 +3,10 @@ import {
 	type ElementRef,
 	HostBinding,
 	inject,
-	signal,
 	viewChild,
 } from "@angular/core";
-import { CircleX, Key, LucideAngularModule, Mail, User } from "lucide-angular";
 import { getAppConfig } from "@/app.config";
+import { SystemIconComponent } from "@/common/components/icon";
 import { UserAuthService } from "@/services";
 import type { RegisterDTO } from "@/types";
 
@@ -22,15 +21,9 @@ import type { RegisterDTO } from "@/types";
             Create an admin user
         </p>
         <form class="flex flex-col gap-4 w-96" (submit)="handleFormSubmission($event)">
-            @if(loginErr()){
-               <div class="alert alert-soft alert-error">
-                    <lucide-angular [img]="FailedIcon" class="size-4" />
-                     <span>{{loginErr()}}</span>
-                </div>
-            }
              <div>
                 <label class="input w-full">
-                <lucide-angular [img]="EmailIcon" class="size-4" />
+                <i gurl-icon [icon]="'Email'" [className]="'size-4'" ></i>
                 <input
                     type="email"
                     required
@@ -43,20 +36,13 @@ import type { RegisterDTO } from "@/types";
             <input type="submit" class="btn btn-block btn-primary" value="Create" />
         </form>
     `,
-	imports: [LucideAngularModule],
+	imports: [SystemIconComponent],
 })
 export class FirstTimeSetupPage {
 	@HostBinding("class")
 	def = "h-screen flex flex-col gap-4 items-center justify-center";
 
 	protected readonly appConfig = getAppConfig();
-	protected readonly UserIcon = User;
-	protected readonly EmailIcon = Mail;
-	protected readonly PassIcon = Key;
-	protected readonly FailedIcon = CircleX;
-
-	protected loginErr = signal<string | null>(null);
-
 	protected emailRef =
 		viewChild.required<ElementRef<HTMLInputElement>>("email");
 

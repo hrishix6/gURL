@@ -8,6 +8,7 @@ import {
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { nanoid } from "nanoid";
 import { debounceTime, Subject } from "rxjs";
+import { envItemsToBulkEditText } from "@/common/utils/text";
 import { ENV_ID_PLACEHOLDER } from "@/constants";
 import {
 	AlertService,
@@ -17,8 +18,10 @@ import {
 } from "@/services";
 import {
 	AppTabType,
+	type CrumbInfo,
 	type EnvironmentDraftParent,
 	type EnvironmentItem,
+	type FetchState,
 } from "@/types";
 
 @Injectable()
@@ -37,6 +40,54 @@ export class EnvFormService {
 	private _parentMeta = signal<EnvironmentDraftParent>({
 		parentEnvId: "",
 		parentEnvName: "",
+	});
+
+	private _bulkEditMode = signal<boolean>(false);
+
+	public bulkEditMode = computed(() => this._bulkEditMode());
+
+	public toggleBulkEditMode() {
+		this._bulkEditMode.update((x) => !x);
+	}
+
+	private _bulkEditText = signal<string>("");
+
+	public setBulkEditText(s: string) {
+		this._bulkEditText.set(s);
+	}
+
+	public bulkEnvText = computed(() => {
+		return envItemsToBulkEditText(
+			this._environmentFormItems(),
+			ENV_ID_PLACEHOLDER,
+		);
+	});
+
+	public bulkupdateEnvItems(items: EnvironmentItem[]) {
+		const newParams = [
+			...items,
+			{
+				id: ENV_ID_PLACEHOLDER,
+				key: "",
+				val: "",
+				isSecret: false,
+				description: "",
+			},
+		];
+		this._environmentFormItems.set(newParams);
+		this.envDataDbSync$.next(newParams);
+		this._tabSvc.updateModifiedStatus(true);
+	}
+
+	private _crumbInfo = signal<CrumbInfo>({
+		entityName: "New Environment",
+	});
+
+	public fetchState = signal<FetchState>({
+		loaded: false,
+		attempts: 0,
+		error: false,
+		loading: false,
 	});
 
 	public parentEnvId = computed(() => this._parentMeta().parentEnvId);
@@ -163,17 +214,48 @@ export class EnvFormService {
 	}
 
 	public async initializeEnvForm(tabId: string, envDraftId: string) {
+		this._envTabId = tabId;
+		this._envDraftId = envDraftId;
+
+		const activeTabId = this._tabSvc.activeTab();
+
+		if (activeTabId !== tabId) {
+			console.log(`not loading env draf data as it's not active`);
+			return;
+		}
+
+		await this.fetchEnvDraft(tabId, envDraftId);
+
+		const crumbInfo = this._crumbInfo();
+
+		if (crumbInfo) {
+			this._tabSvc.setCrumbs(crumbInfo, AppTabType.Env);
+		}
+	}
+
+	public async fetchEnvDraft(tabId: string, envDraftId: string) {
 		try {
-			this._envTabId = tabId;
+			this.fetchState.update((prev) => ({
+				...prev,
+				error: false,
+				loaded: false,
+				loading: true,
+			}));
+
 			const draft = await this.envRepo.findEnvDraft(envDraftId);
 
 			if (!draft) {
 				throw new Error(`No draft found with id ${envDraftId} in db`);
 			}
 
-			const { id, name, dataJSON, parentEnvId, parentEnvName } = draft;
-			this._envDraftId = id;
+			const { name, dataJSON, parentEnvId, parentEnvName } = draft;
+
 			this._envName.set(name);
+
+			this._crumbInfo.set({
+				entityName: name,
+			});
+
 			this._parentMeta.set({
 				parentEnvId,
 				parentEnvName,
@@ -189,10 +271,25 @@ export class EnvFormService {
 					description: "",
 				},
 			]);
+
+			this.fetchState.update((prev) => ({
+				...prev,
+				loaded: true,
+			}));
 		} catch (error) {
 			console.error(error);
+			this.fetchState.update((prev) => ({
+				...prev,
+				error: true,
+			}));
 			this._alertSvc.addAlert("Failed to load environment draft", "error");
 			this._tabSvc.deleteTab(tabId, AppTabType.Env);
+		} finally {
+			this.fetchState.update((prev) => ({
+				...prev,
+				attempts: prev.attempts + 1,
+				loading: false,
+			}));
 		}
 	}
 
@@ -224,15 +321,20 @@ export class EnvFormService {
 			);
 
 			this._appSvc.refreshEnvs$.next();
-
+			this._appSvc.envUpdated$.next(envId);
 			this._parentMeta.set({
 				parentEnvId: envId,
 				parentEnvName: this.environmentName(),
 			});
 
+			this._crumbInfo.set({
+				entityName: this.environmentName(),
+			});
+
 			this._tabSvc.updateActiveTab("name", this.environmentName());
 			this._tabSvc.updateModifiedStatus(false);
-			this._appSvc.refreshBreadcrumb$.next();
+
+			this._tabSvc.setCrumbs(this._crumbInfo(), AppTabType.Env);
 		} catch (error) {
 			console.error(error);
 		}
@@ -270,13 +372,13 @@ export class EnvFormService {
 	}
 
 	constructor() {
-		this._tabSvc.refreshNotifier
+		this._tabSvc.environmentDeleteNotifier
 			.pipe(takeUntilDestroyed(this.destroyRef))
 			.subscribe({
-				next: (v) => {
-					if (v === AppTabType.Env) {
-						console.log(`received signal to refresh self`);
-						this.initializeEnvForm(this._envTabId, this._envDraftId);
+				next: (deletedEnvId) => {
+					if (this.parentEnvId() === deletedEnvId) {
+						console.log(`parent env deleted, refreshing env draft`);
+						this.fetchEnvDraft(this._envTabId, this._envDraftId);
 					}
 				},
 			});
@@ -341,6 +443,31 @@ export class EnvFormService {
 							`draft is not linked to any env and user doesn't want to save drafts, closing tab`,
 						);
 						this._tabSvc.deleteTab(tab.id, AppTabType.Env);
+					}
+				},
+			});
+
+		this._tabSvc.activeTabChanges$
+			.pipe(takeUntilDestroyed(this.destroyRef))
+			.subscribe({
+				next: (tab) => {
+					if (this._envTabId === tab) {
+						const { attempts } = this.fetchState();
+						if (!attempts) {
+							console.log(`fetching data for env Tab ${tab} from constructor`);
+							this.fetchEnvDraft(this._envTabId, this._envDraftId).then(() => {
+								const c = this._crumbInfo();
+								if (c) {
+									console.log(
+										`this draft is active, setting updated crumbinfo`,
+									);
+									this._tabSvc.setCrumbs(c, AppTabType.Env);
+								}
+							});
+						} else {
+							console.log(`data for tab ${tab} is already loaded`);
+							this._tabSvc.setCrumbs(this._crumbInfo(), AppTabType.Env);
+						}
 					}
 				},
 			});

@@ -24,10 +24,10 @@ export class WebEnvRepository implements EnvironmentRepository {
 	}
 
 	async getEnvironments(
-		workspace: string,
+		q: models.EnvsQueryDTO,
 	): Promise<Array<models.EnvironmentDTO> | null | undefined> {
 		const query = new URLSearchParams({
-			workspace_id: workspace,
+			...q,
 		});
 
 		const result = await this.restClient.get<Array<models.EnvironmentDTO>>(

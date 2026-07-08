@@ -8,7 +8,7 @@ import {
 	signal,
 	viewChild,
 } from "@angular/core";
-import { LucideAngularModule, X } from "lucide-angular";
+import { SystemIconComponent } from "@/common/components/icon";
 import { AppService, FormService } from "@/services";
 
 @Component({
@@ -19,7 +19,7 @@ import { AppService, FormService } from "@/services";
         <div class="flex justify-between">  
              <h3 class="text-lg font-bold">Save Request</h3>
              <button class="btn btn-sm btn-square btn-ghost" (click)="onClose()">
-                <lucide-angular [img]="CancelIcon" class="size-4" />
+                <i gurl-icon [icon]="'Cancel'" [className]="'size-4'" ></i>
              </button>
         </div>
         <div class="flex flex-col gap-4">
@@ -59,7 +59,7 @@ import { AppService, FormService } from "@/services";
       <button (click)="onClose()">close</button>
     </div>
   `,
-	imports: [NgClass, LucideAngularModule],
+	imports: [NgClass, SystemIconComponent],
 })
 export class SaveRequestModal implements AfterViewInit {
 	@HostBinding("class")
@@ -75,7 +75,6 @@ export class SaveRequestModal implements AfterViewInit {
 
 	protected readonly defaultCollectionId = "none";
 
-	protected readonly CancelIcon = X;
 	private readonly reqNameInputEl =
 		viewChild.required<ElementRef<HTMLInputElement>>("reqNameInputEl");
 

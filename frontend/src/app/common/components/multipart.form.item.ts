@@ -9,12 +9,13 @@ import {
 	viewChildren,
 } from "@angular/core";
 import type { models } from "@wailsjs/go/models";
-import { Eraser, LucideAngularModule, Paperclip, X } from "lucide-angular";
+import type { Subject } from "rxjs";
 import { getAppConfig } from "@/app.config";
 import { AlertService, getFileRepository } from "@/services";
-import type { AppTabType, MultipartItem } from "@/types";
+import type { AppTabType, InputToken, MultipartItem } from "@/types";
 import { humanBytes } from "../utils/time";
 import { GurlHighlightedInput } from "./highlighted.input";
+import { SystemIconComponent } from "./icon";
 
 @Component({
 	selector: "gurl-multipart-item",
@@ -32,6 +33,8 @@ import { GurlHighlightedInput } from "./highlighted.input";
       }
       <div
         gurl-highlighted-input
+        [activeEnvSub]="activeEnvSub()"
+        [extractTokensFn]="extractTokensFn()"
         [placeHolder]="'key'"
         [disabled]="false"
         [readonly]="tabType() === 'req_example'"
@@ -44,7 +47,9 @@ import { GurlHighlightedInput } from "./highlighted.input";
         @if(typeof item.val === 'string'){
         <div
           gurl-highlighted-input
+          [activeEnvSub]="activeEnvSub()"
           [placeHolder]="'value'"
+          [extractTokensFn]="extractTokensFn()"
           [disabled]="item.key == '' || item.key.trim() == ''"
           [readonly]="tabType() === 'req_example'"
           [text]="item.val"
@@ -77,7 +82,7 @@ import { GurlHighlightedInput } from "./highlighted.input";
             [disabled]="item.id === placeholderId() || item.key == '' || item.key.trim() == ''"
             (click)="openFileDialogue(item.id)"
             >
-              <lucide-angular [img]="BinaryIcon" class="size-4" />
+              <i gurl-icon [icon]="'Attachment'" [className]="'size-4'" ></i>
             </button>
           <button
             [ngClass]="{  
@@ -87,7 +92,7 @@ import { GurlHighlightedInput } from "./highlighted.input";
             [disabled]="item.id === placeholderId() || item.key == '' || item.key.trim() == ''"
             (click)="handleClearFileField(item.id)"
           >
-            <lucide-angular [img]="ClearFileIcon" class="size-4" />
+             <i gurl-icon [icon]="'Clear'" [className]="'size-4'" ></i>
           </button>
         </div>
         }
@@ -100,19 +105,22 @@ import { GurlHighlightedInput } from "./highlighted.input";
         [disabled]="item.id === placeholderId()"
         (click)="handleDeleteItem(item.id)"
       >
-        <lucide-angular [img]="CanceIcon" class="size-4"></lucide-angular>
+         <i gurl-icon [icon]="'Cancel'" [className]="'size-4'" ></i>
       </button>
     }
     </div>
     }
   `,
-	imports: [LucideAngularModule, NgClass, GurlHighlightedInput],
+	imports: [NgClass, GurlHighlightedInput, SystemIconComponent],
 })
 export class MultiPartFormItem {
 	@HostBinding("class")
 	hostClass = "flex flex-col gap-2.5";
 	private readonly webFileInps =
 		viewChildren<ElementRef<HTMLInputElement>>("webFileInp");
+
+	extractTokensFn = input.required<(v: string) => InputToken[]>();
+	activeEnvSub = input.required<Subject<void>>();
 
 	tabType = input.required<AppTabType>();
 	items = input.required<MultipartItem[]>();
@@ -126,9 +134,6 @@ export class MultiPartFormItem {
 
 	private readonly fileRepo = getFileRepository();
 	private readonly alertSvc = inject(AlertService);
-	protected readonly CanceIcon = X;
-	protected readonly BinaryIcon = Paperclip;
-	protected readonly ClearFileIcon = Eraser;
 	protected readonly mode = getAppConfig().mode;
 
 	protected async handleWebFileInput(e: Event) {

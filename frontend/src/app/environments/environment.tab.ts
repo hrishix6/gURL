@@ -9,16 +9,21 @@ import {
 	type OnInit,
 	viewChild,
 } from "@angular/core";
-import { LucideAngularModule, Pencil, Save, Trash2 } from "lucide-angular";
+import { BulkKeyValEditor } from "@/common/components/bulk.editor";
+import { SystemIconComponent } from "@/common/components/icon";
+import { parseTextAsEnvVariables } from "@/common/utils/text";
+import { BULK_EDIT_ENV_INSTRUCTION } from "@/constants";
 import { DraftSavePreferenceModal } from "@/modals/draft.save.preference";
 import { AppService, EnvFormService, TabsService } from "@/services";
+import { TabError } from "@/tabs/tab.error";
+import { TabLoading } from "@/tabs/tab.loading";
 import { type ApplicationTab, AppTabType } from "@/types";
 import { EnvironmentFormItem } from "./environment.form.item";
 
 @Component({
 	selector: "gurl-env-tab",
 	template: `
-        <header class="flex items-center px-4 py-2">
+        <header class="flex items-center p-2">
             <div class="flex-1 flex gap-2.5 p-2 bg-base-300 items-center rounded-box">
                   <input
                     type="text"
@@ -34,8 +39,7 @@ import { EnvironmentFormItem } from "./environment.form.item";
                     #firstInputEl
                     />
                 <button class="btn btn-soft btn-primary" (click)="envFormSvc.saveEnv()" [disabled]="!tab().isModified || envFormSvc.envNameError()">
-                     <lucide-angular [img]="SaveIcon"  class="size-4"/>
-                     Save
+                      <i gurl-icon [icon]="'Save'" [className]="'size-6'" ></i>
                 </button>
             </div>
         </header>
@@ -46,44 +50,70 @@ import { EnvironmentFormItem } from "./environment.form.item";
             </span>
           </div>
         }
-        <div class="flex flex-1 overflow-y-auto flex-col gap-2.5 p-4">
-            @for (item of envFormSvc.environmentFormItems(); track $index) {
-            <div gurl-env-form-item
-                 [item]="item"
-                 (onBlur)="envFormSvc.addItem()"
-                 (onDelete)="envFormSvc.deleteItem($event)"
-                 (onKeyUpdate)="envFormSvc.updatetItem($event.id, 'key', $event.v)"
-                 (onValUpdate)="envFormSvc.updatetItem($event.id, 'val', $event.v)"
-                 (onDescriptionUpdate)="envFormSvc.updatetItem($event.id, 'description', $event.v)"
-                 (onSecretStatusChange)="envFormSvc.toggleItemSecretStatus($event.id)"
-                 ></div>
-            }
+        <div class="flex flex-1 overflow-y-auto flex-col gap-2.5 p-2">
+             @if(envFormSvc.bulkEditMode()){
+            <div class="flex-1">
+              <gurl-bulk-editor
+                  [editInstructions]="bulkEditInstruction"
+                  [parseFn]="parseEnvTextFn"
+                  [initialValue]="envFormSvc.bulkEnvText()"
+                  (onChange)="envFormSvc.bulkupdateEnvItems($event)"
+                />
+             </div>
+            } @else {
+              @for (item of envFormSvc.environmentFormItems(); track $index) {
+              <div gurl-env-form-item
+                  [item]="item"
+                  (onBlur)="envFormSvc.addItem()"
+                  (onDelete)="envFormSvc.deleteItem($event)"
+                  (onKeyUpdate)="envFormSvc.updatetItem($event.id, 'key', $event.v)"
+                  (onValUpdate)="envFormSvc.updatetItem($event.id, 'val', $event.v)"
+                  (onDescriptionUpdate)="envFormSvc.updatetItem($event.id, 'description', $event.v)"
+                  (onSecretStatusChange)="envFormSvc.toggleItemSecretStatus($event.id)"
+                  ></div>
+              }
+          }
         </div>
+        <footer class="flex items-center justify-end px-2 p-1">
+            <label class="label">
+                <input type="checkbox" [checked]="envFormSvc.bulkEditMode()" (change)="envFormSvc.toggleBulkEditMode()" class="toggle toggle-primary" />
+                  <span class="text-xs">Raw</span>
+            </label>
+        </footer>
         @if(
         !appSvc.alwaysDiscardEnvDrafts() && envFormSvc.isDraftSavePreferenceModalOpen()
         ){
       <dialog gurl-draft-save-preference-modal
-	    [title]="envFormSvc.saveDraftModalTitle()"
-		[message]="envFormSvc.saveDraftModalMessage()"
+	      [title]="envFormSvc.saveDraftModalTitle()"
+		    [message]="envFormSvc.saveDraftModalMessage()"
         [isOpen]="envFormSvc.isDraftSavePreferenceModalOpen()"
         (onSave)="handleSaveDraft()"
         (onCancel)="handleClose()"
         (onNoSave)="handleNoSaveDraft($event)"
       ></dialog>
     }
+    @if(envFormSvc.fetchState().loading) {
+        <div gurl-tab-loading></div>
+    }
+    @if(envFormSvc.fetchState().error) {
+        <div gurl-tab-error></div>
+    }
     `,
 	providers: [EnvFormService],
 	imports: [
 		EnvironmentFormItem,
-		LucideAngularModule,
 		NgClass,
 		DraftSavePreferenceModal,
+		SystemIconComponent,
+		TabLoading,
+		TabError,
+		BulkKeyValEditor,
 	],
 })
 export class EnvironmentTab implements OnInit, AfterViewInit {
 	@HostBinding("class") get defaultClass() {
 		if (this.activeId() === this.tab().id) {
-			return "flex-1 flex flex-col overflow-hidden";
+			return "flex-1 flex flex-col overflow-hidden relative";
 		}
 
 		return "hidden";
@@ -100,11 +130,10 @@ export class EnvironmentTab implements OnInit, AfterViewInit {
 		this.firstInputEl().nativeElement?.focus();
 	}
 
+	protected readonly bulkEditInstruction = BULK_EDIT_ENV_INSTRUCTION;
+	protected readonly parseEnvTextFn = parseTextAsEnvVariables;
 	private readonly tabSvc = inject(TabsService);
 
-	protected readonly SaveIcon = Save;
-	protected readonly DeleteIcon = Trash2;
-	protected readonly EditIcon = Pencil;
 	protected firstInputEl =
 		viewChild.required<ElementRef<HTMLInputElement>>("firstInputEl");
 	protected readonly appSvc = inject(AppService);

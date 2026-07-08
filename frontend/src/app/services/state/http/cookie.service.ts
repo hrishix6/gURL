@@ -3,18 +3,15 @@ import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import type { models } from "@wailsjs/go/models";
 import { nanoid } from "nanoid";
 import { debounceTime, Subject } from "rxjs";
+import { cookieItemsToBulkEditText } from "@/common/utils/text";
 import { COOKIE_PLACEHOLDER } from "@/constants";
-import { getReqRepository } from "@/services";
 
 export class CookieService {
-	private draftId = "";
 	private destroyRef: DestroyRef;
-	private reqRepo = getReqRepository();
+	private readonly dbSyncFn: (v: models.GurlKeyValItem[]) => void;
 
 	public init(data: models.RequestDraftDTO) {
-		const { id, cookies } = data;
-		this.draftId = id;
-
+		const { cookies } = data;
 		this._cookies.set([
 			...JSON.parse(cookies),
 			{
@@ -27,10 +24,20 @@ export class CookieService {
 	}
 
 	public initExample(data: models.ReqExampleDTO) {
-		const { id, cookies } = data;
-		this.draftId = id;
-
+		const { cookies } = data;
 		this._cookies.set([...JSON.parse(cookies)]);
+	}
+
+	public initMock(cookies: string) {
+		this._cookies.set([
+			...JSON.parse(cookies),
+			{
+				id: COOKIE_PLACEHOLDER,
+				key: "",
+				val: "",
+				enabled: "on",
+			},
+		]);
 	}
 
 	private cookiesDbSync$ = new Subject<models.GurlKeyValItem[]>();
@@ -58,12 +65,7 @@ export class CookieService {
 	}
 
 	public bulkCookiesText = computed(() => {
-		return this._cookies().reduce((prev, curr) => {
-			if (curr.id !== COOKIE_PLACEHOLDER) {
-				prev += `${curr.key}=${curr.val};`;
-			}
-			return prev;
-		}, "");
+		return cookieItemsToBulkEditText(this._cookies(), COOKIE_PLACEHOLDER);
 	});
 
 	public _bulkUpdateCookieParams(items: models.GurlKeyValItem[]) {
@@ -144,21 +146,18 @@ export class CookieService {
 		return this._cookies().filter((x) => x.id !== COOKIE_PLACEHOLDER);
 	}
 
-	constructor(destroyRef: DestroyRef) {
+	constructor(
+		destroyRef: DestroyRef,
+		dbSyncFn: (v: models.GurlKeyValItem[]) => void,
+	) {
 		this.destroyRef = destroyRef;
-
+		this.dbSyncFn = dbSyncFn;
 		this.cookiesDbSync$
 			.pipe(takeUntilDestroyed(this.destroyRef), debounceTime(500))
 			.subscribe({
 				next: (v) => {
 					const payload = v.filter((x) => x.id !== COOKIE_PLACEHOLDER);
-					this.reqRepo
-						.updatereqDraftFields(this.draftId, {
-							cookiesJson: JSON.stringify(payload),
-						})
-						.then(() => {
-							console.log(`[${this.draftId}] cookies updated in SQlite`);
-						});
+					this.dbSyncFn(payload);
 				},
 			});
 	}

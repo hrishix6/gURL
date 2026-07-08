@@ -9,6 +9,10 @@ export class SetupGuard implements CanActivate {
 	canActivate(): boolean {
 		const appConfig = getAppConfig();
 
+		if (appConfig.mode === "desktop") {
+			return false;
+		}
+
 		if (!appConfig.setup_required) {
 			this.router.navigate(["/"], { replaceUrl: true });
 			return false;

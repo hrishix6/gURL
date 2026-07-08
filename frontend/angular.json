@@ -28,14 +28,8 @@
 						"styles": ["src/styles.css"]
 					},
 					"configurations": {
-						"web-production": {
+						"web-prod": {
 							"outputPath": "dist/gurl",
-							"fileReplacements": [
-								{
-									"replace": "src/environments/environment.ts",
-									"with": "src/environments/environment.web.prod.ts"
-								}
-							],
 							"budgets": [
 								{
 									"type": "initial",
@@ -50,14 +44,8 @@
 							],
 							"outputHashing": "all"
 						},
-						"production": {
+						"desktop-prod": {
 							"outputPath": "../shared/assets/static",
-							"fileReplacements": [
-								{
-									"replace": "src/environments/environment.ts",
-									"with": "src/environments/environment.desktop.ts"
-								}
-							],
 							"budgets": [
 								{
 									"type": "initial",
@@ -73,46 +61,37 @@
 							"outputHashing": "all"
 						},
 						"web-dev": {
-							"fileReplacements": [
-								{
-									"replace": "src/environments/environment.ts",
-									"with": "src/environments/environment.web.dev.ts"
-								}
-							],
 							"optimization": false,
 							"extractLicenses": false,
 							"sourceMap": true
 						},
-						"development": {
-							"fileReplacements": [
-								{
-									"replace": "src/environments/environment.ts",
-									"with": "src/environments/environment.desktop.ts"
-								}
-							],
+						"desktop-dev": {
 							"optimization": false,
 							"extractLicenses": false,
 							"sourceMap": true,
 							"outputPath": "../shared/assets/static"
 						}
 					},
-					"defaultConfiguration": "production"
+					"defaultConfiguration": "desktop-prod"
 				},
 				"serve": {
 					"builder": "@angular/build:dev-server",
 					"configurations": {
-						"production": {
-							"buildTarget": "gurl:build:production"
+						"desktop-prod": {
+							"buildTarget": "gurl:build:desktop-prod"
 						},
-						"development": {
-							"buildTarget": "gurl:build:development"
+						"desktop-dev": {
+							"buildTarget": "gurl:build:desktop-dev"
+						},
+						"web-prod": {
+							"buildTarget": "gurl:build:web-prod"
 						},
 						"web-dev": {
 							"buildTarget": "gurl:build:web-dev",
 							"proxyConfig": "src/proxy.conf.json"
 						}
 					},
-					"defaultConfiguration": "development"
+					"defaultConfiguration": "desktop-dev"
 				},
 				"test": {
 					"builder": "@angular/build:unit-test"

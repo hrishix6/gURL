@@ -6,6 +6,10 @@ export function CancelReq(arg1) {
   return window['go']['executor']['DesktopExecutor']['CancelReq'](arg1);
 }
 
+export function GetInterpolatedReq(arg1, arg2) {
+  return window['go']['executor']['DesktopExecutor']['GetInterpolatedReq'](arg1, arg2);
+}
+
 export function GetSavedResponsesSrc(arg1) {
   return window['go']['executor']['DesktopExecutor']['GetSavedResponsesSrc'](arg1);
 }
@@ -14,6 +18,6 @@ export function ParseCookieRaw(arg1) {
   return window['go']['executor']['DesktopExecutor']['ParseCookieRaw'](arg1);
 }
 
-export function SendHttpReq(arg1) {
-  return window['go']['executor']['DesktopExecutor']['SendHttpReq'](arg1);
+export function SendHttpReq(arg1, arg2) {
+  return window['go']['executor']['DesktopExecutor']['SendHttpReq'](arg1, arg2);
 }

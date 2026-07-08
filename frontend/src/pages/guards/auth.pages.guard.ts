@@ -11,6 +11,10 @@ export class AuthPagesGuard implements CanActivate {
 	async canActivate() {
 		const appConfig = getAppConfig();
 
+		if (appConfig.mode === "desktop") {
+			return false;
+		}
+
 		if (appConfig.setup_required) {
 			this.router.navigate(["/setup"], { replaceUrl: true });
 			return false;

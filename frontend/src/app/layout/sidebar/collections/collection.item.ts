@@ -8,44 +8,40 @@ import {
 	signal,
 } from "@angular/core";
 import type { models } from "@wailsjs/go/models";
-import {
-	Ban,
-	ChevronDown,
-	ChevronUp,
-	EllipsisVertical,
-	Eraser,
-	FileDown,
-	Layers,
-	LucideAngularModule,
-	SquarePen,
-	Trash2,
-} from "lucide-angular";
 import { getAppConfig } from "@/app.config";
-import { AppService, GlobalModalsService, UserAuthService } from "@/services";
+import { SystemIconComponent } from "@/common/components/icon";
+import {
+	AppService,
+	GlobalModalsService,
+	TabsService,
+	UserAuthService,
+} from "@/services";
+import { FetchStateService } from "@/services/state/fetch.state.service";
+import { GurlReqExampleItem } from "./collection.req.example.item";
 import { GurlRequestItem } from "./collection.request.item";
 
 @Component({
 	selector: `div[gurl-collection-item]`,
 	template: `
-    <div class="flex items-center gap-2 p-2 bg-base-300 rounded box basis-">
+    <div class="flex items-center gap-2 p-2 bg-base-300 rounded-box">
       <div
         class="flex flex-1 items-center gap-2"
       >
         <div>
-          <lucide-angular [img]="CollectionsIcon" class="size-4" />
+          <i gurl-icon [icon]="'Collection'" [className]="'size-4'" ></i>
         </div>
         <p class="flex-1 text-sm truncate">{{ data().name }}</p>
 	  </div>
 	  <button class="btn btn-sm btn-square btn-ghost" (click)="toggleOpen()">
 			@if(isOpen()) {
-        		<lucide-angular [img]="CloseIcon" class="size-4" />
+        		<i gurl-icon [icon]="'ChevronUp'" [className]="'size-4'" ></i>
        		 }@else {
-        		<lucide-angular [img]="OpenIcon" class="size-4" />
+        		<i gurl-icon [icon]="'ChevronDown'" [className]="'size-4'" ></i>
        	 }
 	  </button>
       <div class="dropdown dropdown-end">
         <button tabindex="0" class="btn btn-sm btn-square btn-ghost">
-          <lucide-angular [img]="CollectionOptionsIcon" class="size-4" />
+          <i gurl-icon [icon]="'Options'" [className]="'size-4'" ></i>
         </button>
 		@switch (config.mode) {
 			@case ("web") {
@@ -60,21 +56,21 @@ import { GurlRequestItem } from "./collection.request.item";
 				
 				>
 					<a role="link" [ariaDisabled]="!!userAuthSvc.userInfo()?.isDemoUser" (click)="toggleRenameModal()"> 
-							<lucide-angular [img]="RenameIcon" class="size-4" />
+							<i gurl-icon [icon]="'Rename'" [className]="'size-4'" ></i>
 						Rename 
 			</a>
 					</li>
 			@if(requestItems().length){
 						<li>
 							<a role="link" (click)="toggleClearModal()">
-								<lucide-angular [img]="ClearIcon" class="size-4" />
+								<i gurl-icon [icon]="'Clear'" [className]="'size-4'" ></i>
 								Clear
 			</a>
 						</li>
 						<li
 				>
 							<a role="link" (click)="toggleExportDialogue()">
-								<lucide-angular [img]="ExportIcon" class="size-4" />
+								<i gurl-icon [icon]="'Export'" [className]="'size-4'" ></i>
 								Export
 			</a>
 						</li>
@@ -83,7 +79,7 @@ import { GurlRequestItem } from "./collection.request.item";
 					'menu-disabled': !!userAuthSvc.userInfo()?.isDemoUser,
 				}">
 					<a role="link" [ariaDisabled]="!!userAuthSvc.userInfo()?.isDemoUser" (click)="toggleDeleteModal()">
-						<lucide-angular [img]="DeleteIcon" class="size-4" />	
+						<i gurl-icon [icon]="'Delete'" [className]="'size-4'" ></i>
 						Delete
 			</a>
 					</li>
@@ -97,27 +93,27 @@ import { GurlRequestItem } from "./collection.request.item";
 
 					<li class="my-0.5">
 					<button role="link" (click)="toggleRenameModal()"> 
-							<lucide-angular [img]="RenameIcon" class="size-4" />
+							<i gurl-icon [icon]="'Rename'" [className]="'size-4'" ></i>
 						Rename 
 					</button>
 					</li>
 			@if(requestItems().length){
 						<li>
 							<button role="link" (click)="toggleClearModal()">
-								<lucide-angular [img]="ClearIcon" class="size-4" />
+								<i gurl-icon [icon]="'Clear'" [className]="'size-4'" ></i>
 								Clear
 							</button>
 						</li>
 						<li>
 							<button role="link" (click)="toggleExportDialogue()">
-								<lucide-angular [img]="ExportIcon" class="size-4" />
+								<i gurl-icon [icon]="'Export'" [className]="'size-4'" ></i>
 								Export
 							</button>
 						</li>
 					}
 					<li>
 					<button role="link" (click)="toggleDeleteModal()">
-						<lucide-angular [img]="DeleteIcon" class="size-4" />	
+						<i gurl-icon [icon]="'Delete'" [className]="'size-4'" ></i>	
 						Delete
 					</button>
 					</li>
@@ -127,19 +123,59 @@ import { GurlRequestItem } from "./collection.request.item";
       </div>
     </div>
     @if(isOpen()) {
-    <section class="flex flex-col gap-1">
-      @if (requestItems().length) { @for (item of requestItems(); track item.id) {
-      <div gurl-request-item [data]="item"></div>
-      } } @else {
-      <div class="flex items-center gap-2 my-2 justify-center text-sm opacity-25">
-        <lucide-angular [img]="EmptyIcon" class="size-4" />
-		No items
-      </div>
-      }
-    </section>
+	  @if(reqFState().loaded && examplesFState().loaded) {
+		 <section class="flex flex-col gap-1">
+			@if (requestItems().length) { @for (item of requestItems(); track item.id) {
+			<div gurl-request-item [data]="item"></div>
+			} } @else {
+			<div class="flex items-center gap-2 my-2 justify-center text-sm opacity-25">
+				<i gurl-icon [icon]="'Empty'" [className]="'size-4'" ></i>
+				No requests
+			</div>
+			}
+			@if (reqExampleItems().length) {
+				@for (item of reqExampleItems(); track item.id) {
+					<div gurl-req-example-item [data]="item"></div>
+				}
+			} @else {
+				<div class="flex items-center gap-2 my-2 justify-center text-sm opacity-25">
+				<i gurl-icon [icon]="'Empty'" [className]="'size-4'" ></i>
+					No examples
+				</div>
+			}
+			
+		</section>
+	  }
+	@if(reqFState().loading || examplesFState().loading) {
+            <div class="flex items-center gap-2 my-2 justify-center">
+                <span class="loading loading-bars loading-xs text-primary"></span>
+            </div>
+     }
+	@if(reqFState().error) {
+		<div class="flex flex-col gap-2 items-center my-2 justify-center">
+			<div class="flex items-center justify-center opacity-30 gap-2 text-sm">
+				<i gurl-icon [icon]="'Failed'" [className]="'size-4'" ></i>
+				Failed to load requests.
+			</div>
+			<div class="flex items-center justify-center">
+				<span class="loading loading-bars loading-xs text-primary"></span>
+			</div>
+		</div>
+    }
+	@if(examplesFState().error) {
+		<div class="flex flex-col gap-2 items-center my-2 justify-center">
+			<div class="flex items-center justify-center opacity-30 gap-2 text-sm">
+				<i gurl-icon [icon]="'Failed'" [className]="'size-4'" ></i>
+				Failed to load examples.
+			</div>
+			<div class="flex items-center justify-center">
+				<span class="loading loading-bars loading-xs text-primary"></span>
+			</div>
+		</div>
+    }
     }
   `,
-	imports: [LucideAngularModule, GurlRequestItem, NgClass],
+	imports: [GurlRequestItem, NgClass, SystemIconComponent, GurlReqExampleItem],
 })
 export class GurlCollectionItem {
 	@HostBinding("class")
@@ -150,16 +186,19 @@ export class GurlCollectionItem {
 	protected readonly appSvc = inject(AppService);
 	protected readonly config = getAppConfig();
 	protected readonly userAuthSvc = inject(UserAuthService);
+	protected readonly tabSvc = inject(TabsService);
 	protected readonly modalsSvc = inject(GlobalModalsService);
-	protected readonly CollectionsIcon = Layers;
-	protected readonly CollectionOptionsIcon = EllipsisVertical;
-	protected readonly EmptyIcon = Ban;
-	protected readonly ExportIcon = FileDown;
-	protected readonly OpenIcon = ChevronDown;
-	protected readonly CloseIcon = ChevronUp;
-	protected readonly ClearIcon = Eraser;
-	protected readonly RenameIcon = SquarePen;
-	protected readonly DeleteIcon = Trash2;
+	private readonly fetchStateSvc = inject(FetchStateService);
+
+	protected reqFState = computed(() => {
+		const c = this.data().id;
+		return this.fetchStateSvc.fetchState()[this.fetchStateSvc.requestsFKey(c)];
+	});
+
+	protected examplesFState = computed(() => {
+		const c = this.data().id;
+		return this.fetchStateSvc.fetchState()[this.fetchStateSvc.exampleFKey(c)];
+	});
 
 	protected toggleRenameModal() {
 		const activeEl = document.activeElement as HTMLElement;
@@ -189,6 +228,21 @@ export class GurlCollectionItem {
 
 	protected toggleOpen() {
 		this.isOpen.update((x) => !x);
+		const c = this.data().id;
+		const requestsKey = this.fetchStateSvc.init(
+			this.fetchStateSvc.requestsFKey(c),
+		);
+		const examplesKey = this.fetchStateSvc.init(
+			this.fetchStateSvc.exampleFKey(c),
+		);
+
+		if (!requestsKey.attempts) {
+			this.appSvc.fetchSavedRequests(c);
+		}
+
+		if (!examplesKey.attempts) {
+			this.appSvc.fetchSavedExamples(c);
+		}
 	}
 
 	protected requestItems = computed<models.RequestLightDTO[]>(() =>
@@ -196,4 +250,10 @@ export class GurlCollectionItem {
 			.savedRequests()
 			.filter((x) => x.collectionId === this.data().id),
 	);
+
+	protected reqExampleItems = computed<models.ReqExampleLightDTO[]>(() => {
+		return this.appSvc
+			.savedExamples()
+			.filter((x) => x.collectionId === this.data().id);
+	});
 }

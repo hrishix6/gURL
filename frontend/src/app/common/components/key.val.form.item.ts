@@ -1,16 +1,17 @@
 import { NgClass } from "@angular/common";
 import { Component, HostBinding, input, output } from "@angular/core";
 import type { models } from "@wailsjs/go/models";
-import { LucideAngularModule, X } from "lucide-angular";
-import type { AppTabType } from "@/types";
+import type { Subject } from "rxjs";
+import type { AppTabType, InputToken } from "@/types";
 import { GurlHighlightedInput } from "./highlighted.input";
+import { SystemIconComponent } from "./icon";
 
 @Component({
 	selector: "gurl-keyval-item",
 	template: `
     @for (item of items(); track item.id) {
     <div class="flex gap-2.5 items-center">
-      @if(tabType() === "req"){
+      @if(tabType() === "req" || tabType() === "mock"){
           <input
           type="checkbox"
           class="checkbox checkbox-xs checkbox-primary xl:checkbox-sm"
@@ -21,27 +22,31 @@ import { GurlHighlightedInput } from "./highlighted.input";
       } 
       <div
         gurl-highlighted-input
+        [activeEnvSub]="activeEnvSub()"
         [placeHolder]="'key'"
         [readonly]="tabType() === 'req_example'"
         [disabled]="false"
         [text]="item.key"
         (onInput)="handleUpdateKey(item.id, $event)"
         (onBlur)="handleBlur()"
+        [extractTokensFn]="extractTokensFn()"
       >
       </div>
       <div class="flex-2">
         <div
           gurl-highlighted-input
+          [activeEnvSub]="activeEnvSub()"
           [placeHolder]="'value'"
           [disabled]="item.key == '' || item.key.trim() == ''"
           [text]="item.val"
           (onInput)="handleUpdateVal(item.id, $event)"
           (onBlur)="handleBlur()"
           [readonly]="tabType() === 'req_example'"
+          [extractTokensFn]="extractTokensFn()"
         >
         </div>
       </div>
-       @if(tabType() === "req"){
+       @if(tabType() === "req" || tabType() === "mock"){
         <button
           [ngClass]="{
             'btn btn-xs btn-ghost btn-square xl:btn-sm': true,
@@ -49,17 +54,20 @@ import { GurlHighlightedInput } from "./highlighted.input";
           [disabled]="item.id === placeholderId()"
           (click)="handleDeleteItem(item.id)"
         >
-          <lucide-angular [img]="CanceIcon" class="size-4"></lucide-angular>
+          <i gurl-icon [icon]="'Cancel'" [className]="'size-4'" ></i>
       </button>
       } 
     </div>
     }
   `,
-	imports: [LucideAngularModule, NgClass, GurlHighlightedInput],
+	imports: [NgClass, GurlHighlightedInput, SystemIconComponent],
 })
 export class KeyValFormItem {
 	@HostBinding("class")
 	hostClass = "flex flex-col gap-2.5";
+
+	extractTokensFn = input.required<(v: string) => InputToken[]>();
+	activeEnvSub = input.required<Subject<void>>();
 
 	items = input.required<models.GurlKeyValItem[]>();
 	placeholderId = input.required<string>();
@@ -69,8 +77,6 @@ export class KeyValFormItem {
 	onValUpdate = output<{ id: string; v: string }>();
 	onBlur = output();
 	onDelete = output<string>();
-
-	protected readonly CanceIcon = X;
 
 	protected handleUpdateKey(id: string, v: string) {
 		this.onKeyUpdate.emit({ id, v });

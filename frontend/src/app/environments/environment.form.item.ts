@@ -1,6 +1,6 @@
 import { NgClass } from "@angular/common";
 import { Component, HostBinding, input, output } from "@angular/core";
-import { Key, LucideAngularModule, X } from "lucide-angular";
+import { SystemIconComponent } from "@/common/components/icon";
 import { ENV_ID_PLACEHOLDER } from "@/constants";
 import type { EnvironmentItem } from "@/types";
 
@@ -15,12 +15,12 @@ import type { EnvironmentItem } from "@/types";
         (click)="handleSecretStatusToggle(item().id)"
         [disabled]="item().key == '' || item().key.trim() == ''"
         >
-        <lucide-angular [img]="MaskIcon" class="size-4"></lucide-angular>
+        <i gurl-icon [icon]="'Hide'" [className]="'size-4'" ></i>
       </button>
       <input
         type="text"
         placeholder="key"
-        class="input input-sm flex-2 input-ghost bg-base-300 input-primary xl:input-md"
+        class="input input-sm flex-1 input-ghost bg-base-300 input-primary xl:input-md"
         [value]="item().key"
         (input)="handleUpdateKey(item().id, $event.target.value)"
         (blur)="handleBlur()"
@@ -34,15 +34,6 @@ import type { EnvironmentItem } from "@/types";
         (input)="handleUpdateVal(item().id, $event.target.value)"
         (blur)="handleBlur()"
     />
-      <input
-        type="text"
-        placeholder="description"
-        class="input input-sm flex-4 input-ghost bg-base-300 input-primary xl:input-md"
-        [disabled]="item().key == '' || item().key.trim() == ''"
-        [value]="item().description"
-        (input)="handleUpdateDescription(item().id, $event.target.value)"
-        (blur)="handleBlur()"
-      />
       <button
         [ngClass]="{
           'btn btn-xs btn-ghost btn-square xl:btn-sm': true,
@@ -50,10 +41,10 @@ import type { EnvironmentItem } from "@/types";
         [disabled]="item().id === placeholderId"
         (click)="handleDeleteItem(item().id)"
       >
-        <lucide-angular [img]="CancelIcon" class="size-4"></lucide-angular>
+         <i gurl-icon [icon]="'Cancel'" [className]="'size-4'" ></i>
       </button>
     `,
-	imports: [LucideAngularModule, NgClass],
+	imports: [NgClass, SystemIconComponent],
 })
 export class EnvironmentFormItem {
 	@HostBinding("class")
@@ -68,8 +59,6 @@ export class EnvironmentFormItem {
 	onDelete = output<string>();
 
 	protected placeholderId = ENV_ID_PLACEHOLDER;
-	protected readonly CancelIcon = X;
-	protected readonly MaskIcon = Key;
 
 	protected handleUpdateKey(id: string, v: string) {
 		this.onKeyUpdate.emit({ id, v });

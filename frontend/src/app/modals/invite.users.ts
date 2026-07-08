@@ -7,7 +7,7 @@ import {
 	output,
 	viewChild,
 } from "@angular/core";
-import { LucideAngularModule, X } from "lucide-angular";
+import { SystemIconComponent } from "@/common/components/icon";
 
 @Component({
 	selector: `dialog[gurl-invite-users-modal]`,
@@ -17,7 +17,7 @@ import { LucideAngularModule, X } from "lucide-angular";
                         <div class="flex justify-between">  
                             <h3 class="text-lg font-bold">Invite User</h3>
                             <button class="btn btn-sm btn-square btn-ghost" (click)="handleClose()">
-                                <lucide-angular [img]="CancelIcon" class="size-4" />
+                                <i gurl-icon [icon]="'Cancel'" [className]="'size-4'" ></i>
                             </button>
                         </div>
                         <form class="flex flex-col" (submit)="hanndleInvite($event)" >
@@ -43,7 +43,7 @@ import { LucideAngularModule, X } from "lucide-angular";
                     <button (click)="handleClose()">Cancel</button>
             </div>
     `,
-	imports: [LucideAngularModule],
+	imports: [SystemIconComponent],
 })
 export class InviteUsersDialogue implements AfterViewInit {
 	@HostBinding("class")
@@ -67,7 +67,6 @@ export class InviteUsersDialogue implements AfterViewInit {
 		viewChild.required<ElementRef<HTMLInputElement>>("email");
 	protected readonly formRef =
 		viewChild.required<ElementRef<HTMLInputElement>>("formSub");
-	protected readonly CancelIcon = X;
 
 	protected handleClose() {
 		this.onCancel.emit();

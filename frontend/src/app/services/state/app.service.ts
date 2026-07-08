@@ -11,6 +11,7 @@ import type { models } from "@wailsjs/go/models";
 import { nanoid } from "nanoid";
 import { debounceTime, Subject } from "rxjs";
 import {
+	APP_COLLECTIONS_FETCH_ENTITY,
 	DEFAULT_THEME,
 	NO_ENV_ID,
 	SUPPORTED_THEMES,
@@ -21,15 +22,13 @@ import {
 	getCollectionRepository,
 	getEnvRepository,
 	getExporter,
+	getReqMocksRepository,
 	getReqRepository,
 	getUIStateRepository,
 	getWorkspaceRepository,
 } from "@/services";
 import {
-	type ActiveItemInfo,
 	AppSidebarContent,
-	type AppState,
-	AppTabType,
 	type AppTheme,
 	type DropDownItem,
 	type EnvironmentItem,
@@ -38,6 +37,7 @@ import {
 	type InputToken,
 	type ReqHistoryItem,
 } from "@/types";
+import { FetchStateService } from "./fetch.state.service";
 import { TabsService } from "./tabs.service";
 
 @Injectable({
@@ -50,10 +50,8 @@ export class AppService {
 	private readonly uiStateRepo = getUIStateRepository();
 	private readonly workspaceRepo = getWorkspaceRepository();
 	private readonly exporter = getExporter();
-	private _appState = signal<AppState>("initializing");
-	private _appError = signal<string | null>(null);
-	public appState = computed(() => this._appState());
-	public appError = computed(() => this._appError());
+	private readonly reqMocksRepo = getReqMocksRepository();
+
 	private tabSvc = inject(TabsService);
 	private alertSvc = inject(AlertService);
 	private destoyRef = inject(DestroyRef);
@@ -62,7 +60,13 @@ export class AppService {
 	private activeWorkspaceDbSync$ = new Subject<string>();
 	public activeEnvChange$ = new Subject<void>();
 	public activeEnvDbSync$ = new Subject<string>();
-	public refreshBreadcrumb$ = new Subject<void>();
+	public envUpdated$ = new Subject<string>();
+
+	public sidebarItemExpandSignal = new Subject<{
+		key: string;
+		open: boolean;
+	}>();
+
 	public initiateDefaultWorkspaceCreation$ = new Subject<void>();
 
 	private _alwaysDiscardReqDrafts = signal<boolean>(false);
@@ -83,36 +87,132 @@ export class AppService {
 		this.discardEnvDraftsDbSync$.next(v);
 	}
 
-	public activeItemInfo = signal<ActiveItemInfo>({
-		show: false,
-		child: "",
-		parent: "",
-		type: AppTabType.Req,
-	});
+	//#region examples
 
 	private _savedExamples = signal<models.ReqExampleLightDTO[]>([]);
-	public savedExamples = computed(() => this._savedExamples());
+
+	public savedExamples = computed(() => {
+		const examples = this._savedExamples();
+
+		const key = this.searchKey();
+
+		if (!key || key.trim() === "") {
+			return examples;
+		}
+
+		const normalizedKey = key.toLocaleLowerCase();
+
+		return examples.filter(
+			(e) =>
+				e.name.toLowerCase().includes(normalizedKey) ||
+				e.method.toLowerCase().includes(normalizedKey) ||
+				e.url.toLowerCase().includes(normalizedKey),
+		);
+	});
+
 	public refreshSavedExamples$ = new Subject<void>();
 
 	public async deleteReqExample(id: string) {
 		try {
 			await this.reqRepo.deleteReqExample(id);
 			this.alertSvc.addAlert(`Request example deleted.`, "success");
-			await this.initializeSavedExamples();
+
+			this._savedExamples.update((prev) => {
+				return prev.filter((x) => x.id !== id);
+			});
+
+			this.tabSvc.closeExampleTab(id);
 		} catch (error) {
 			console.error(error);
 			this.alertSvc.addAlert(`Failed to delete request example.`, "error");
 		}
 	}
 
+	public async addReqExample(
+		dto: models.ReqExampleDTO,
+		meta: models.SavedResponseRenderMeta,
+	) {
+		await this.reqRepo.addReqExample(dto, meta);
+		this._savedExamples.update((prev) => {
+			return [
+				{
+					id: dto.id,
+					name: dto.name,
+					requestId: dto.requestId,
+					method: dto.method,
+					collectionId: dto.collectionId,
+					url: dto.url,
+				},
+				...prev,
+			];
+		});
+	}
+
+	async fetchSavedExamples(collectionId: string) {
+		const fKey = this.fetchStateSvc.exampleFKey(collectionId);
+
+		try {
+			const examples = await this.reqRepo.getReqExamples({
+				workspaceId: this._activeWorkspace(),
+				collectionId: collectionId,
+			});
+
+			if (Array.isArray(examples) && examples.length) {
+				this._savedExamples.update((prev) => {
+					const cpy = prev.filter((x) => x.collectionId !== collectionId);
+					return [...cpy, ...examples];
+				});
+			}
+			this.fetchStateSvc.loaded(fKey);
+		} catch (_error) {
+			this.fetchStateSvc.error(fKey);
+		} finally {
+			this.fetchStateSvc.end(fKey);
+		}
+	}
+
+	//#endregion examples
+
 	//#region environments
-	public validateInterpolatedToken(token: InputToken): [boolean, string] {
-		const currentEnv = this.activeEnvironment();
-		if (!currentEnv) {
+
+	public resolveVar(key: string, envId?: string): [v: string, ok: boolean] {
+		if (!envId) {
+			envId = this._activeEnvironment();
+		}
+
+		const env = this._globalEnvMap()[envId];
+
+		if (!env) {
+			return ["undefined", false];
+		}
+
+		if (!(key in env)) {
+			return ["undefined", false];
+		}
+
+		return [env[key] || "", !!env[key]];
+	}
+
+	public validateInterpolatedToken(
+		token: InputToken,
+		useEnv?: string,
+	): [boolean, string] {
+		let envToCheck: string = "";
+
+		if (useEnv) {
+			envToCheck = useEnv;
+		} else {
+			const currentEnv = this.activeEnvironment();
+			if (currentEnv) {
+				envToCheck = currentEnv;
+			}
+		}
+
+		if (!envToCheck) {
 			return [false, ""];
 		}
 
-		const env = this._globalEnvMap()[currentEnv];
+		const env = this._globalEnvMap()[envToCheck];
 
 		if (!env) {
 			return [false, ""];
@@ -129,15 +229,10 @@ export class AppService {
 		return [false, ""];
 	}
 
-	private _envSearchKey = signal<string>("");
-
 	public refreshEnvs$ = new Subject<void>();
-
-	public envSearchKeyChange$ = new Subject<string>();
-
 	private _environments = signal<models.EnvironmentDTO[]>([]);
 	public environments = computed(() => {
-		const key = this._envSearchKey().toLocaleLowerCase();
+		const key = this.searchKey().toLocaleLowerCase();
 		if (!key) {
 			return this._environments();
 		}
@@ -185,7 +280,7 @@ export class AppService {
 			await this.envRepo.deleteEnvDraftsUnderEnv(id);
 			this.alertSvc.addAlert(`Environment deleted.`, "success");
 			await this.initializeEnvironments();
-			this.tabSvc.refreshNotifier.next(AppTabType.Env);
+			this.tabSvc.environmentDeleteNotifier.next(id);
 		} catch (error) {
 			console.error(error);
 			this.alertSvc.addAlert(`Failed to delete environment.`, "error");
@@ -245,12 +340,10 @@ export class AppService {
 	//#endregion environments
 
 	//#region history
-	private globalHistory: Record<string, ReqHistoryItem[]> = {};
 	private _historyItems = signal<ReqHistoryItem[]>([]);
-	public searchHistoryKeyChange$ = new Subject<string>();
-	private _searchHistoryKey = signal<string>("");
+
 	public historyItems = computed(() => {
-		const key = this._searchHistoryKey().toLocaleLowerCase();
+		const key = this.searchKey().toLocaleLowerCase();
 
 		if (!key) {
 			return this._historyItems();
@@ -267,7 +360,6 @@ export class AppService {
 	public addHistoryItem(item: ReqHistoryItem) {
 		this._historyItems.update((prev) => {
 			const newHistory = [...prev, item];
-			this.globalHistory[this._activeWorkspace()] = newHistory;
 			return newHistory;
 		});
 	}
@@ -275,10 +367,10 @@ export class AppService {
 	//#endregion history
 
 	//#region requests
-	public refreshSavedRequests$ = new Subject<void>();
 	private _savedRequests = signal<models.RequestLightDTO[]>([]);
+
 	public savedRequests = computed(() => {
-		const key = this._collectionSearchKey();
+		const key = this.searchKey();
 
 		if (!key || key.trim() === "") {
 			return this._savedRequests();
@@ -296,10 +388,11 @@ export class AppService {
 	public async deleteRequest(requestId: string) {
 		try {
 			await this.reqRepo.deleteSavedReq(requestId);
-			await this.reqRepo.deleteRequestDrafts(requestId);
 			this.alertSvc.addAlert(`Request deleted.`, "success");
-			await this.initializeSavedRequests();
-			this.tabSvc.refreshNotifier.next(AppTabType.Req);
+			this.tabSvc.requestDeleteNotifier.next(requestId);
+			this._savedRequests.update((prev) => {
+				return prev.filter((x) => x.id !== requestId);
+			});
 		} catch (error) {
 			console.error(error);
 			this.alertSvc.addAlert(`Failed to delete request.`, "error");
@@ -308,21 +401,66 @@ export class AppService {
 
 	public async copyRequest(sourceId: string, name: string) {
 		try {
-			await this.reqRepo.saveRequestCopy(sourceId, { name });
-			this.alertSvc.addAlert(`Request copy "${name}" added.`, "success");
-			await this.initializeSavedRequests();
+			const copyId = await this.reqRepo.saveRequestCopy(sourceId, { name });
+			const copy = await this.reqRepo.getSavedReqById(copyId);
+			if (!copy) {
+				this.alertSvc.addAlert(`Failed to fetch copy`, "success");
+				return;
+			}
+			this._savedRequests.update((prev) => {
+				return [copy, ...prev];
+			});
 		} catch (error) {
 			console.error(error);
 			this.alertSvc.addAlert(`Failed to copy request "${name}".`, "error");
 		}
 	}
 
+	public async fetchUpdatedReq(id: string) {
+		try {
+			const r = await this.reqRepo.getSavedReqById(id);
+
+			if (!r) {
+				throw new Error("failed to fetch update");
+			}
+
+			this._savedRequests.update((prev) => {
+				const cpy = prev.filter((x) => x.id !== id);
+				return [r, ...cpy];
+			});
+		} catch (error) {
+			console.error(error);
+			this.alertSvc.addAlert("failed to fetch updated request", "error");
+		}
+	}
+
+	async fetchSavedRequests(collectionId: string) {
+		const fKey = this.fetchStateSvc.requestsFKey(collectionId);
+
+		try {
+			const requests = await this.reqRepo.getSavedRequests({
+				workspaceId: this._activeWorkspace(),
+				collectionId: collectionId,
+			});
+
+			if (Array.isArray(requests) && requests.length) {
+				this._savedRequests.update((prev) => {
+					const cpy = prev.filter((x) => x.collectionId !== collectionId);
+					return [...cpy, ...requests];
+				});
+			}
+			this.fetchStateSvc.loaded(fKey);
+		} catch (_error) {
+			this.fetchStateSvc.error(fKey);
+		} finally {
+			this.fetchStateSvc.end(fKey);
+		}
+	}
+
 	//#endregion requests
 
 	//#region collections
-	public collectionSearchKeyChange$ = new Subject<string>();
 	private _collections = signal<models.CollectionDTO[]>([]);
-	private _collectionSearchKey = signal<string>("");
 	public collections = computed(() => this._collections());
 
 	public async addCollection(name: string) {
@@ -333,8 +471,19 @@ export class AppService {
 				workspaceId: this._activeWorkspace(),
 			};
 			await this.collectionRepo.addCollection(newCollection);
+
+			this._collections.update((prev) => {
+				return [
+					{
+						id: newCollection.id,
+						name: newCollection.name,
+						mockServerEnabled: false,
+						mockServerKey: "",
+					},
+					...prev,
+				];
+			});
 			this.alertSvc.addAlert(`Collection ${name} added`, "success");
-			await this.initializeCollections();
 		} catch (error) {
 			console.error(error);
 			this.alertSvc.addAlert(`Failed to add collection ${name}`, "error");
@@ -344,11 +493,24 @@ export class AppService {
 	public async deleteCollection(id: string) {
 		try {
 			await this.collectionRepo.deleteCollection(id);
-			await this.collectionRepo.deleteDraftsUnderCollection(id);
+			this._collections.update((prev) => {
+				return prev.filter((x) => x.id !== id);
+			});
+
+			this._savedRequests.update((x) => {
+				return x.filter((y) => y.collectionId !== id);
+			});
+
+			this._savedExamples.update((x) => {
+				return x.filter((y) => y.collectionId !== id);
+			});
+
+			this._mockItems.update((x) => {
+				return x.filter((y) => y.collectionId !== id);
+			});
+
+			this.tabSvc.collectionDeleteNotifier.next(id);
 			this.alertSvc.addAlert(`Collection deleted.`, "success");
-			await this.initializeCollections();
-			await this.initializeSavedRequests();
-			this.tabSvc.refreshNotifier.next(AppTabType.Req);
 		} catch (error) {
 			console.error(error);
 			this.alertSvc.addAlert(`Failed to delete collection.`, "error");
@@ -359,7 +521,17 @@ export class AppService {
 		try {
 			await this.collectionRepo.renameCollection(id, name);
 			this.alertSvc.addAlert(`Collection renamed to ${name}.`, "success");
-			await this.initializeCollections();
+			this._collections.update((prev) => {
+				const i = prev.findIndex((x) => x.id === id);
+
+				if (i < 0) {
+					return prev;
+				}
+
+				const cpy = [...prev];
+				cpy[i] = { ...cpy[i], name };
+				return cpy;
+			});
 		} catch (error) {
 			console.error(error);
 			this.alertSvc.addAlert(`Failed to rename collection.`, "error");
@@ -369,10 +541,9 @@ export class AppService {
 	public async clearCollection(id: string) {
 		try {
 			await this.collectionRepo.clearCollection(id);
-			await this.collectionRepo.deleteDraftsUnderCollection(id);
 			this.alertSvc.addAlert(`Collection cleared.`, "success");
-			await this.initializeSavedRequests();
-			this.tabSvc.refreshNotifier.next(AppTabType.Req);
+			this._savedRequests.update((x) => x.filter((y) => y.collectionId !== id));
+			this.tabSvc.clearCollectionNotifier.next(id);
 		} catch (error) {
 			console.error(error);
 			this.alertSvc.addAlert(`Failed to clear collection.`, "error");
@@ -391,13 +562,40 @@ export class AppService {
 
 	public async importCollection(file?: File) {
 		try {
-			await this.exporter.importCollection(this._activeWorkspace(), file);
+			const importedId = await this.exporter.importCollection(
+				this._activeWorkspace(),
+				file,
+			);
+			const collection =
+				await this.collectionRepo.getCollectionById(importedId);
+			if (!collection) {
+				throw new Error("no collection received");
+			}
+			this._collections.update((prev) => [collection, ...prev]);
 			this.alertSvc.addAlert(`Collection imported successfully.`, "success");
-			await this.initializeCollections();
-			await this.initializeSavedRequests();
 		} catch (error) {
 			console.error(error);
 			this.alertSvc.addAlert(`Failed to import collection.`, "error");
+		}
+	}
+
+	async fetchCollections() {
+		try {
+			this.fetchStateSvc.start(APP_COLLECTIONS_FETCH_ENTITY);
+			const collections = await this.collectionRepo.getAllCollections({
+				workspaceId: this._activeWorkspace(),
+			});
+
+			if (Array.isArray(collections) && collections.length) {
+				this._collections.set(collections);
+			} else {
+				this._collections.set([]);
+			}
+			this.fetchStateSvc.loaded(APP_COLLECTIONS_FETCH_ENTITY);
+		} catch (_error) {
+			this.fetchStateSvc.error(APP_COLLECTIONS_FETCH_ENTITY);
+		} finally {
+			this.fetchStateSvc.end(APP_COLLECTIONS_FETCH_ENTITY);
 		}
 	}
 
@@ -440,6 +638,10 @@ export class AppService {
 	//#endregion console
 
 	//#region sidebar
+	private searchKey = signal<string>("");
+
+	public searchKeyChanges$ = new Subject<string>();
+
 	private _appSidebarContent = signal<AppSidebarContent>(
 		AppSidebarContent.Collections,
 	);
@@ -477,7 +679,6 @@ export class AppService {
 
 	//#region workspaces
 	private _workspaces = signal<DropDownItem<string>[]>([]);
-
 	private _activeWorkspace = signal<string>("");
 
 	public activeWorkSpace = computed<DropDownItem<string>>(() => {
@@ -487,7 +688,7 @@ export class AppService {
 
 	public workspaces = computed(() => this._workspaces());
 
-	private setActiveWorkspace(id: string) {
+	public setActiveWorkspace(id: string) {
 		const index = this._workspaces().findIndex((x) => x.id === id);
 		if (index === -1) {
 			throw new Error("Workspace with the given id does not exist");
@@ -503,43 +704,52 @@ export class AppService {
 				return;
 			}
 
-			this._appState.set("initializing");
-			await new Promise((resolve) => setTimeout(resolve, 1000));
-			await this.initializeActiveWorkspace(id);
-			this.alertSvc.addAlert(`Workspace initialized`, "success");
-			this._appState.set("loaded");
+			await this.uiStateRepo.updateUIState({
+				activeWorkspace: id,
+			});
+
+			this.clean();
+
+			window.location.href = `/`;
 		} catch (error) {
 			console.error(error);
-			this._appError.set("Failed to switch workspace, please reload.");
-			this._appState.set("error");
 		}
 	}
 
-	async createDefaultWorkspace(name: string) {
-		try {
-			const newWorkspace: models.CreateWorkspaceDTO = {
-				name,
-				id: nanoid(),
-			};
-			await this.workspaceRepo.addWorkspace(newWorkspace);
-			await this.initializeWorkspaces(newWorkspace.id);
-		} catch (error) {
-			console.error(error);
-			this._appError.set("Failed to create default workspace.");
-			this._appState.set("error");
-		}
-	}
+	async createDefaultWorkspace(name: string): Promise<string> {
+		const newWorkspace: models.CreateWorkspaceDTO = {
+			name,
+			id: nanoid(),
+		};
+		await this.workspaceRepo.addWorkspace(newWorkspace);
+		// await this.initializeWorkspaces(newWorkspace.id);
+		await this.uiStateRepo.updateUIState({
+			activeWorkspace: newWorkspace.id,
+		});
 
-	async refreshWorkspaces() {
+		const uiState = await this.uiStateRepo.getUIState();
 		const workspaces = await this.workspaceRepo.getWorkspaces();
-		if (Array.isArray(workspaces) && workspaces.length) {
-			const workspaceDropdownItems = workspaces.map((ws) => ({
-				id: ws.id,
-				displayName: ws.name,
-			}));
 
-			this._workspaces.set(workspaceDropdownItems);
+		if (
+			uiState?.activeWorkspace &&
+			Array.isArray(workspaces) &&
+			workspaces.length
+		) {
+			this.initUiState(uiState);
+			this.setWorkspaces(workspaces);
+			this.setActiveWorkspace(uiState.activeWorkspace);
+			return uiState.activeWorkspace;
 		}
+
+		throw new Error("failed to initialize default workspaces");
+	}
+
+	setWorkspaces(data: models.WorkspaceLightDTO[]) {
+		const workspaceDropdownItems = data.map((ws) => ({
+			id: ws.id,
+			displayName: ws.name,
+		}));
+		this._workspaces.set(workspaceDropdownItems);
 	}
 
 	async createNewWorkspace(name: string) {
@@ -549,7 +759,16 @@ export class AppService {
 				id: nanoid(),
 			};
 			await this.workspaceRepo.addWorkspace(newWorkspace);
-			await this.refreshWorkspaces();
+
+			this._workspaces.update((prev) => {
+				return [
+					...prev,
+					{
+						id: newWorkspace.id,
+						displayName: name,
+					},
+				];
+			});
 		} catch (error) {
 			console.error(error);
 			this.alertSvc.addAlert(`Failed to create workspace '${name}'`, "error");
@@ -628,37 +847,11 @@ export class AppService {
 			},
 		});
 
-		this.searchHistoryKeyChange$
+		this.searchKeyChanges$
 			.pipe(takeUntilDestroyed(this.destoyRef), debounceTime(500))
 			.subscribe({
 				next: (v) => {
-					this._searchHistoryKey.set(v);
-				},
-			});
-
-		this.envSearchKeyChange$
-			.pipe(takeUntilDestroyed(this.destoyRef), debounceTime(500))
-			.subscribe({
-				next: (v) => {
-					this._envSearchKey.set(v);
-				},
-			});
-
-		this.refreshSavedRequests$
-			.pipe(takeUntilDestroyed(this.destoyRef))
-			.subscribe({
-				next: () => {
-					console.log(`refreshing saved requests from db`);
-					this.initializeSavedRequests();
-				},
-			});
-
-		this.refreshSavedExamples$
-			.pipe(takeUntilDestroyed(this.destoyRef))
-			.subscribe({
-				next: () => {
-					console.log(`refreshing saved examples from db`);
-					this.initializeSavedExamples();
+					this.searchKey.set(v);
 				},
 			});
 
@@ -668,14 +861,6 @@ export class AppService {
 				this.initializeEnvironments();
 			},
 		});
-
-		this.collectionSearchKeyChange$
-			.pipe(takeUntilDestroyed(this.destoyRef), debounceTime(500))
-			.subscribe({
-				next: (v) => {
-					this._collectionSearchKey.set(v);
-				},
-			});
 
 		this.desktopSidebarChange$
 			.pipe(takeUntilDestroyed(this.destoyRef))
@@ -752,9 +937,9 @@ export class AppService {
 
 	async initializeEnvironments() {
 		try {
-			const environments = await this.envRepo.getEnvironments(
-				this._activeWorkspace(),
-			);
+			const environments = await this.envRepo.getEnvironments({
+				workspaceId: this._activeWorkspace(),
+			});
 			if (Array.isArray(environments) && environments.length) {
 				this._environments.set(environments);
 			} else {
@@ -766,126 +951,35 @@ export class AppService {
 		}
 	}
 
-	async initializeCollections() {
-		try {
-			const collections = await this.collectionRepo.getAllCollections(
-				this._activeWorkspace(),
-			);
-			if (Array.isArray(collections) && collections.length) {
-				this._collections.set(collections);
-			} else {
-				this._collections.set([]);
-			}
-		} catch (error) {
-			console.error(error);
-			this.alertSvc.addAlert("Failed to load collections.", "error");
+	public initUiState(data: models.UIStateDTO) {
+		if (this.isAppTheme(data.activeTheme)) {
+			this._activeTheme.set(data.activeTheme);
 		}
+		this._formLayout.set((data.layout as FormLayout) || FormLayout.Responsive);
+		this._isDesktopSidebarOpen.set(data.isSidebarOpen);
+		this._alwaysDiscardReqDrafts.set(data.alwaysDiscardDrafts);
 	}
 
-	async initializeSavedRequests() {
-		try {
-			const savedRequests = await this.reqRepo.getSavedRequests(
-				this._activeWorkspace(),
-			);
-			if (Array.isArray(savedRequests) && savedRequests.length) {
-				this._savedRequests.set(savedRequests);
-			} else {
-				this._savedRequests.set([]);
-			}
-		} catch (error) {
-			console.error(error);
-			this.alertSvc.addAlert("Failed to load requests.", "error");
-		}
-	}
-
-	async initializeSavedExamples() {
-		try {
-			const savedExamples = await this.reqRepo.getReqExamples(
-				this._activeWorkspace(),
-			);
-			if (Array.isArray(savedExamples) && savedExamples.length) {
-				this._savedExamples.set(savedExamples);
-			} else {
-				this._savedExamples.set([]);
-			}
-		} catch (_error) {
-			this.alertSvc.addAlert("Failed to load request examples.", "error");
-		}
-	}
-
-	async initializeUIState(): Promise<string> {
-		const uiState = await this.uiStateRepo.getUIState();
-		if (this.isAppTheme(uiState.activeTheme)) {
-			this._activeTheme.set(uiState.activeTheme);
-		}
-		this._formLayout.set(
-			(uiState.layout as FormLayout) || FormLayout.Responsive,
-		);
-		this._isDesktopSidebarOpen.set(uiState.isSidebarOpen);
-		this._alwaysDiscardReqDrafts.set(uiState.alwaysDiscardDrafts);
-		return uiState.activeWorkspace;
-	}
-
-	async initializeWorkspaces(activeWorkspace: string) {
-		await this.refreshWorkspaces();
-		if (activeWorkspace !== "") {
-			await this.initializeActiveWorkspace(activeWorkspace);
-			return;
-		}
-
-		this.initiateDefaultWorkspaceCreation$.next();
-	}
-
-	public async initializeActiveWorkspace(workspaceId: string) {
-		const workspaceInfo =
-			await this.workspaceRepo.getWorkspaceById(workspaceId);
-
-		if (!workspaceInfo) {
-			throw new Error("workspace not found");
-		}
-
-		this.setActiveWorkspace(workspaceId);
-		if (this.globalHistory[workspaceId]) {
-			this._historyItems.set(this.globalHistory[workspaceId]);
-		} else {
-			this._historyItems.set([]);
-		}
-
-		await this.initializeCollections();
-		await this.initializeSavedRequests();
-		await this.initializeSavedExamples();
+	public async initializeActiveWorkspace(workspaceData: models.WorkspaceDTO) {
 		await this.initializeEnvironments();
-
-		if (this._environments().some((x) => x.id === workspaceInfo.activeEnv)) {
-			this._activeEnvironment.set(workspaceInfo.activeEnv);
+		if (this._environments().some((x) => x.id === workspaceData.activeEnv)) {
+			this._activeEnvironment.set(workspaceData.activeEnv);
 		} else {
 			this._activeEnvironment.set(NO_ENV_ID);
 		}
 
-		this.tabSvc.init(workspaceInfo);
-	}
-
-	public async init() {
-		try {
-			const activeWorkspace = await this.initializeUIState();
-			await this.initializeWorkspaces(activeWorkspace);
-			this._appState.set("loaded");
-		} catch (_error) {
-			console.log(_error);
-			this._appError.set("Failed to initialize the workspace.");
-			this._appState.set("error");
-		}
+		this.tabSvc.init(workspaceData);
 	}
 
 	public clean() {
+		this.searchKey.set("");
+
 		// history
-		this.globalHistory = {};
 		this._historyItems.set([]);
-		this._searchHistoryKey.set("");
 
 		// environments
 		this._environments.set([]);
-		this._envSearchKey.set("");
+
 		this._activeEnvironment.set(NO_ENV_ID);
 
 		// workspaces
@@ -898,10 +992,171 @@ export class AppService {
 
 		// collections
 		this._collections.set([]);
-		this._collectionSearchKey.set("");
 
 		this.tabSvc.clean();
 	}
 
 	//#endregion init
+
+	//#region mocks
+	private fetchStateSvc = inject(FetchStateService);
+
+	private _mockItems = signal<models.MockLightDTO[]>([]);
+
+	public mockItems = computed(() => {
+		const key = this.searchKey();
+
+		if (!key || key.trim() === "") {
+			return this._mockItems();
+		}
+
+		const normalizedKey = key.toLocaleLowerCase();
+
+		return this._mockItems().filter(
+			(mock) =>
+				mock.method.toLocaleLowerCase().includes(normalizedKey) ||
+				mock.name?.toLocaleLowerCase().includes(normalizedKey) ||
+				mock.path?.toLocaleLowerCase().includes(normalizedKey),
+		);
+	});
+
+	public async fetchMockItems(collectionId: string) {
+		const key = this.fetchStateSvc.mocksKey(collectionId);
+		try {
+			this.fetchStateSvc.start(key);
+
+			const mocks = await this.reqMocksRepo.getMocks({
+				collectionId: collectionId,
+				workspaceId: this._activeWorkspace(),
+			});
+
+			if (Array.isArray(mocks) && mocks.length) {
+				this._mockItems.update((prev) => {
+					const cpy = prev.filter((x) => x.collectionId !== collectionId);
+					return [...cpy, ...mocks];
+				});
+			}
+
+			this.fetchStateSvc.loaded(key);
+		} catch (_error) {
+			this.fetchStateSvc.error(key);
+		} finally {
+			this.fetchStateSvc.end(key);
+		}
+	}
+
+	public async copyMock(id: string) {
+		try {
+			const newMock = await this.reqMocksRepo.copyMockWithId(id);
+			this._mockItems.update((prev) => {
+				return [...prev, newMock];
+			});
+			this.alertSvc.addAlert("Copy successful", "success");
+		} catch (error) {
+			console.error(error);
+			this.alertSvc.addAlert("Failed to copy mock", "error");
+		}
+	}
+
+	public async deleteMock(id: string) {
+		try {
+			await this.reqMocksRepo.deleteMockById(id);
+			this._mockItems.update((prev) => {
+				return prev.filter((x) => x.id !== id);
+			});
+			this.tabSvc.mockDeleteNotifier.next(id);
+			this.alertSvc.addAlert("Mock deleted", "success");
+		} catch (error) {
+			console.error(error);
+			this.alertSvc.addAlert("Failed to delete mock", "error");
+		}
+	}
+
+	public async fetchUpdatedMock(id: string) {
+		try {
+			const m = await this.reqMocksRepo.getMockById(id);
+
+			if (!m) {
+				throw new Error("failed to fetch update");
+			}
+
+			this._mockItems.update((prev) => {
+				const cpy = prev.filter((x) => x.id !== id);
+				return [m, ...cpy];
+			});
+		} catch (error) {
+			console.error(error);
+			this.alertSvc.addAlert("failed to fetch updated mock", "error");
+		}
+	}
+
+	public async createMockFroMExample(exampleId: string) {
+		try {
+			const mock = await this.reqRepo.createMockFromExample(exampleId, {
+				id: nanoid(),
+			});
+
+			this._mockItems.update((prev) => [mock, ...prev]);
+			this.alertSvc.addAlert("Mock created", "success");
+		} catch (error) {
+			console.error(error);
+			this.alertSvc.addAlert("failed to create mock", "error");
+		}
+	}
+
+	public async createMockServer(id: string) {
+		try {
+			const updated = await this.collectionRepo.createMockServer({
+				collectionId: id,
+				workspaceId: this._activeWorkspace(),
+			});
+
+			this._collections.update((prev) => {
+				const i = prev.findIndex((x) => x.id === id);
+
+				if (i < 0) {
+					return prev;
+				}
+
+				const cpy = [...prev];
+				cpy[i] = updated;
+				return cpy;
+			});
+
+			this.alertSvc.addAlert("Mock server created", "success");
+		} catch (error) {
+			console.error(error);
+			this.alertSvc.addAlert("failed to create mock server", "error");
+		}
+	}
+
+	public async updateMockServer(id: string, flag: boolean) {
+		try {
+			const updated = await this.collectionRepo.updateMockServer(id, flag);
+
+			this._collections.update((prev) => {
+				const i = prev.findIndex((x) => x.id === id);
+
+				if (i < 0) {
+					return prev;
+				}
+
+				const cpy = [...prev];
+				cpy[i] = updated;
+				return cpy;
+			});
+
+			this.alertSvc.addAlert(
+				`Mock server ${flag ? "started" : "stoppped"}.`,
+				"success",
+			);
+		} catch (error) {
+			console.error(error);
+			this.alertSvc.addAlert(
+				`failed to ${flag ? "start" : "stop"} mock server`,
+				"error",
+			);
+		}
+	}
+	//#endregion mocks
 }

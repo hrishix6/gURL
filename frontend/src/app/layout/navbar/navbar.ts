@@ -1,7 +1,7 @@
 import { Component, inject } from "@angular/core";
-import { LucideAngularModule, UserRoundPlus } from "lucide-angular";
 import { getAppConfig } from "@/app.config";
 import { EntityCreationButton } from "@/app.entity.create";
+import { SystemIconComponent } from "@/common/components/icon";
 import { GlobalModalsService, UserAuthService } from "@/services";
 import { WorkspaceOptions } from "@/workspaces/workspace.options";
 
@@ -19,24 +19,22 @@ import { WorkspaceOptions } from "@/workspaces/workspace.options";
                         @if(appConfig.mode == "web") {
                             @if(userAuthSvc.userInfo()?.isAdmin){
                                 <button class="btn btn-sm btn-soft btn-primary" (click)="handleOpenInviteDialogue()">
-                                    <lucide-angular [img]="InviteIcon" class="size-4" />
+                                    <i gurl-icon [icon]="'Invite'" [className]="'size-4'" ></i>
                                     <span class="hidden xl:inline-block">Invite</span>
                                 </button>
                             }
                         }
                         <div gurl-entity-creation></div>
-                        <gurl-workspace [align]="'end'" />
+                        <gurl-workspace-options [align]="'end'" />
                     </nav>
         </nav>
     `,
-	imports: [WorkspaceOptions, EntityCreationButton, LucideAngularModule],
+	imports: [WorkspaceOptions, EntityCreationButton, SystemIconComponent],
 })
 export class Navbar {
 	protected readonly appConfig = getAppConfig();
 	protected readonly userAuthSvc = inject(UserAuthService);
 	private readonly modalsSvc = inject(GlobalModalsService);
-
-	protected readonly InviteIcon = UserRoundPlus;
 
 	handleOpenInviteDialogue() {
 		this.modalsSvc.openInviteUserModal();

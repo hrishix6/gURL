@@ -1,6 +1,7 @@
 import { Component, computed, HostBinding, inject } from "@angular/core";
-import { Eye, EyeOff, LucideAngularModule } from "lucide-angular";
 import { GurlDropdown } from "@/common/components";
+import { SystemIconComponent } from "@/common/components/icon";
+import { TooltipDirective } from "@/common/components/tooltip";
 import {
 	API_KEY_LOCATION,
 	REQ_AUTH_TYPES,
@@ -127,8 +128,13 @@ import type {
                             >
                 </gurl-dropdown>
                 @if(f.tabType() === 'req'){
+                @if(["json", "xml"].includes(f.bodySvc.bodyType().id)){
+                    <button class="ml-auto btn btn-square btn-sm btn-soft" gurlTooltip [tooltip]="'Format'" (click)="handleTextFormatting()">
+                        <i gurl-icon [icon]="'Format'" [className]="'size-4'"></i>
+                    </button>
+                }
                 @if(["urlencoded"].includes(f.bodySvc.bodyType().id)){
-                    <label class="label ml-auto self-end">
+                    <label class="label ml-auto">
                             <input type="checkbox" [checked]="f.bodySvc.bulkEditModeUrlEncodedForm()" (change)="handleEditModeSwitch('req_body')" class="toggle toggle-primary" />
                              Raw
                     </label>
@@ -138,14 +144,11 @@ import type {
         }
     }
     `,
-	imports: [LucideAngularModule, GurlDropdown],
+	imports: [GurlDropdown, SystemIconComponent, TooltipDirective],
 })
 export class ReqFooter {
 	@HostBinding("class")
 	def = "flex text-xs px-2 py-1";
-
-	protected readonly PreviewOpenIcon = Eye;
-	protected readonly PreviewCloseIcon = EyeOff;
 
 	protected readonly f = inject(FormService);
 	protected readonly reqBodyTypes = REQ_BODY_TYPES;
@@ -196,5 +199,9 @@ export class ReqFooter {
 				return this.f.cookieSvc.toggleEditModeCookies();
 			}
 		}
+	}
+
+	protected handleTextFormatting() {
+		this.f.bodySvc.formatText$.next();
 	}
 }

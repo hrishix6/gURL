@@ -1,5 +1,5 @@
 import { Component, HostBinding, input, output, signal } from "@angular/core";
-import { LucideAngularModule, Plus, X } from "lucide-angular";
+import { SystemIconComponent } from "@/common/components/icon";
 
 @Component({
 	selector: `dialog[gurl-create-req-modal]`,
@@ -9,18 +9,19 @@ import { LucideAngularModule, Plus, X } from "lucide-angular";
         <div class="flex justify-between">  
              <h3 class="text-lg font-bold">New Request</h3>
              <button class="btn btn-sm btn-square btn-ghost" (click)="handleCancel()">
-                <lucide-angular [img]="CancelIcon" class="size-4" />
+                <i gurl-icon [icon]="'Cancel'" [className]="'size-4'" ></i>
              </button>
         </div>
         <div class="flex gap-4 justify-center mt-4">
           <button class="btn btn-soft btn-primary xl:btn-lg" (click)="handleCreateHttpReq()">
-            <lucide-angular [img]="CreateIcon" class="size-6" />
+            <i gurl-icon [icon]="'Plus'" [className]="'size-6'" ></i>
             <span>New HTTP</span>
           </button>
-          <button class="btn btn-soft btn-primary xl:btn-lg" (click)="handleCreateWSSReq()">
+          <!-- TODO WSS -->
+          <!-- <button class="btn btn-soft btn-primary xl:btn-lg" (click)="handleCreateWSSReq()">
             <lucide-angular [img]="CreateIcon" class="size-6" />
             <span>New WSS</span>
-          </button>
+          </button> -->
         </div>
       </div>
     </div>
@@ -28,7 +29,7 @@ import { LucideAngularModule, Plus, X } from "lucide-angular";
       <button (click)="handleCancel()">close</button>
     </div>
   `,
-	imports: [LucideAngularModule],
+	imports: [SystemIconComponent],
 })
 export class CreateRequestModal {
 	@HostBinding("class")
@@ -43,8 +44,6 @@ export class CreateRequestModal {
 	onNewHttp = output<void>();
 	onNewWSS = output<void>();
 
-	protected readonly CancelIcon = X;
-	protected readonly CreateIcon = Plus;
 	protected error = signal<boolean>(false);
 
 	protected handleCreateHttpReq() {

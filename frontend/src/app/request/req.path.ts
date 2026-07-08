@@ -1,7 +1,7 @@
-import { Component, HostBinding, inject } from "@angular/core";
-import { Ban, LucideAngularModule } from "lucide-angular";
+import { Component, inject } from "@angular/core";
 import { GurlHighlightedInput } from "@/common/components/highlighted.input";
-import { FormService } from "@/services";
+import { SystemIconComponent } from "@/common/components/icon";
+import { AppService, FormService } from "@/services";
 
 @Component({
 	selector: "gurl-req-path",
@@ -9,7 +9,7 @@ import { FormService } from "@/services";
   <div class="flex-1 overflow-y-auto p-1 relative">
          @if(f.urlSvc.pathParams().length === 0){
             <div class="absolute top-0 left-0 w-full h-full flex items-center justify-center opacity-10">
-               <lucide-angular [img]="NoneIcon" class="size-16 -z-10" />
+                <i gurl-icon [icon]="'Empty'" [className]="'size-16 -z-10'" ></i>
             </div>
          }
          @else {
@@ -22,6 +22,8 @@ import { FormService } from "@/services";
                             [readonly]="true"
                             [disabled]="false"
                             [text]="item.key"
+                            [extractTokensFn]="f.reqFormExtractTokensCB"
+                            [activeEnvSub]="appSvc.activeEnvChange$"
                         >
                         </div>
                         <div class="flex-2">
@@ -32,6 +34,8 @@ import { FormService } from "@/services";
                             [text]="item.val"
                             (onInput)="f.updatePathParam(item.id, 'val', $event)"
                             [readonly]="false"
+                            [extractTokensFn]="f.reqFormExtractTokensCB"
+                            [activeEnvSub]="appSvc.activeEnvChange$"
                             >
                             </div>
                         </div>
@@ -41,12 +45,9 @@ import { FormService } from "@/services";
          }
   </div>
   `,
-	imports: [LucideAngularModule, GurlHighlightedInput],
+	imports: [GurlHighlightedInput, SystemIconComponent],
 })
 export class ReqPath {
-	@HostBinding("class")
-	defaultClass = "flex-1 flex flex-col overflow-hidden";
-
 	protected readonly f = inject(FormService);
-	protected readonly NoneIcon = Ban;
+	protected readonly appSvc = inject(AppService);
 }
