@@ -5,7 +5,7 @@
             "previewLimit": 50,
             "driver": "SQLite",
             "name": "desktop db",
-            "database": "desktop/appData/gurl.db"
+            "database": "desktop/appData/gURL/gurl.db"
         }
     ]
 }
