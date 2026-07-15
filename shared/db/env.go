@@ -58,16 +58,17 @@ func NewEnvironmentRepository(db *gorm.DB) *EnvironmentRepository {
 	}
 }
 
-func (er *EnvironmentRepository) GetEnvironments(ctx context.Context, workspaceId string) ([]models.EnvironmentDTO, error) {
+func (er *EnvironmentRepository) GetEnvironmentById(ctx context.Context, id string) (Environment, error) {
+	return gorm.G[Environment](er.db).Where("id = ?", id).First(ctx)
+}
+
+func (er *EnvironmentRepository) GetEnvironments(ctx context.Context, query models.EnvsQueryDTO) ([]models.EnvironmentDTO, error) {
 
 	user := utils.UserIdFromContext(ctx)
 
 	var envs []Environment
 
-	tx := er.db.Where(&Environment{
-		WorkspaceId: workspaceId,
-		UserId:      user,
-	}).Find(&envs)
+	tx := er.db.Where("workspace_id = ? AND user_id = ?", query.WorkspaceId, user).Find(&envs)
 
 	if tx.Error != nil {
 		return []models.EnvironmentDTO{}, tx.Error
@@ -185,18 +186,17 @@ func (er *EnvironmentRepository) RemoveEnvDraft(ctx context.Context, id string) 
 
 func (er *EnvironmentRepository) RemoveEnv(ctx context.Context, id string) error {
 
-	tx := er.db.Where(&Environment{
-		BaseEntity: BaseEntity{
-			Id: id,
-		},
-		UserId: utils.UserIdFromContext(ctx),
-	}).Delete(&Environment{})
+	user := utils.UserIdFromContext(ctx)
 
-	if tx.Error != nil {
-		return tx.Error
+	var env Environment
+
+	err := er.db.Where("id = ? AND user_id = ?", id, user).First(&env).Error
+
+	if err != nil {
+		return err
 	}
 
-	return nil
+	return er.db.Delete(&env).Error
 }
 
 func (er *EnvironmentRepository) UpdateEnvDraftData(ctx context.Context, id string, dto models.UpdateEnvDraftDataDTO) error {
@@ -279,14 +279,11 @@ func (er *EnvironmentRepository) DeleteEnvDraftsUnderEnv(ctx context.Context, en
 
 func (er *EnvironmentRepository) FindSavedEnvById(ctx context.Context, id string) (Environment, error) {
 
+	user := utils.UserIdFromContext(ctx)
+
 	env := new(Environment)
 
-	tx := er.db.Where(&Environment{
-		BaseEntity: BaseEntity{
-			Id: id,
-		},
-		UserId: utils.UserIdFromContext(ctx),
-	}).First(env)
+	tx := er.db.Where("id = ? AND user_id = ?", id, user).First(env)
 
 	return *env, tx.Error
 }

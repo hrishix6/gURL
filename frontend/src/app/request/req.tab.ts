@@ -13,6 +13,8 @@ import { RequestFormDetails } from "@/request/req.form.details";
 import { ReqFormHeader } from "@/request/req.form.header";
 import { ResponseDetails } from "@/response/res.details";
 import { AppService, FormService, TabsService } from "@/services";
+import { TabError } from "@/tabs/tab.error";
+import { TabLoading } from "@/tabs/tab.loading";
 import { type ApplicationTab, AppTabType, FormLayout } from "@/types";
 
 @Component({
@@ -46,6 +48,12 @@ import { type ApplicationTab, AppTabType, FormLayout } from "@/types";
 	(onSubmit)="formSvc.saveResponseExample($event)"
 	></dialog>		
 	}
+	@if(formSvc.fetchState().loading) {
+        <div gurl-tab-loading></div>
+    }
+	@if(formSvc.fetchState().error) {
+        <div gurl-tab-error></div>
+    }
   `,
 	imports: [
 		ReqFormHeader,
@@ -54,13 +62,15 @@ import { type ApplicationTab, AppTabType, FormLayout } from "@/types";
 		NgClass,
 		DraftSavePreferenceModal,
 		SaveReqExampleModal,
+		TabLoading,
+		TabError,
 	],
 	providers: [FormService],
 })
 export class RequestTab implements OnInit {
 	@HostBinding("class") get defaultClass() {
 		if (this.activeId() === this.tab().id) {
-			return "flex-1 flex flex-col overflow-hidden";
+			return "flex-1 flex flex-col overflow-hidden relative";
 		}
 
 		return "hidden";

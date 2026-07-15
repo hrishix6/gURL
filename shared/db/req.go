@@ -122,13 +122,32 @@ func (rr *RequestRepository) RemoveDraft(ctx context.Context, id string) error {
 	return rr.db.Delete(&d).Error
 }
 
-func (rr *RequestRepository) GetSavedRequests(ctx context.Context, workspaceId string) ([]models.RequestLightDTO, error) {
+func (rr *RequestRepository) GetSavedRequestById(ctx context.Context, id string) (*models.RequestLightDTO, error) {
+	var r Request
+
+	err := rr.db.Where("id = ?", id).First(&r).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &models.RequestLightDTO{
+		Id:           r.Id,
+		Name:         r.Name,
+		Method:       r.Method,
+		Url:          r.Url,
+		CollectionId: r.CollectionId,
+	}, nil
+}
+
+func (rr *RequestRepository) GetSavedRequests(ctx context.Context, reqQuery models.ReqQueryDTO) ([]models.RequestLightDTO, error) {
 
 	var records []Request
 
 	tx := rr.db.Where(&Request{
-		WorkspaceId: workspaceId,
-		UserId:      utils.UserIdFromContext(ctx),
+		WorkspaceId:  reqQuery.WorkspaceId,
+		CollectionId: reqQuery.CollectionId,
+		UserId:       utils.UserIdFromContext(ctx),
 	}).Find(&records)
 
 	if tx.Error != nil {
@@ -159,7 +178,30 @@ func (rr *RequestRepository) FindDraftById(ctx context.Context, id string) (*mod
 		}
 		return nil, err
 	}
-	return found.ToRequestDraftDTO(), nil
+
+	dto := found.ToRequestDraftDTO()
+
+	if found.ParentCollectionId != "" {
+		c, err := gorm.G[Collection](rr.db).Where("id = ?", found.ParentCollectionId).First(ctx)
+
+		if err == nil {
+			dto.CollectionInfo = &models.DraftCollectionInfo{
+				Name: c.Name,
+			}
+		}
+	}
+
+	if found.ParentRequestId != "" {
+		r, err := gorm.G[Request](rr.db).Where("id = ?", found.ParentRequestId).First(ctx)
+
+		if err == nil {
+			dto.RequestInfo = &models.DraftRequestInfo{
+				Name: r.Name,
+			}
+		}
+	}
+
+	return dto, nil
 }
 
 func (rr *RequestRepository) AddFreshDraft(ctx context.Context, dto models.AddDraftDTO) error {
@@ -230,12 +272,26 @@ func (rr *RequestRepository) DeleteRequestDrafts(ctx context.Context, requestId 
 	return nil
 }
 
-func (rr *RequestRepository) SaveDraftAsRequest(ctx context.Context, id string, dto models.SaveDraftAsReqDTO) error {
+func (rr *RequestRepository) SaveDraftAsRequest(ctx context.Context, id string, dto models.SaveDraftAsReqDTO) (*models.RequestDraftDTO, error) {
 
 	draft, err := rr.findDraft(ctx, id)
 
 	if err != nil {
-		return err
+		return nil, err
+	}
+
+	o := draft.ToRequestDraftDTO()
+
+	var collection Collection
+
+	err = rr.db.Where("id = ?", dto.CollectionId).First(&collection).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	o.CollectionInfo = &models.DraftCollectionInfo{
+		Name: collection.Name,
 	}
 
 	existing, err := rr.findSavedReq(ctx, dto.RequestId)
@@ -248,13 +304,40 @@ func (rr *RequestRepository) SaveDraftAsRequest(ctx context.Context, id string, 
 			createErr := rr.addSavedReq(ctx, req)
 
 			if createErr != nil {
-				return createErr
+				return nil, createErr
 			}
 
-			return nil
+			o.RequestInfo = &models.DraftRequestInfo{
+				Name: req.Name,
+			}
+
+			//update draft
+			err = rr.updateDraftParents(id, map[string]any{
+				"parent_request_id":    dto.RequestId,
+				"parent_request_name":  dto.Name,
+				"parent_collection_id": dto.CollectionId,
+			})
+
+			if err != nil {
+				return nil, err
+			}
+
+			return o, nil
 		}
 
-		return err
+		return nil, err
+	}
+
+	existing.UpdateFromDraft(ctx, &dto, &draft)
+
+	err = rr.db.Save(&existing).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	o.RequestInfo = &models.DraftRequestInfo{
+		Name: existing.Name,
 	}
 
 	//update draft
@@ -265,33 +348,30 @@ func (rr *RequestRepository) SaveDraftAsRequest(ctx context.Context, id string, 
 	})
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	existing.UpdateFromDraft(ctx, &dto, &draft)
-
-	return rr.db.Save(&existing).Error
-
+	return o, nil
 }
 
-func (rr *RequestRepository) SaveRequestCopy(ctx context.Context, id string, dto models.SaveRequestCopyDTO) error {
+func (rr *RequestRepository) SaveRequestCopy(ctx context.Context, id string, dto models.SaveRequestCopyDTO) (string, error) {
 
 	existing, err := rr.findSavedReq(ctx, id)
 
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	existing.Id = nanoid.Must()
 	existing.Name = dto.Name
 
-	createErr := rr.addSavedReq(ctx, &existing)
+	err = rr.addSavedReq(ctx, &existing)
 
-	if createErr != nil {
-		return createErr
+	if err != nil {
+		return "", err
 	}
 
-	return nil
+	return existing.Id, nil
 }
 
 func (rr *RequestRepository) UpdateDraftFields(ctx context.Context, id string, dto models.UpdateDraftFieldsDTO) error {

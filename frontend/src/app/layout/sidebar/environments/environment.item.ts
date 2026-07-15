@@ -1,15 +1,8 @@
 import { NgClass } from "@angular/common";
 import { Component, HostBinding, inject, input } from "@angular/core";
 import type { models } from "@wailsjs/go/models";
-import {
-	Container,
-	Copy,
-	EllipsisVertical,
-	FileDown,
-	LucideAngularModule,
-	Trash2,
-} from "lucide-angular";
 import { getAppConfig } from "@/app.config";
+import { SystemIconComponent } from "@/common/components/icon";
 import {
 	AppService,
 	GlobalModalsService,
@@ -20,19 +13,18 @@ import {
 @Component({
 	selector: `div[gurl-environment-item]`,
 	template: `
-    <div class="flex items-center gap-2 p-2 bg-base-300 rounded box">
+    <div class="flex items-center gap-2 p-2 bg-base-300 rounded-box">
       <a
-         href="#"
          role="button"
-         class="flex flex-1 items-center gap-2 focus:outline-0 focus:underline"
+         class="flex flex-1 items-center gap-2 hover:cursor-pointer focus:outline-0 focus:underline"
          (click)="openEnvironmentTab()"
       > 
-            <lucide-angular [img]="EnvironmentIcon" class="size-4" />
+            <i gurl-icon [icon]="'Environment'" [className]="'size-4'" ></i>
             <p class="flex-1 text-sm truncate">{{ data().name }}</p>
         </a>
       <div class="dropdown dropdown-end">
-        <button tabindex="0" class="btn btn-sm btn-square btn-ghost">
-          <lucide-angular [img]="EnvironmentOptionsIcon" class="size-4" />
+        <button tabindex="0" class="btn btn-sm btn-square btn-ghost">	
+          <i gurl-icon [icon]="'Options'" [className]="'size-4'" ></i>
         </button>
 		@switch (config.mode) {
 			@case ("web") {
@@ -46,7 +38,7 @@ import {
 				}"
 				>
 				<a role="link" [ariaDisabled]="!!userAuthSvc.userInfo()?.isDemoUser"  (click)="copyEnvironment()">
-						<lucide-angular [img]="CopyIcon" class="size-4" />	
+						<i gurl-icon [icon]="'Copy'" [className]="'size-4'" ></i>
 						Copy
 				</a>
 				</li>
@@ -56,15 +48,15 @@ import {
 				}"
 				>
 				<a role="link" [ariaDisabled]="!!userAuthSvc.userInfo()?.isDemoUser"  (click)="toggleDeleteModal()">
-						<lucide-angular [img]="DeleteIcon" class="size-4" />	
+						<i gurl-icon [icon]="'Delete'" [className]="'size-4'" ></i>	
 						Delete
 				</a>
 				</li>
 				<li>
-					<button role="link" (click)="toggleExportEnv()">
-						<lucide-angular [img]="ExportIcon" class="size-4" />
+					<a role="link" (click)="toggleExportEnv()">
+						<i gurl-icon [icon]="'Export'" [className]="'size-4'" ></i>
 						Export
-					</button>
+					</a>
 				</li>
 			</ul>
 			}
@@ -75,21 +67,21 @@ import {
 					>
 						<li>
 						<a href="#" role="link" (click)="copyEnvironment()">
-								<lucide-angular [img]="CopyIcon" class="size-4" />	
+								<i gurl-icon [icon]="'Copy'" [className]="'size-4'" ></i>
 								Copy
 						</a>
 						</li>
 						<li>
-						<a href="#" role="link" (click)="toggleDeleteModal()">
-								<lucide-angular [img]="DeleteIcon" class="size-4" />	
+							<a href="#" role="link" (click)="toggleDeleteModal()">
+								<i gurl-icon [icon]="'Delete'" [className]="'size-4'" ></i>		
 								Delete
-						</a>
+							</a>
 						</li>
 						<li>
-							<button role="link" (click)="toggleExportEnv()">
-								<lucide-angular [img]="ExportIcon" class="size-4" />
+							<a role="link" (click)="toggleExportEnv()">
+								<i gurl-icon [icon]="'Export'" [className]="'size-4'" ></i>
 								Export
-							</button>
+							</a>
 						</li>
 					</ul>
 			}
@@ -98,21 +90,15 @@ import {
       </div>
     </div>
   `,
-	imports: [LucideAngularModule, NgClass],
+	imports: [NgClass, SystemIconComponent],
 })
 export class GurlEnvironmentItem {
 	@HostBinding("class")
 	def = "flex flex-col gap-1";
 
 	data = input.required<models.EnvironmentDTO>();
-
-	protected readonly EnvironmentIcon = Container;
 	protected readonly config = getAppConfig();
 	protected readonly userAuthSvc = inject(UserAuthService);
-	protected readonly EnvironmentOptionsIcon = EllipsisVertical;
-	protected readonly ExportIcon = FileDown;
-	protected readonly DeleteIcon = Trash2;
-	protected readonly CopyIcon = Copy;
 
 	private readonly tabSvc = inject(TabsService);
 	protected readonly appSvc = inject(AppService);

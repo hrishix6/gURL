@@ -151,7 +151,7 @@ func (rer *ReqExampleRepository) AddReqExample(ctx context.Context,
 	}
 	defer srcF.Close()
 
-	dstFileName := fmt.Sprintf("%s%s", dto.Id, meta.Extension)
+	dstFileName := fmt.Sprintf("gurl-ex-f-%s%s", dto.Id, meta.Extension)
 
 	dstFilePath := filepath.Join(savedResponsesDir, dstFileName)
 
@@ -203,16 +203,35 @@ func (rer *ReqExampleRepository) GetReqExampleById(ctx context.Context, id strin
 		return nil, tx.Error
 	}
 
-	return example.ToReqExampleDTO(), nil
+	dto := example.ToReqExampleDTO()
+
+	c, err := gorm.G[Collection](rer.db).Where("id = ?", dto.CollectionId).First(ctx)
+
+	if err == nil {
+		dto.CollectionInfo = &models.DraftCollectionInfo{
+			Name: c.Name,
+		}
+	}
+
+	r, err := gorm.G[Request](rer.db).Where("id = ?", dto.RequestId).First(ctx)
+
+	if err == nil {
+		dto.RequestInfo = &models.DraftRequestInfo{
+			Name: r.Name,
+		}
+	}
+
+	return dto, nil
 }
 
-func (rer *ReqExampleRepository) GetReqExamples(ctx context.Context, workspaceId string) ([]models.ReqExampleLightDTO, error) {
+func (rer *ReqExampleRepository) GetReqExamples(ctx context.Context, query models.ReqExampleQueryDTO) ([]models.ReqExampleLightDTO, error) {
 
 	var records []RequestExample
 
 	tx := rer.db.Where(&RequestExample{
-		WorkspaceId: workspaceId,
-		UserId:      utils.UserIdFromContext(ctx),
+		WorkspaceId:  query.WorkspaceId,
+		CollectionId: query.CollectionId,
+		UserId:       utils.UserIdFromContext(ctx),
 	}).Find(&records)
 
 	if tx.Error != nil {
@@ -223,9 +242,12 @@ func (rer *ReqExampleRepository) GetReqExamples(ctx context.Context, workspaceId
 
 	for _, record := range records {
 		results = append(results, models.ReqExampleLightDTO{
-			Id:        record.Id,
-			RequestId: record.RequestId,
-			Name:      record.Name,
+			Id:           record.Id,
+			RequestId:    record.RequestId,
+			Method:       record.Method,
+			Name:         record.Name,
+			CollectionId: record.CollectionId,
+			Url:          record.Url,
 		})
 	}
 

@@ -6,7 +6,7 @@ import {
 	output,
 	signal,
 } from "@angular/core";
-import { LucideAngularModule, X } from "lucide-angular";
+import { SystemIconComponent } from "@/common/components/icon";
 
 @Component({
 	selector: `dialog[gurl-draft-save-preference-modal]`,
@@ -17,7 +17,7 @@ import { LucideAngularModule, X } from "lucide-angular";
                     <div class="flex justify-between">  
 						<h3 class="text-lg font-bold">{{title()}}</h3>
 						<button class="btn btn-sm btn-square btn-ghost" (click)="handleClose()">
-							<lucide-angular [img]="CancelIcon" class="size-4" />
+							<i gurl-icon [icon]="'Cancel'" [className]="'size-4'" ></i>
 						</button>
 					</div>
                     <p>
@@ -49,7 +49,7 @@ import { LucideAngularModule, X } from "lucide-angular";
         <button (click)="handleClose()">Cancel</button>
         </div>
     `,
-	imports: [LucideAngularModule],
+	imports: [SystemIconComponent],
 })
 export class DraftSavePreferenceModal implements OnInit {
 	@HostBinding("class")
@@ -70,7 +70,6 @@ export class DraftSavePreferenceModal implements OnInit {
 		this.alwaysDiscard.set(false);
 	}
 
-	protected readonly CancelIcon = X;
 	protected alwaysDiscard = signal<boolean>(false);
 
 	protected alwaysDiscardChanges() {

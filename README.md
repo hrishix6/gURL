@@ -11,7 +11,7 @@
 gURL is just another fancy cURL. I am building this because I want to learn Go & desktop app development using Wails, plus it's something that is useful in my
 day-to-day work.
 
-> Declaimer: Entire is code is written by me, no LLMs were used to write any of the code, you see only main branch here because this repository is just push mirror of my personal git hosting.
+> Declaimer: This is organically grown project. All code you see is handwritten by me. No LLMs were used to generate any code. 
 
 ## Features
 
@@ -22,11 +22,13 @@ It's still in early stage, essential features are implemented.
 * Request history
 * Request collections
 * Environments
+* Mock server
 * Request examples
 * Response preview for supported media types (Images, Audio, Video, Pdfs etc)
 * Import & Export
 * Linux & Mac Os supported, Windows support in progress
 * Web client is also present, can be self hosted
+
 
 ## Screenshots
 
@@ -53,6 +55,45 @@ It's still in early stage, essential features are implemented.
 <figure>
   <figcaption align="center"><h3>Response Example</h3></figcaption>
   <img src="docs/screens/response_example.png"  alt="response example" />
+</figure>
+
+### Mock Server
+
+For every collection a `mock server` is automatically created. Any saved request examples
+under the collection can be converted into `request mocks`. A `request mock` keeps details
+about how the incoming request should be handled by `mock server`. 
+
+On `request mock` you would typically define the `path` and `HTTP method` those are required.
+Optionally you can add `Http Headers` and `Body` that server will respond with. Additionally 
+you can also configure `status code` and `delay`. 
+
+<figure>
+  <img src="docs/screens/mock_server.png"  alt="mock servers" />
+</figure>
+
+You can toggle `mock server` on / off from mock servers sidebar. Once the server is up you can click `info` icon to 
+see the server information
+
+<figure>
+  <img src="docs/screens/mock_server_info.png"  alt="mock server information" />
+</figure>
+
+Notice the `Authentication Header`. It's basic form of protection added for your mock server so if you deploy it to web only you can call the mock server. Without a valid key server will response with 403 response.
+
+If you click three dots on `request mock` and hit `info` option you will see details of how you can call the mocked endpoint. 
+
+<figure>
+  <img src="docs/screens/how_to_call_mock.png"  alt="calling mock" />
+</figure>
+
+You can utilize `environments` for interpolating variables within response body and response headers for the `mock`. 
+
+<figure>
+  <img src="docs/screens/mock_variables.png"  alt="Mock environments" />
+</figure>
+
+<figure>
+  <img src="docs/screens/mock_server_response.png"  alt="mock server response" />
 </figure>
 
 ## Architecture 
@@ -134,7 +175,6 @@ This project is designed with a shared core + multiple clients architecture. The
 - [ ] Oauth 1.0 & 2.0 authorization support.
 - [ ] WSS, GRPC, SOAP support.
 - [ ] pre & post scripts.
-- [ ] Mock server
 - [ ] Git integration
 - [ ] Web Hooks testing & replayability
 - [ ] Ability to execute collections and add tests

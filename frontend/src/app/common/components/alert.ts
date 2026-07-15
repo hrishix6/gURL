@@ -1,8 +1,8 @@
 import { NgClass } from "@angular/common";
 import { Component, inject, input, type OnInit } from "@angular/core";
-import { Check, CircleX, LucideAngularModule } from "lucide-angular";
 import { AlertService } from "@/services";
 import type { Alert as AlertData } from "@/types";
+import { SystemIconComponent } from "./icon";
 
 @Component({
 	selector: "gurl-alert",
@@ -13,14 +13,23 @@ import type { Alert as AlertData } from "@/types";
           'alert-error': data().type === 'error',
 		  'alert-animated': !!data().selfDestruct
         }">
-          <lucide-angular [img]="data().type === 'success' ? CheckIcon : FailedIcon" class="size-5" />
+		  @switch (data().type) {
+			@case ("success") {
+				<i gurl-icon [icon]="'Success'" [className]="'size-5'" ></i>
+			}
+			@case ('error') {
+				<i gurl-icon [icon]="'Failed'" [className]="'size-5'" ></i>
+			}
+		  }
           <span>{{data().message}}</span>
         </div>
     `,
-	imports: [NgClass, LucideAngularModule],
+	imports: [NgClass, SystemIconComponent],
 })
 export class Alert implements OnInit {
-	data = input.required<AlertData>();
+	public data = input.required<AlertData>();
+
+	private readonly alertSvc = inject(AlertService);
 
 	ngOnInit(): void {
 		if (this.data().selfDestruct) {
@@ -29,7 +38,4 @@ export class Alert implements OnInit {
 			}, this.data().selfDestructTimeMS);
 		}
 	}
-	private readonly alertSvc = inject(AlertService);
-	protected readonly FailedIcon = CircleX;
-	protected readonly CheckIcon = Check;
 }

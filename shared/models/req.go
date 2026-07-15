@@ -21,11 +21,21 @@ type RequestCoreDTO struct {
 
 type RequestDraftDTO struct {
 	RequestCoreDTO
-	Id                 string `json:"id"`
-	ParentRequestId    string `json:"parentRequestId"`
-	ParentRequestName  string `json:"parentRequestName"`
-	ParentCollectionId string `json:"parentCollectionId"`
-	WorkspaceId        string `json:"workspace_id"`
+	Id                 string               `json:"id"`
+	ParentRequestId    string               `json:"parentRequestId"`
+	ParentRequestName  string               `json:"parentRequestName"`
+	ParentCollectionId string               `json:"parentCollectionId"`
+	WorkspaceId        string               `json:"workspace_id"`
+	CollectionInfo     *DraftCollectionInfo `json:"collectionInfo"`
+	RequestInfo        *DraftRequestInfo    `json:"requestInfo"`
+}
+
+type DraftCollectionInfo struct {
+	Name string `json:"name"`
+}
+
+type DraftRequestInfo struct {
+	Name string `json:"name"`
 }
 
 type RequestDTO struct {
@@ -80,4 +90,9 @@ type UpdateDraftFieldsDTO struct {
 
 type SaveRequestCopyDTO struct {
 	Name string `json:"name"`
+}
+
+type ReqQueryDTO struct {
+	WorkspaceId  string `json:"workspaceId"`
+	CollectionId string `json:"collectionId"`
 }

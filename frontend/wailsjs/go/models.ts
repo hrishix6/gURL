@@ -95,6 +95,8 @@ export namespace models {
 	export class CollectionDTO {
 	    id: string;
 	    name: string;
+	    mockServerEnabled: boolean;
+	    mockServerKey: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new CollectionDTO(source);
@@ -104,6 +106,20 @@ export namespace models {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
 	        this.name = source["name"];
+	        this.mockServerEnabled = source["mockServerEnabled"];
+	        this.mockServerKey = source["mockServerKey"];
+	    }
+	}
+	export class CollectionsQueryDTO {
+	    workspaceId: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new CollectionsQueryDTO(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.workspaceId = source["workspaceId"];
 	    }
 	}
 	export class CopyEnvironmentDTO {
@@ -134,6 +150,32 @@ export namespace models {
 	        this.workspaceId = source["workspaceId"];
 	    }
 	}
+	export class CreateMockDTO {
+	    id: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new CreateMockDTO(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	    }
+	}
+	export class CreateMockServerDTO {
+	    workspaceId: string;
+	    collectionId: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new CreateMockServerDTO(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.workspaceId = source["workspaceId"];
+	        this.collectionId = source["collectionId"];
+	    }
+	}
 	export class CreateWorkspaceDTO {
 	    id: string;
 	    name: string;
@@ -160,6 +202,30 @@ export namespace models {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.file_name = source["file_name"];
 	        this.file_mimetype = source["file_mimetype"];
+	    }
+	}
+	export class DraftCollectionInfo {
+	    name: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new DraftCollectionInfo(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	    }
+	}
+	export class DraftRequestInfo {
+	    name: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new DraftRequestInfo(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
 	    }
 	}
 	export class EnvironmentDTO {
@@ -196,6 +262,18 @@ export namespace models {
 	        this.dataJSON = source["dataJSON"];
 	        this.parentEnvId = source["parentEnvId"];
 	        this.parentEnvName = source["parentEnvName"];
+	    }
+	}
+	export class EnvsQueryDTO {
+	    workspaceId: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new EnvsQueryDTO(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.workspaceId = source["workspaceId"];
 	    }
 	}
 	export class FileStats {
@@ -471,6 +549,96 @@ export namespace models {
 		}
 	}
 	
+	export class MockDraftDTO {
+	    method: string;
+	    path: string;
+	    environmentId: string;
+	    status: number;
+	    delayS: number;
+	    headers: string;
+	    bodyType: string;
+	    text: string;
+	    binary: string;
+	    id: string;
+	    parentMockId: string;
+	    parentMockName: string;
+	    parentCollectionId: string;
+	    collectionInfo?: DraftCollectionInfo;
+	
+	    static createFrom(source: any = {}) {
+	        return new MockDraftDTO(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.method = source["method"];
+	        this.path = source["path"];
+	        this.environmentId = source["environmentId"];
+	        this.status = source["status"];
+	        this.delayS = source["delayS"];
+	        this.headers = source["headers"];
+	        this.bodyType = source["bodyType"];
+	        this.text = source["text"];
+	        this.binary = source["binary"];
+	        this.id = source["id"];
+	        this.parentMockId = source["parentMockId"];
+	        this.parentMockName = source["parentMockName"];
+	        this.parentCollectionId = source["parentCollectionId"];
+	        this.collectionInfo = this.convertValues(source["collectionInfo"], DraftCollectionInfo);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class MockLightDTO {
+	    id: string;
+	    name: string;
+	    path: string;
+	    method: string;
+	    collectionId: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new MockLightDTO(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.name = source["name"];
+	        this.path = source["path"];
+	        this.method = source["method"];
+	        this.collectionId = source["collectionId"];
+	    }
+	}
+	export class MockQueryDTO {
+	    workspaceId: string;
+	    collectionId: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new MockQueryDTO(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.workspaceId = source["workspaceId"];
+	        this.collectionId = source["collectionId"];
+	    }
+	}
 	export class ReqExampleDTO {
 	    url: string;
 	    method: string;
@@ -506,6 +674,8 @@ export namespace models {
 	    limitExceeded: boolean;
 	    responseTffbMs: number;
 	    responseDlMs: number;
+	    requestInfo?: DraftRequestInfo;
+	    collectionInfo?: DraftCollectionInfo;
 	
 	    static createFrom(source: any = {}) {
 	        return new ReqExampleDTO(source);
@@ -547,12 +717,35 @@ export namespace models {
 	        this.limitExceeded = source["limitExceeded"];
 	        this.responseTffbMs = source["responseTffbMs"];
 	        this.responseDlMs = source["responseDlMs"];
+	        this.requestInfo = this.convertValues(source["requestInfo"], DraftRequestInfo);
+	        this.collectionInfo = this.convertValues(source["collectionInfo"], DraftCollectionInfo);
 	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
 	}
 	export class ReqExampleLightDTO {
 	    id: string;
 	    requestId: string;
+	    method: string;
 	    name: string;
+	    collectionId: string;
+	    url: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new ReqExampleLightDTO(source);
@@ -562,7 +755,38 @@ export namespace models {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
 	        this.requestId = source["requestId"];
+	        this.method = source["method"];
 	        this.name = source["name"];
+	        this.collectionId = source["collectionId"];
+	        this.url = source["url"];
+	    }
+	}
+	export class ReqExampleQueryDTO {
+	    workspaceId: string;
+	    collectionId: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ReqExampleQueryDTO(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.workspaceId = source["workspaceId"];
+	        this.collectionId = source["collectionId"];
+	    }
+	}
+	export class ReqQueryDTO {
+	    workspaceId: string;
+	    collectionId: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ReqQueryDTO(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.workspaceId = source["workspaceId"];
+	        this.collectionId = source["collectionId"];
 	    }
 	}
 	export class RequestDraftDTO {
@@ -587,6 +811,8 @@ export namespace models {
 	    parentRequestName: string;
 	    parentCollectionId: string;
 	    workspace_id: string;
+	    collectionInfo?: DraftCollectionInfo;
+	    requestInfo?: DraftRequestInfo;
 	
 	    static createFrom(source: any = {}) {
 	        return new RequestDraftDTO(source);
@@ -615,7 +841,27 @@ export namespace models {
 	        this.parentRequestName = source["parentRequestName"];
 	        this.parentCollectionId = source["parentCollectionId"];
 	        this.workspace_id = source["workspace_id"];
+	        this.collectionInfo = this.convertValues(source["collectionInfo"], DraftCollectionInfo);
+	        this.requestInfo = this.convertValues(source["requestInfo"], DraftRequestInfo);
 	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
 	}
 	export class RequestLightDTO {
 	    id: string;
@@ -667,6 +913,24 @@ export namespace models {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.envId = source["envId"];
+	        this.name = source["name"];
+	        this.workspaceId = source["workspaceId"];
+	    }
+	}
+	export class SaveMockDraftAsMock {
+	    mockId: string;
+	    collectionId: string;
+	    name: string;
+	    workspaceId: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new SaveMockDraftAsMock(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.mockId = source["mockId"];
+	        this.collectionId = source["collectionId"];
 	        this.name = source["name"];
 	        this.workspaceId = source["workspaceId"];
 	    }
@@ -780,6 +1044,36 @@ export namespace models {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.dataJSON = source["dataJSON"];
+	    }
+	}
+	export class UpdateMockDraftFields {
+	    method?: string;
+	    path?: string;
+	    headersJson?: string;
+	    cookiesJson?: string;
+	    bodyType?: string;
+	    text?: string;
+	    binaryJson?: string;
+	    status?: number;
+	    delayS?: number;
+	    environmentId?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new UpdateMockDraftFields(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.method = source["method"];
+	        this.path = source["path"];
+	        this.headersJson = source["headersJson"];
+	        this.cookiesJson = source["cookiesJson"];
+	        this.bodyType = source["bodyType"];
+	        this.text = source["text"];
+	        this.binaryJson = source["binaryJson"];
+	        this.status = source["status"];
+	        this.delayS = source["delayS"];
+	        this.environmentId = source["environmentId"];
 	    }
 	}
 	export class UpdateUIStateDTO {

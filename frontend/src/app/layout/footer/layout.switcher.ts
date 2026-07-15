@@ -1,22 +1,27 @@
 import { NgClass } from "@angular/common";
-import { Component, computed, inject } from "@angular/core";
-import {
-	Check,
-	Columns2,
-	LucideAngularModule,
-	MonitorSmartphone,
-	Rows2,
-} from "lucide-angular";
+import { Component, inject } from "@angular/core";
+import { SystemIconComponent } from "@/common/components/icon";
+import { TooltipDirective } from "@/common/components/tooltip";
 import { SUPPORTED_LAYOUTS } from "@/constants";
 import { AppService } from "@/services";
-import { FormLayout } from "@/types";
+import type { FormLayout } from "@/types";
 
 @Component({
 	selector: "div[gurl-layout-switcher]",
 	template: `
       <div class="dropdown dropdown-top dropdown-end">
-        <div tabindex="0" role="button" class="btn btn-square btn-sm">
-             <lucide-angular [img]="layoutSwithcerIcon()" class="size-5"/>
+        <div tabindex="0" role="button" class="btn btn-square btn-sm" gurlTooltip [tooltip]="'Layout'">
+             @switch (appSvc.formLayout()) {
+				@case("r") {
+					 <i gurl-icon [icon]="'ResponsiveLayout'" [className]="'size-5'" ></i>
+				}
+				@case("h") {
+					 <i gurl-icon [icon]="'HorizontalLayout'" [className]="'size-5'" ></i>
+				}
+				@case("v"){
+					 <i gurl-icon [icon]="'VerticleLayout'" [className]="'size-5'" ></i>
+				}
+			 }
         </div>
         <ul
           tabindex="-1"
@@ -31,7 +36,7 @@ import { FormLayout } from "@/types";
                 >
                 {{layout.displayName}}
                 @if(layout.id == appSvc.formLayout()) {
-                    <lucide-angular [img]="CheckedIcon" class="size-4  ml-auto" />
+                   <i gurl-icon [icon]="'Tick'" [className]="'size-4 ml-auto'" ></i>
                  }
                 </button>
             </li>
@@ -39,10 +44,9 @@ import { FormLayout } from "@/types";
         </ul>
       </div>
   `,
-	imports: [LucideAngularModule, NgClass],
+	imports: [NgClass, SystemIconComponent, TooltipDirective],
 })
 export class GurlLayoutSwitcher {
-	protected readonly CheckedIcon = Check;
 	protected readonly layouts = SUPPORTED_LAYOUTS;
 	protected readonly appSvc = inject(AppService);
 
@@ -51,15 +55,4 @@ export class GurlLayoutSwitcher {
 		const target = document.activeElement as HTMLButtonElement;
 		target.blur();
 	}
-
-	protected layoutSwithcerIcon = computed(() => {
-		switch (this.appSvc.formLayout()) {
-			case FormLayout.Horizontal:
-				return Rows2;
-			case FormLayout.Vertical:
-				return Columns2;
-			case FormLayout.Responsive:
-				return MonitorSmartphone;
-		}
-	});
 }

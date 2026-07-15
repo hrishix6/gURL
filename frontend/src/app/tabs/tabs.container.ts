@@ -5,8 +5,9 @@ import {
 	inject,
 	viewChild,
 } from "@angular/core";
-import { LucideAngularModule, Plus } from "lucide-angular";
+import { SystemIconComponent } from "@/common/components/icon";
 import { EnvironmentTab } from "@/environments/environment.tab";
+import { MockTab } from "@/mocks/mock.tab";
 import { AppService, TabsService } from "@/services";
 import { RequestTab } from "../request/req.tab";
 import { TabHeader } from "./tab.header";
@@ -17,7 +18,7 @@ import { TabHeader } from "./tab.header";
     <div class="flex items-center py-1 px-2 border-b-2 border-base-100">
       <!-- Button to add  new tab -->
       <button class="btn btn-square btn-ghost mr-1" (click)="tabsSvc.createFreshTab()">
-        <lucide-angular [img]="PlusIcon" class="size-4" />
+        <i gurl-icon [icon]="'Plus'" [className]="'size-4'" ></i>
       </button>
       <!-- Tabs -->
       <div
@@ -51,15 +52,28 @@ import { TabHeader } from "./tab.header";
         >
         </gurl-env-tab>
       }
+
+      @if(tab.entityType === 'mock') {
+        <gurl-mock-tab
+        [tab]="tab"
+        [activeId]="tabsSvc.activeTab()"
+        >
+        </gurl-mock-tab>
+      }
     } 
   `,
-	imports: [LucideAngularModule, TabHeader, RequestTab, EnvironmentTab],
+	imports: [
+		TabHeader,
+		RequestTab,
+		EnvironmentTab,
+		SystemIconComponent,
+		MockTab,
+	],
 })
 export class TabsContainer {
 	@HostBinding("class")
 	def = "flex-1 flex flex-col overflow-hidden";
 
-	protected readonly PlusIcon = Plus;
 	protected readonly tabsSvc = inject(TabsService);
 	protected readonly appSvc = inject(AppService);
 

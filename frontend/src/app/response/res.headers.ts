@@ -1,5 +1,5 @@
-import { Component, HostBinding, inject } from "@angular/core";
-import { Ban, LucideAngularModule } from "lucide-angular";
+import { Component, inject } from "@angular/core";
+import { SystemIconComponent } from "@/common/components/icon";
 import { FormService } from "@/services";
 
 @Component({
@@ -79,16 +79,12 @@ import { FormService } from "@/services";
     }
     @else {
         <div class="flex-1 flex items-center justify-center opacity-10">
-            <lucide-angular [img]="NoneIcon" class="size-16 -z-10" />
+            <i gurl-icon [icon]="'Empty'" [className]="'size-16 -z-10'" ></i>
         </div>
     }
     `,
-	imports: [LucideAngularModule],
+	imports: [SystemIconComponent],
 })
 export class ResHeaders {
-	@HostBinding("class")
-	def = "flex-1 flex overflow-hidden relative py-1";
-
-	protected readonly NoneIcon = Ban;
 	protected readonly formSvc = inject(FormService);
 }

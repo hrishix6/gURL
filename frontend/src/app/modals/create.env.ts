@@ -8,8 +8,8 @@ import {
 	signal,
 	viewChild,
 } from "@angular/core";
-import { FileDown, LucideAngularModule, Plus, X } from "lucide-angular";
 import { getAppConfig } from "@/app.config";
+import { SystemIconComponent } from "@/common/components/icon";
 import { AlertService } from "@/services";
 
 @Component({
@@ -20,19 +20,19 @@ import { AlertService } from "@/services";
         <div class="flex justify-between">  
              <h3 class="text-lg font-bold">New Environment</h3>
              <button class="btn btn-sm btn-square btn-ghost" (click)="handleCacnel()">
-                <lucide-angular [img]="CancelIcon" class="size-4" />
+                <i gurl-icon [icon]="'Cancel'" [className]="'size-4'" ></i>
              </button>
         </div>
         <div class="flex gap-4 justify-center mt-4">
           <button class="btn btn-soft btn-primary xl:btn-lg" (click)="handleEmpty()">
-            <lucide-angular [img]="CreateIcon" class="size-6" />
+            <i gurl-icon [icon]="'Plus'" [className]="'size-6'" ></i>
             <span>New</span>
           </button>
 		    @if(mode === "web") {
               <input type="file" accept=".json" class="hidden" #webFileInp (input)="handleWebEnvImport($event)"   />
           }
           <button class="btn btn-soft btn-primary xl:btn-lg" (click)="handleImport()">
-            <lucide-angular [img]="ImportIcon" class="size-6" />
+            <i gurl-icon [icon]="'Import'" [className]="'size-6'" ></i>
             <span>Import</span>
           </button>
         </div>
@@ -42,7 +42,7 @@ import { AlertService } from "@/services";
       <button (click)="handleCacnel()">close</button>
     </div>
   `,
-	imports: [LucideAngularModule],
+	imports: [SystemIconComponent],
 })
 export class CreateEnvironmentModal {
 	@HostBinding("class")
@@ -63,10 +63,6 @@ export class CreateEnvironmentModal {
 	protected readonly mode = getAppConfig().mode;
 
 	private readonly alertSvc = inject(AlertService);
-	protected readonly ImportIcon = FileDown;
-	protected readonly CancelIcon = X;
-	protected readonly CreateIcon = Plus;
-
 	protected error = signal<boolean>(false);
 
 	protected async handleWebEnvImport(e: Event) {

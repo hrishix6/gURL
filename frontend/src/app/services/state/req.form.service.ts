@@ -8,6 +8,7 @@ import {
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import type { models } from "@wailsjs/go/models";
 import { nanoid } from "nanoid";
+import { Subject } from "rxjs";
 import { extractTokens } from "@/common/utils/tokens";
 import {
 	COOKIE_PLACEHOLDER,
@@ -30,7 +31,9 @@ import {
 } from "@/services";
 import {
 	AppTabType,
+	type CrumbInfo,
 	type DraftParentMetadata,
+	type FetchState,
 	type InputToken,
 	type MultipartItem,
 	type ReqBodyType,
@@ -56,6 +59,20 @@ export class FormService {
 	private fileRepo = getFileRepository();
 	public tabType = computed(() => this._tabType());
 	private destroyRef = inject(DestroyRef);
+	public formatResponseText$ = new Subject<void>();
+
+	public headersSyncNotifier$ = new Subject<models.GurlKeyValItem[]>();
+
+	public notifyHeaderSync = (v: models.GurlKeyValItem[]) => {
+		this.headersSyncNotifier$.next(v);
+	};
+
+	public cookiesSyncNotifier$ = new Subject<models.GurlKeyValItem[]>();
+	public notifyCookiesSync = (v: models.GurlKeyValItem[]) => {
+		this.cookiesSyncNotifier$.next(v);
+	};
+
+	private _crumbInfo = signal<CrumbInfo>({ entityName: "New Request" });
 
 	private _parentMeta = signal<DraftParentMetadata>({
 		parentCollectionId: "",
@@ -68,10 +85,17 @@ export class FormService {
 	private _appSvc = inject(AppService);
 	private _alertSvc = inject(AlertService);
 	public auth = new AuthService(this.destroyRef);
-	public headerSvc = new HeadersService(this.destroyRef);
-	public cookieSvc = new CookieService(this.destroyRef);
+
+	public headerSvc = new HeadersService(this.destroyRef, this.notifyHeaderSync);
+	public cookieSvc = new CookieService(this.destroyRef, this.notifyCookiesSync);
 	public bodySvc = new BodyService(this.destroyRef);
 	public urlSvc = new UrlService(this.destroyRef);
+	public fetchState = signal<FetchState>({
+		loaded: false,
+		attempts: 0,
+		error: false,
+		loading: false,
+	});
 
 	public saveDraftModalTitle = computed(() => {
 		const { parentRequestId, parentRequestName } = this.draftParentData();
@@ -93,18 +117,88 @@ export class FormService {
 		return "Your changes to the request will be lost, save these changes to avoid losing work.";
 	});
 
+	public resolveEnvVariable = (key: string) => {
+		return this._appSvc.resolveVar(key);
+	};
+
 	constructor() {
 		//tab refresh notification
-		this._tabSvc.refreshNotifier
+		this._tabSvc.requestDeleteNotifier
 			.pipe(takeUntilDestroyed(this.destroyRef))
 			.subscribe({
-				next: (v) => {
-					if (v === AppTabType.Req) {
-						console.log(`received signal to refresh self`);
-						this.initializeReqForm(this._requestTabId, this._requestId);
+				next: (deletedReqId) => {
+					const { parentRequestId } = this._parentMeta();
+					if (deletedReqId === parentRequestId) {
+						if (this.tabType() === AppTabType.Req) {
+							console.log(`parent request was deleted, refreshing draft`);
+							this.fetchdraftData(this._requestId, this.tabType()).then(() => {
+								const activeTab = this._tabSvc.activeTab();
+								if (activeTab === this._requestTabId) {
+									const v = this._crumbInfo();
+
+									if (v) {
+										console.log(
+											`this draft is active, setting updated crumbinfo`,
+										);
+										this._tabSvc.setCrumbs(v, this.tabType());
+									}
+								}
+							});
+						}
 					}
 				},
 			});
+
+		this._tabSvc.clearCollectionNotifier
+			.pipe(takeUntilDestroyed(this.destroyRef))
+			.subscribe({
+				next: (clearedCollectionId) => {
+					if (this.tabType() === AppTabType.Req) {
+						const { parentCollectionId } = this._parentMeta();
+						if (clearedCollectionId === parentCollectionId) {
+							console.log(`parent collection was cleared, refreshing draft`);
+							this.fetchdraftData(this._requestId, AppTabType.Req).then(() => {
+								const activeTab = this._tabSvc.activeTab();
+								if (activeTab === this._requestTabId) {
+									const v = this._crumbInfo();
+									if (v) {
+										console.log(
+											`this draft is active, setting updated crumbinfo`,
+										);
+										this._tabSvc.setCrumbs(v, this.tabType());
+									}
+								}
+							});
+						}
+					}
+				},
+			});
+
+		this._tabSvc.collectionDeleteNotifier
+			.pipe(takeUntilDestroyed(this.destroyRef))
+			.subscribe({
+				next: (deletedCollectionId) => {
+					if (this.tabType() === AppTabType.Req) {
+						const { parentCollectionId } = this._parentMeta();
+						if (deletedCollectionId === parentCollectionId) {
+							console.log(`parent collection was deleted, refreshing draft`);
+							this.fetchdraftData(this._requestId, AppTabType.Req).then(() => {
+								const activeTab = this._tabSvc.activeTab();
+								if (activeTab === this._requestTabId) {
+									const v = this._crumbInfo();
+									if (v) {
+										console.log(
+											`this draft is active, setting updated crumbinfo`,
+										);
+										this._tabSvc.setCrumbs(v, this.tabType());
+									}
+								}
+							});
+						}
+					}
+				},
+			});
+
 		this._tabSvc.closeReqTabEvent$
 			.pipe(takeUntilDestroyed(this.destroyRef))
 			.subscribe({
@@ -157,6 +251,58 @@ export class FormService {
 					}
 				},
 			});
+
+		this._tabSvc.activeTabChanges$
+			.pipe(takeUntilDestroyed(this.destroyRef))
+			.subscribe((v) => {
+				if (this._requestTabId === v) {
+					const { attempts } = this.fetchState();
+					if (!attempts) {
+						console.log(`fetching data for Tab ${v} from constructor`);
+						this.fetchdraftData(this._requestId, this.tabType()).then(() => {
+							const c = this._crumbInfo();
+							if (c) {
+								console.log(`this draft is active, setting updated crumbinfo`);
+								this._tabSvc.setCrumbs(c, this.tabType());
+							}
+						});
+					} else {
+						console.log(`data for tab ${v} is already loaded`);
+						const c = this._crumbInfo();
+						if (c) {
+							this._tabSvc.setCrumbs(c, this.tabType());
+						}
+					}
+				}
+			});
+
+		//headers
+		this.headersSyncNotifier$
+			.pipe(takeUntilDestroyed(this.destroyRef))
+			.subscribe({
+				next: (v) => {
+					this.reqRepository
+						.updatereqDraftFields(this._requestId, {
+							headersJson: JSON.stringify(v),
+						})
+						.then(() => {
+							console.log(`[${this._requestId}] headers updated in SQlite`);
+						});
+				},
+			});
+
+		//cookies
+		this.cookiesSyncNotifier$.subscribe({
+			next: (v) => {
+				this.reqRepository
+					.updatereqDraftFields(this._requestId, {
+						cookiesJson: JSON.stringify(v),
+					})
+					.then(() => {
+						console.log(`[${this._requestId}] cookies updated in SQlite`);
+					});
+			},
+		});
 	}
 
 	//#region request-ops
@@ -194,16 +340,21 @@ export class FormService {
 				requestId = nanoid();
 			}
 
-			await this.reqRepository.saveDraftAsRequest(this._requestId, {
-				collectionId: collectionId,
-				name,
-				requestId,
-				workspaceId: this._appSvc.activeWorkSpace().id,
-			});
+			const updatedDraft = await this.reqRepository.saveDraftAsRequest(
+				this._requestId,
+				{
+					collectionId: collectionId,
+					name,
+					requestId,
+					workspaceId: this._appSvc.activeWorkSpace().id,
+				},
+			);
+
+			if (!updatedDraft) {
+				throw new Error("failed to save");
+			}
 
 			this._alertSvc.addAlert(`Request "${name}" saved`, "success");
-
-			await this._appSvc.initializeSavedRequests();
 
 			this._parentMeta.set({
 				parentRequestId: requestId,
@@ -212,8 +363,18 @@ export class FormService {
 			});
 
 			this._tabSvc.updateActiveTab("name", name);
+
 			this._tabSvc.updateModifiedStatus(false);
-			this._appSvc.refreshBreadcrumb$.next();
+
+			this._crumbInfo.set({
+				collection: updatedDraft.collectionInfo?.name,
+				request: updatedDraft.requestInfo?.name,
+				entityName: name,
+			});
+
+			this._tabSvc.setCrumbs(this._crumbInfo(), AppTabType.Req);
+
+			await this._appSvc.fetchUpdatedReq(requestId);
 		} catch (error) {
 			console.error(error);
 			this._alertSvc.addAlert(`Failed to save request`, "error");
@@ -223,7 +384,7 @@ export class FormService {
 	}
 
 	public async copyRequest() {
-		const newDraft: models.RequestDraftDTO = {
+		const newDraft: Partial<models.RequestDraftDTO> = {
 			id: nanoid(),
 			bodyType: this.bodySvc.bodyType().id,
 			url: this.urlSvc.url(),
@@ -263,7 +424,7 @@ export class FormService {
 			parentRequestName: "",
 			workspace_id: this._appSvc.activeWorkSpace().id,
 		};
-		await this._tabSvc.createDuplicateTab(newDraft);
+		await this._tabSvc.createDuplicateTab(newDraft as models.RequestDraftDTO);
 	}
 
 	//#endregion request-ops
@@ -476,6 +637,11 @@ export class FormService {
 	//#endregion proxy-setters
 
 	//#region Request-Response
+
+	public reqFormExtractTokensCB = (v: string) => {
+		return this.extractTokens(v);
+	};
+
 	public extractTokens(v: string): InputToken[] {
 		const tokens = extractTokens(v);
 		for (const token of tokens) {
@@ -581,27 +747,64 @@ export class FormService {
 		id: string,
 		reqTabType: AppTabType = AppTabType.Req,
 	) {
+		this._tabType.set(reqTabType);
+		this._requestTabId = tabId;
+		this._requestId = id;
+
+		if (this._tabSvc.activeTab() !== tabId) {
+			console.log(
+				`not fetching data for Tab ${tabId} for entity of type ${reqTabType} with id ${id} as it's not active`,
+			);
+			return;
+		}
+
+		console.log(
+			`fetching data for Tab ${tabId} for entity of type ${reqTabType} with id ${id} from initFn`,
+		);
+
+		await this.fetchdraftData(id, reqTabType);
+
+		const crumbInfo = this._crumbInfo();
+
+		if (crumbInfo) {
+			this._tabSvc.setCrumbs(crumbInfo, reqTabType);
+		}
+	}
+
+	private async fetchdraftData(
+		id: string,
+		reqTabType: AppTabType = AppTabType.Req,
+	) {
 		try {
-			this._tabType.set(reqTabType);
-			this._requestTabId = tabId;
+			this.fetchState.update((prev) => ({
+				...prev,
+				error: false,
+				loaded: false,
+				loading: true,
+			}));
+
 			if (reqTabType === AppTabType.ReqExample) {
 				const dbExample = await this.reqRepository.getReqExampleById(id);
 				if (!dbExample) {
 					throw new Error(`Example with id ${id} not found in db`);
 				}
-				this._requestId = dbExample.id;
 				this._parentMeta.set({
 					parentCollectionId: dbExample.collectionId,
 					parentRequestId: dbExample.requestId,
 					parentRequestName: dbExample.name,
 				});
 				await this.populateRequestExampleState(dbExample);
+
+				this._crumbInfo.set({
+					collection: dbExample.collectionInfo?.name,
+					entityName: dbExample.name,
+					request: dbExample.requestInfo?.name,
+				});
 			} else {
 				const dbRequest = await this.reqRepository.findDraftById(id);
 				if (!dbRequest) {
 					throw new Error(`Draft with id ${id} not found in db`);
 				}
-				this._requestId = dbRequest.id;
 				this._parentMeta.set({
 					parentCollectionId: dbRequest.parentCollectionId,
 					parentRequestId: dbRequest.parentRequestId,
@@ -609,14 +812,36 @@ export class FormService {
 				});
 
 				this.populateInitialState(dbRequest);
+
+				const activeTab = this._tabSvc.getTabById(this._requestTabId);
+
+				this._crumbInfo.set({
+					collection: dbRequest.collectionInfo?.name,
+					entityName: activeTab?.name || "New Request",
+					request: dbRequest.requestInfo?.name,
+				});
 			}
+
+			this.fetchState.update((prev) => ({
+				...prev,
+				loaded: true,
+			}));
 		} catch (error) {
 			console.error(error);
 			this._alertSvc.addAlert(
 				`Failed to load request ${this._tabType() === AppTabType.ReqExample ? "example" : ""} tab`,
 				"error",
 			);
-			this._tabSvc.deleteTab(this._requestTabId, reqTabType);
+			this.fetchState.update((prev) => ({
+				...prev,
+				error: true,
+			}));
+		} finally {
+			this.fetchState.update((prev) => ({
+				...prev,
+				attempts: prev.attempts + 1,
+				loading: false,
+			}));
 		}
 	}
 
@@ -657,73 +882,6 @@ export class FormService {
 		return o;
 	}
 
-	public interpolatedPayload(payload: models.GurlReq): models.GurlReq {
-		const o: Partial<models.GurlReq> = {
-			...payload,
-			headers: payload.headers.map((h) => {
-				return {
-					...h,
-					key: this.interPolateTokens(h.key),
-					val: this.interPolateTokens(h.val),
-				};
-			}),
-			query: payload.query.map((q) => {
-				return {
-					...q,
-					key: this.interPolateTokens(q.key),
-					val: this.interPolateTokens(q.val),
-				};
-			}),
-			cookies: payload.cookies.map((c) => {
-				return {
-					...c,
-					key: this.interPolateTokens(c.key),
-					val: this.interPolateTokens(c.val),
-				};
-			}),
-			urlencoded: payload.urlencoded.map((u) => {
-				return {
-					...u,
-					key: this.interPolateTokens(u.key),
-					val: this.interPolateTokens(u.val),
-				};
-			}),
-			multipart: payload.multipart.map((m) => {
-				return {
-					...m,
-					key: this.interPolateTokens(m.key),
-					value: this.interPolateTokens(m.value),
-				};
-			}),
-			url: this.interPolateTokens(this.interPolateTokens(payload.url)), //twice first pass for interpolating path params, 2nd pass for interpolating env (this is in case user has set path param value to {{var}})
-		};
-
-		const { apiKeyAuth, authEnabled, authType, basicAuth, tokenAuth } =
-			payload.auth;
-
-		const substitutedAuth: Partial<models.GurlAuth> = {
-			authEnabled,
-			authType,
-			apiKeyAuth: {
-				...apiKeyAuth,
-				key: this.interPolateTokens(apiKeyAuth.key),
-				value: this.interPolateTokens(apiKeyAuth.value),
-			},
-			basicAuth: {
-				...basicAuth,
-				username: this.interPolateTokens(basicAuth.username),
-				password: this.interPolateTokens(basicAuth.password),
-			},
-			tokenAuth: {
-				...tokenAuth,
-				token: this.interPolateTokens(tokenAuth.token),
-			},
-		};
-
-		o.auth = substitutedAuth as models.GurlAuth;
-		return o as models.GurlReq;
-	}
-
 	public async send() {
 		if (this.urlSvc.url() === "") {
 			return;
@@ -732,7 +890,7 @@ export class FormService {
 		try {
 			this._reqStatus.set("progress");
 			this._res.set(null);
-			const payload: Partial<models.GurlReq> = {
+			const substitudedPayload: Partial<models.GurlReq> = {
 				id: this._requestId,
 				url: this.urlSvc.url(),
 				method: this.urlSvc.method().id,
@@ -747,13 +905,16 @@ export class FormService {
 				auth: this.auth.requestAuthData(),
 			};
 
-			const substitudedPayload = this.interpolatedPayload(
-				payload as models.GurlReq,
-			);
+			substitudedPayload.url = this.interPolateTokens(substitudedPayload.url!);
 
 			console.dir(substitudedPayload);
 
-			const res = await this.httpExecutor.sendHttpReq(substitudedPayload);
+			const activeEnvId = this._appSvc.activeEnvironment();
+
+			const res = await this.httpExecutor.sendHttpReq(
+				substitudedPayload as models.GurlReq,
+				activeEnvId,
+			);
 
 			console.dir(res);
 
@@ -804,7 +965,7 @@ export class FormService {
 			if (!b) {
 				return;
 			}
-			await this.fileRepo.saveFile({
+			await this.fileRepo.downloadResponseFile({
 				file_mimetype: b.detectedMimeType,
 				file_name: b.filename,
 			});
@@ -878,49 +1039,43 @@ export class FormService {
 				limitExceeded,
 			} = res;
 
-			const dto: models.ReqExampleDTO = {
-				id: nanoid(),
-				url: this.interPolateTokens(this.interPolateTokens(this.urlSvc.url())),
-				path: "",
-				query: JSON.stringify(
-					this.urlSvc.queryParamsForExample().map((q) => {
-						return {
-							...q,
-							key: this.interPolateTokens(q.key),
-							val: this.interPolateTokens(q.val),
-						};
-					}),
-				),
-				headers: JSON.stringify(
-					this.headerSvc.headersForExample().map((h) => {
-						return {
-							...h,
-							key: this.interPolateTokens(h.key),
-							val: this.interPolateTokens(h.val),
-						};
-					}),
-				),
-				cookies: JSON.stringify(
-					this.cookieSvc.cookiesForExample().map((c) => {
-						return {
-							...c,
-							key: this.interPolateTokens(c.key),
-							val: this.interPolateTokens(c.val),
-						};
-					}),
-				),
+			const payload: Partial<models.GurlReq> = {
+				id: this._requestId,
+				url: this.urlSvc.url(),
+				method: this.urlSvc.method().id,
+				query: this.urlSvc.queryParamsForExample(),
+				headers: this.headerSvc.headersForExample(),
+				cookies: this.cookieSvc.cookiesForExample(),
+				bodyType: this.bodySvc.bodyType().id,
+				binary: this.bodySvc.requestBinaryData(),
+				multipart: [],
+				plaintext: this.bodySvc.textBody(),
+				urlencoded: this.bodySvc.urlEncodedParamsForExample(),
+				auth: this.auth.requestAuthData(),
+			};
 
+			payload.url = this.interPolateTokens(payload.url || "");
+
+			const activeEnv = this._appSvc.activeEnvironment();
+			const substitutedPayload = await this.httpExecutor.getInterpolatedReq(
+				payload as models.GurlReq,
+				activeEnv,
+			);
+
+			const dto: Partial<models.ReqExampleDTO> = {
+				id: nanoid(),
+				url: substitutedPayload.url,
+				path: "",
+				query: JSON.stringify(substitutedPayload.query),
+				headers: JSON.stringify(substitutedPayload.headers),
+				cookies: JSON.stringify(substitutedPayload.cookies),
 				bodyType: this.bodySvc.bodyType().id,
 				uploadSize,
-				urlencoded: JSON.stringify(
-					this.bodySvc.urlEncodedParamsForExample().map((u) => {
-						return {
-							...u,
-							key: this.interPolateTokens(u.key),
-							val: this.interPolateTokens(u.val),
-						};
-					}),
-				),
+				urlencoded: JSON.stringify(substitutedPayload.urlencoded),
+				binary: this.bodySvc.binaryBody()
+					? JSON.stringify(this.bodySvc.binaryBody())
+					: "",
+				text: substitutedPayload.plaintext,
 
 				multipart: JSON.stringify(
 					this.bodySvc.multipartFormForExample().map((m) => {
@@ -934,29 +1089,12 @@ export class FormService {
 						};
 					}),
 				),
-
-				binary: this.bodySvc.binaryBody()
-					? JSON.stringify(this.bodySvc.binaryBody())
-					: "",
-
-				text: this.bodySvc.textBody(),
-				authEnabled: this.auth.authEnabled(),
-				authType: this.auth.activeAuth().id,
-				apiKeyAuth: JSON.stringify({
-					...this.auth.apiKey(),
-					key: this.interPolateTokens(this.auth.apiKey().key),
-					value: this.interPolateTokens(this.auth.apiKey().value),
-				}),
-				basicAuth: JSON.stringify({
-					...this.auth.basicAuth(),
-					username: this.interPolateTokens(this.auth.basicAuth().username),
-					password: this.interPolateTokens(this.auth.basicAuth().password),
-				}),
-				tokenAuth: JSON.stringify({
-					...this.auth.tokenAuth(),
-					token: this.interPolateTokens(this.auth.tokenAuth().token),
-				}),
-				method: this.urlSvc.method().id,
+				authEnabled: substitutedPayload.auth.authEnabled,
+				authType: substitutedPayload.auth.authType,
+				apiKeyAuth: JSON.stringify(substitutedPayload.auth.apiKeyAuth),
+				basicAuth: JSON.stringify(substitutedPayload.auth.basicAuth),
+				tokenAuth: JSON.stringify(substitutedPayload.auth.tokenAuth),
+				method: substitutedPayload.method,
 				name,
 				requestId: parentRequestId,
 				collectionId: parentCollectionId,
@@ -984,10 +1122,8 @@ export class FormService {
 				src: "",
 			};
 			console.dir(meta);
-			await this.reqRepository.addReqExample(dto, meta);
-
+			await this._appSvc.addReqExample(dto as models.ReqExampleDTO, meta);
 			this._alertSvc.addAlert(`Example saved`, "success");
-			this._appSvc.refreshSavedExamples$.next();
 		} catch (error) {
 			console.error(error);
 			this._alertSvc.addAlert(`Failed to save example`, "error");

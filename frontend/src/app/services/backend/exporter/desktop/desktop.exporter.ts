@@ -25,7 +25,7 @@ export class DesktopExporter implements Exporter {
 	exportEnvironment(id: string): Promise<void> {
 		return ExportEnvironment(id);
 	}
-	importCollection(workspaceId: string): Promise<void> {
+	importCollection(workspaceId: string): Promise<string> {
 		return ImportCollection(workspaceId);
 	}
 	importEnvironment(workspaceId: string): Promise<void> {

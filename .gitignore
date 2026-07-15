@@ -12,3 +12,4 @@ appData/
 !wailsjs/go/
 runtime/
 nginx/
+*.drawio

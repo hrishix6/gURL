@@ -6,6 +6,7 @@ import { CreateEnvironmentModal } from "./create.env";
 import { CreateRequestModal } from "./create.req";
 import { DeleteConfirmationModal } from "./delete.confirmation";
 import { InviteUsersDialogue } from "./invite.users";
+import { MockServerInfoModal } from "./mock.server.info";
 import { NewCollectionModal } from "./new.collection";
 import { DefaultWorkspaceModal } from "./new.workspace";
 import { RenameCollectionModal } from "./rename.collection";
@@ -164,6 +165,28 @@ import { RenameCollectionModal } from "./rename.collection";
           (onConfirm)="modalsSvc.handledeleteReqExample()"
         ></dialog>
       }
+
+      <!-- Mock modals -->
+    @if(modalsSvc.isDeleteMockModalOpen()) {
+        <dialog gurl-rm-confirmation-modal
+        [title]="modalsSvc.deleteMockModalTitle()"
+        [message]="modalsSvc.deleteMockModalMessage()"
+        [isOpen]="modalsSvc.isDeleteMockModalOpen()"
+        [actionInProgress]="modalsSvc.deleteMockInProgress()"
+        (onCancel)="modalsSvc.handleCloseDeleteMockModal()"
+        (onConfirm)="modalsSvc.handleDeleteMock()"
+        >
+        </dialog>
+    }
+
+    @if(modalsSvc.isMockInfoModalOpen()) {
+      <dialog gurl-mock-server-info-modal
+        [data]="modalsSvc.openMockServerInfo()"
+        [isOpen]="modalsSvc.isMockInfoModalOpen()"
+        (onCancel)="modalsSvc.handleCloseMockInfoModal()"
+        >
+        </dialog>
+    }
     </ng-content>`,
 	imports: [
 		CreateEnvironmentModal,
@@ -175,6 +198,7 @@ import { RenameCollectionModal } from "./rename.collection";
 		CopyRequestModal,
 		DefaultWorkspaceModal,
 		InviteUsersDialogue,
+		MockServerInfoModal,
 	],
 })
 export class GlobalModalsHost {

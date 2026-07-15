@@ -6,7 +6,7 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
-func (ex *DesktopExporter) ImportCollection(workspaceId string) error {
+func (ex *DesktopExporter) ImportCollection(workspaceId string) (string, error) {
 
 	//open save file dialogue and perform io.copy
 	dialogueOptions := runtime.OpenDialogOptions{
@@ -26,12 +26,10 @@ func (ex *DesktopExporter) ImportCollection(workspaceId string) error {
 	src, err := runtime.OpenFileDialog(ex.appCtx, dialogueOptions)
 
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	_, err = ex.internalImportor.HandleImportCollection(ex.appCtx, src, workspaceId)
-
-	return err
+	return ex.internalImportor.HandleImportCollection(ex.appCtx, src, workspaceId)
 }
 
 func (ex *DesktopExporter) ImportEnvironment(workspaceId string) error {

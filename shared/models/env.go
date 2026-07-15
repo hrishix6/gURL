@@ -45,3 +45,7 @@ type SaveEnvDraftAsEnvDTO struct {
 	Name        string `json:"name"`
 	WorkspaceId string `json:"workspaceId"`
 }
+
+type EnvsQueryDTO struct {
+	WorkspaceId string `json:"workspaceId"`
+}

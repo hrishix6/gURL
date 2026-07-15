@@ -45,7 +45,7 @@ export class WebExporter implements Exporter {
 		window.URL.revokeObjectURL(downloadURL);
 	}
 
-	async importCollection(workspaceId: string, file: File): Promise<void> {
+	async importCollection(workspaceId: string, file: File): Promise<string> {
 		const { path } = await this._fileRepo.chooseFile(file);
 
 		const payload: WebImportDTO = {
@@ -53,7 +53,16 @@ export class WebExporter implements Exporter {
 			workspace_id: workspaceId,
 		};
 
-		await this.restClient.post("import/collection", payload);
+		const imported = await this.restClient.post<string>(
+			"import/collection",
+			payload,
+		);
+
+		if (!imported.success) {
+			throw new Error("failed to import");
+		}
+
+		return imported.data;
 	}
 
 	async importEnvironment(workspaceId: string, file: File): Promise<void> {

@@ -9,7 +9,7 @@ import {
 	signal,
 	viewChild,
 } from "@angular/core";
-import { LucideAngularModule, X } from "lucide-angular";
+import { SystemIconComponent } from "@/common/components/icon";
 
 @Component({
 	selector: `dialog[gurl-new-collection-modal]`,
@@ -19,7 +19,7 @@ import { LucideAngularModule, X } from "lucide-angular";
          <div class="flex justify-between">  
              <h3 class="text-lg font-bold">New Empty Collection</h3>
              <button class="btn btn-sm btn-square btn-ghost" (click)="onClose()" [disabled]="actionInProgress()">
-                <lucide-angular [img]="CancelIcon" class="size-4" />
+                <i gurl-icon [icon]="'Cancel'" [className]="'size-4'" ></i>
              </button>
         </div>
         <div class="flex flex-col">
@@ -52,7 +52,7 @@ import { LucideAngularModule, X } from "lucide-angular";
       <button (click)="onClose()" [disabled]="actionInProgress()">close</button>
     </div>
   `,
-	imports: [NgClass, LucideAngularModule],
+	imports: [NgClass, SystemIconComponent],
 })
 export class NewCollectionModal implements AfterViewInit {
 	@HostBinding("class")
@@ -70,8 +70,6 @@ export class NewCollectionModal implements AfterViewInit {
 	ngAfterViewInit(): void {
 		this.firstInputEl()?.nativeElement.focus();
 	}
-
-	protected readonly CancelIcon = X;
 
 	private readonly firstInputEl =
 		viewChild.required<ElementRef<HTMLInputElement>>("firstInput");

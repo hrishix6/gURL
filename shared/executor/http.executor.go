@@ -33,6 +33,7 @@ func NewHttpExecutor(
 	tempResponsePrefix string,
 	savedResponsePrefix string,
 	maxResponseBytesLimit int64,
+	previewSrvAddr string,
 ) *HttpExecutor {
 	contextStore := NewGurlReqContextStore()
 
@@ -50,16 +51,11 @@ func NewHttpExecutor(
 		savedResDir:      savedResDir,
 		TEMP_RES_PREFIX:  tempResponsePrefix,
 		SAVED_RES_PREFIX: savedResponsePrefix,
+		previewSrvAddr:   previewSrvAddr,
 	}
 }
 
-func (e *HttpExecutor) SetPreviewSrvAddr(addr string) {
-	e.previewSrvAddr = addr
-
-	log.Printf("[HttpExecutor] Preview Server Addr: %s \n", e.previewSrvAddr)
-}
-
-func (e *HttpExecutor) SendHttpReq(ctx context.Context, r models.GurlReq) (*models.GurlRes, error) {
+func (e *HttpExecutor) SendHttpReq(ctx context.Context, r models.GurlReq, envData string) (*models.GurlRes, error) {
 
 	wrappedCtx, cancelFunc := context.WithCancel(ctx)
 
@@ -69,7 +65,13 @@ func (e *HttpExecutor) SendHttpReq(ctx context.Context, r models.GurlReq) (*mode
 
 	log.Printf("[HttpExecutor] added req %s to cancel store\n", r.Id)
 
-	req, err := e.httpTransformer.TransformToHttp(wrappedCtx, &r, e.httpAgent)
+	i, err := e.InterpolateReq(&r, envData)
+
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := e.httpTransformer.TransformToHttp(wrappedCtx, i, e.httpAgent)
 
 	if err != nil {
 		return nil, err
@@ -179,4 +181,8 @@ func (e *HttpExecutor) GetPreviewHandler() http.HandlerFunc {
 	})
 
 	return previewHandler
+}
+
+func (e *HttpExecutor) InterpolateReq(r *models.GurlReq, envData string) (*models.GurlReq, error) {
+	return transform.InterpolateReq(r, envData)
 }

@@ -4,12 +4,13 @@ import {
 	AddDraftFromRequest,
 	AddFreshDraft,
 	AddReqExample,
+	CreateMockFromExample,
 	DeleteReqExample,
-	DeleteRequestDrafts,
 	DeleteSavedReq,
 	FindDraftById,
 	GetReqExampleById,
 	GetReqExamples,
+	GetSavedRequestById,
 	GetSavedRequests,
 	RemoveDraft,
 	SaveDraftAsRequest,
@@ -29,6 +30,10 @@ export class DesktopReqRepository implements RequestRepository {
 		}
 
 		return DesktopReqRepository.desktopReqRepo;
+	}
+
+	getSavedReqById(id: string): Promise<models.RequestLightDTO | undefined> {
+		return GetSavedRequestById(id);
 	}
 
 	addDraft(arg1: models.RequestDraftDTO): Promise<void> {
@@ -52,9 +57,7 @@ export class DesktopReqRepository implements RequestRepository {
 	deleteReqExample(arg1: string): Promise<void> {
 		return DeleteReqExample(arg1);
 	}
-	deleteRequestDrafts(arg1: string): Promise<void> {
-		return DeleteRequestDrafts(arg1);
-	}
+
 	deleteSavedReq(arg1: string): Promise<void> {
 		return DeleteSavedReq(arg1);
 	}
@@ -66,23 +69,27 @@ export class DesktopReqRepository implements RequestRepository {
 		return GetReqExampleById(arg1);
 	}
 
-	getReqExamples(workspace: string): Promise<Array<models.ReqExampleLightDTO>> {
-		return GetReqExamples(workspace);
+	getReqExamples(
+		q: models.ReqExampleQueryDTO,
+	): Promise<Array<models.ReqExampleLightDTO>> {
+		return GetReqExamples(q);
 	}
-	getSavedRequests(workspace: string): Promise<Array<models.RequestLightDTO>> {
-		return GetSavedRequests(workspace);
+	getSavedRequests(
+		q: models.ReqQueryDTO,
+	): Promise<Array<models.RequestLightDTO>> {
+		return GetSavedRequests(q);
 	}
 
 	saveDraftAsRequest(
 		draftId: string,
 		arg1: models.SaveDraftAsReqDTO,
-	): Promise<void> {
+	): Promise<models.RequestDraftDTO> {
 		return SaveDraftAsRequest(draftId, arg1);
 	}
 	saveRequestCopy(
 		sourceId: string,
 		arg1: models.SaveRequestCopyDTO,
-	): Promise<void> {
+	): Promise<string> {
 		return SaveRequestCopy(sourceId, arg1);
 	}
 	updatereqDraftFields(
@@ -90,5 +97,12 @@ export class DesktopReqRepository implements RequestRepository {
 		arg: models.UpdateDraftFieldsDTO,
 	): Promise<void> {
 		return UpdateDraftFields(draftId, arg);
+	}
+
+	createMockFromExample(
+		exampleId: string,
+		dto: models.CreateMockDTO,
+	): Promise<models.MockLightDTO> {
+		return CreateMockFromExample(exampleId, dto);
 	}
 }

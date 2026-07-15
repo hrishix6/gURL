@@ -1,12 +1,12 @@
 {
   "$schema": "https://wails.io/schemas/config.v2.json",
-  "name": "gURL_v0.7.0",
+  "name": "gURL_v0.9.0",
   "frontend:dir": "../frontend",
   "wailsjsdir": "../frontend",
-  "outputfilename": "gURL_v0.7.0",
+  "outputfilename": "gURL_v0.9.0",
   "frontend:install": "pnpm install",
-  "frontend:build": "pnpm run build",
-  "frontend:dev:watcher": "pnpm start",
+  "frontend:build": "pnpm run desktop-prod",
+  "frontend:dev:watcher": "pnpm run desktop:start",
   "frontend:dev:serverUrl": "auto",
   "author": {
     "name": "Hrishikesh Pethe",

@@ -9,14 +9,9 @@ import {
 } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { ActivatedRoute } from "@angular/router";
-import {
-	CircleCheck,
-	CircleX,
-	LucideAngularModule,
-	User,
-} from "lucide-angular";
 import { getAppConfig } from "@/app.config";
 import { DemoLoginCaptcha } from "@/common/components/demo.login.captcha";
+import { SystemIconComponent } from "@/common/components/icon";
 import { LOGIN_CODES_MSGS } from "@/constants";
 import { UserAuthService } from "@/services";
 import type { LoginRequestDTO } from "@/types";
@@ -32,13 +27,21 @@ import type { LoginRequestDTO } from "@/types";
 			<form class="flex flex-col gap-4" (submit)="handleFormSubmission($event)">
 				@if(loginMessage()){
 				<div class="alert alert-soft alert-{{loginMessageKind()}}">
-						<lucide-angular [img]="loginMessageKind() == 'error' ? FailedIcon: PassIcon "class="size-4" />
+					    @switch (loginMessageKind()) {
+							@case ("error") {
+								<i gurl-icon [icon]="'Failed'" [className]="'size-4'" ></i>
+							}	
+
+							@case('success'){
+								<i gurl-icon [icon]="'Success'" [className]="'size-4'" ></i>
+							}
+						}
 						<span>{{loginMessage()}}</span>
 					</div>
 				}
 				<div>
 					<label class="input w-full">
-					<lucide-angular [img]="UserIcon" class="size-4" />
+					<i gurl-icon [icon]="'User'" [className]="'size-4'" ></i>
 					<input
 						type="email"
 						placeholder="example@email.com"
@@ -55,19 +58,13 @@ import type { LoginRequestDTO } from "@/types";
 			}
 		</div>
     `,
-	imports: [LucideAngularModule, DemoLoginCaptcha],
+	imports: [DemoLoginCaptcha, SystemIconComponent],
 })
 export class LoginPage {
 	protected readonly appConfig = getAppConfig();
 	private readonly userAuthSvc = inject(UserAuthService);
 	private readonly destroyRef = inject(DestroyRef);
-
 	private readonly activatedRoute = inject(ActivatedRoute);
-
-	protected readonly UserIcon = User;
-	protected readonly PassIcon = CircleCheck;
-	protected readonly FailedIcon = CircleX;
-
 	protected loginMessage = signal<string | null>(null);
 	protected loginMessageKind = signal<"error" | "success" | null>("success");
 

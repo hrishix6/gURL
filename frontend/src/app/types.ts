@@ -22,6 +22,8 @@ export type ReqBodyType =
 	| "txt"
 	| "form";
 
+export type MockBodyType = "none" | "json" | "xml" | "plaintext" | "binary";
+
 export type ReqTabId =
 	| "req_headers"
 	| "req_path"
@@ -37,6 +39,8 @@ export type ResTabId =
 	| "res_cookies";
 
 export type RequestAuthType = "no_auth" | "basic" | "token" | "api_key";
+
+export type MockTabId = "mock_meta" | "mock_body" | "mock_vars";
 
 export type AppTheme =
 	| "dracula"
@@ -103,12 +107,19 @@ export enum AppTabType {
 	Env = "env",
 	Pref = "pref",
 	ReqExample = "req_example",
+	Mock = "mock",
 }
 
 export interface DraftParentMetadata {
 	parentRequestId: string;
 	parentCollectionId: string;
 	parentRequestName: string;
+}
+
+export interface MockParentMetadata {
+	parentMockId: string;
+	parentCollectionId: string;
+	parentMockName: string;
 }
 
 export interface ApplicationTab {
@@ -127,10 +138,40 @@ export interface ActiveItemInfo {
 	type: AppTabType;
 }
 
+export enum CrumbType {
+	Req = "Request",
+	Collections = "Collection",
+	Env = "Environment",
+	ReqExample = "Request_Example",
+	Mock = "Mock",
+	MockServer = "MockServer",
+}
+
+export interface Crumb {
+	type: CrumbType;
+	name: string;
+}
+
+export interface CrumbInfo {
+	collection?: string;
+	request?: string;
+	entityName: string;
+	mockServer?: string;
+}
+
 export enum AppSidebarContent {
 	History = "history",
 	Collections = "collections",
 	Environments = "environments",
+	MockServers = "mock-servers",
+	UserSettings = "user-settings",
+}
+
+export interface FetchState {
+	loaded: boolean;
+	loading: boolean;
+	error: boolean;
+	attempts: number;
 }
 
 export type BasicAuth = Pick<models.BasicAuth, "username" | "password">;
@@ -195,6 +236,21 @@ export interface AppConfig {
 	appVersion: string;
 	setup_required: boolean;
 	demo_enabled: boolean;
+	env: "DEV" | "PROD";
+	deployment: "public" | "private";
+	mockSrvBaseUrl: string;
+}
+
+export interface MockCallingInfo {
+	url: string;
+	auth: {
+		key: string;
+		val: string;
+	};
+	match?: {
+		key: string;
+		val: string;
+	};
 }
 
 export interface InputToken {
@@ -214,13 +270,20 @@ export interface WorkspaceRepository {
 
 export interface CollectionRepository {
 	getAllCollections(
-		workspace: string,
+		query: models.CollectionsQueryDTO,
 	): Promise<Array<models.CollectionDTO> | undefined | null>;
 	addCollection(dto: models.CreateCollectionDTO): Promise<void>;
 	clearCollection(arg1: string): Promise<void>;
 	deleteCollection(arg1: string): Promise<void>;
-	deleteDraftsUnderCollection(arg1: string): Promise<void>;
 	renameCollection(id: string, newName: string): Promise<void>;
+	getCollectionById(
+		id: string,
+	): Promise<models.CollectionDTO | undefined | null>;
+
+	createMockServer(
+		query: models.CreateMockServerDTO,
+	): Promise<models.CollectionDTO>;
+	updateMockServer(id: string, flag: boolean): Promise<models.CollectionDTO>;
 }
 
 export interface EnvironmentRepository {
@@ -231,7 +294,7 @@ export interface EnvironmentRepository {
 		arg1: models.CopyEnvironmentDTO,
 	): Promise<void>;
 	getEnvironments(
-		workspace: string,
+		query: models.EnvsQueryDTO,
 	): Promise<Array<models.EnvironmentDTO> | undefined | null>;
 	findEnvDraft(arg1: string): Promise<models.EnvironmentDraftDTO | undefined>;
 	removeEnv(arg1: string): Promise<void>;
@@ -250,8 +313,30 @@ export interface EnvironmentRepository {
 export interface Exporter {
 	exportCollection(id: string, name: string): Promise<void>;
 	exportEnvironment(id: string, name: string): Promise<void>;
-	importCollection(workspaceId: string, file?: File): Promise<void>;
+	importCollection(workspaceId: string, file?: File): Promise<string>;
 	importEnvironment(workspaceId: string, file?: File): Promise<void>;
+}
+
+export interface ReqMockRepository {
+	getMockById(id: string): Promise<models.MockLightDTO>;
+	getMocks(query: models.MockQueryDTO): Promise<models.MockLightDTO[]>;
+	deleteMockById(id: string): Promise<void>;
+	copyMockWithId(id: string): Promise<models.MockLightDTO>;
+	createFreshMockDraft(dto: models.AddDraftDTO): Promise<void>;
+	getMockDraftById(id: string): Promise<models.MockDraftDTO>;
+	deleteMockDraftById(id: string): Promise<void>;
+	createMockDraftFromMock(
+		mockId: string,
+		dto: models.AddDraftDTO,
+	): Promise<void>;
+	updateMockDraftFields(
+		id: string,
+		dto: models.UpdateMockDraftFields,
+	): Promise<void>;
+	saveMockDraftAsMock(
+		draftId: string,
+		dto: models.SaveMockDraftAsMock,
+	): Promise<models.MockDraftDTO>;
 }
 
 export interface RequestRepository {
@@ -264,28 +349,33 @@ export interface RequestRepository {
 		arg2: models.SavedResponseRenderMeta,
 	): Promise<void>;
 	deleteReqExample(arg1: string): Promise<void>;
-	deleteRequestDrafts(arg1: string): Promise<void>;
 	deleteSavedReq(arg1: string): Promise<void>;
 	findDraftById(arg1: string): Promise<models.RequestDraftDTO | undefined>;
+	getSavedReqById(id: string): Promise<models.RequestLightDTO | undefined>;
 	getReqExampleById(arg1: string): Promise<models.ReqExampleDTO | undefined>;
 	getReqExamples(
-		workspace: string,
+		query: models.ReqExampleQueryDTO,
 	): Promise<Array<models.ReqExampleLightDTO> | undefined | null>;
 	getSavedRequests(
-		workspace: string,
+		query: models.ReqQueryDTO,
 	): Promise<Array<models.RequestLightDTO> | undefined | null>;
 	saveDraftAsRequest(
 		draftId: string,
 		arg1: models.SaveDraftAsReqDTO,
-	): Promise<void>;
+	): Promise<models.RequestDraftDTO | null | undefined>;
 	saveRequestCopy(
 		requestId: string,
 		arg1: models.SaveRequestCopyDTO,
-	): Promise<void>;
+	): Promise<string>;
 	updatereqDraftFields(
 		draftId: string,
 		arg: models.UpdateDraftFieldsDTO,
 	): Promise<void>;
+
+	createMockFromExample(
+		exampleId: string,
+		dto: models.CreateMockDTO,
+	): Promise<models.MockLightDTO>;
 }
 
 export interface UIStateRepository {
@@ -294,7 +384,7 @@ export interface UIStateRepository {
 }
 
 export interface FileRepository {
-	saveFile(arg1: models.DownloadTmpFileDTO): Promise<void>;
+	downloadResponseFile(arg1: models.DownloadTmpFileDTO): Promise<void>;
 	chooseFile(file?: File): Promise<models.FileStats>;
 }
 
@@ -302,7 +392,8 @@ export interface HttpExecutor {
 	cancelReq(arg1: string): Promise<void>;
 	getSavedResponsesSrc(arg1: string): Promise<string>;
 	parseCookieRaw(arg1: string): Promise<Array<models.GurlKeyValItem>>;
-	sendHttpReq(arg1: models.GurlReq): Promise<models.GurlRes>;
+	sendHttpReq(arg1: models.GurlReq, envId: string): Promise<models.GurlRes>;
+	getInterpolatedReq(r: models.GurlReq, envId: string): Promise<models.GurlReq>;
 }
 
 export type ApiRequestMeta = {

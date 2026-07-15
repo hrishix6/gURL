@@ -1,6 +1,6 @@
 import { Component, HostBinding, inject } from "@angular/core";
-import { LucideAngularModule } from "lucide-angular";
 import { Tab } from "@/common/components";
+import { ReqDetailsTabContentDirective } from "@/common/directives/req.details.content";
 import { REQ_DETAILS_TABS } from "@/constants";
 import { FormService } from "@/services";
 import type { ReqTabId } from "@/types";
@@ -23,24 +23,13 @@ import { ReqQuery } from "./req.query";
         [activeTab]="formSvc.activeReqTab()"
       ></gurl-section-tabs>
     </header>
-    <div class="flex-1 p-2 flex flex-col gap-2 overflow-hidden mt-2">
-      @switch (formSvc.activeReqTab()) { @case ("req_headers") {
-      <gurl-req-headers />
-      } @case ("req_query") {
-      <gurl-req-query />
-      } @case ("req_body") {
-      <gurl-req-body />
-      } 
-      @case ("req_path") {
-        <gurl-req-path />
-      }
-      @case ("req_auth") {
-      <gurl-req-auth />
-      }
-      @case("req_cookies"){
-      <gurl-req-cookies />
-      }
-    }
+    <div class="flex-1 p-2 flex flex-col gap-2 overflow-hidden">
+       <gurl-req-headers req-details-tab-content [active]="formSvc.activeReqTab() === 'req_headers'" />
+       <gurl-req-path  req-details-tab-content [active]="formSvc.activeReqTab() === 'req_path'" />
+       <gurl-req-query req-details-tab-content [active]="formSvc.activeReqTab() === 'req_query'" />
+       <gurl-req-body req-details-tab-content [active]="formSvc.activeReqTab() === 'req_body'" />
+       <gurl-req-auth req-details-tab-content [active]="formSvc.activeReqTab() === 'req_auth'" />
+       <gurl-req-cookies req-details-tab-content [active]="formSvc.activeReqTab() === 'req_cookies'" />
     </div>
     <gurl-req-footer />
   `,
@@ -49,11 +38,11 @@ import { ReqQuery } from "./req.query";
 		ReqBody,
 		ReqHeaders,
 		ReqQuery,
-		LucideAngularModule,
 		ReqCookies,
 		ReqFooter,
 		RequestAuth,
 		ReqPath,
+		ReqDetailsTabContentDirective,
 	],
 })
 export class RequestFormDetails {

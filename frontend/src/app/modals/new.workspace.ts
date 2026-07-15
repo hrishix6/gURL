@@ -10,7 +10,7 @@ import {
 	signal,
 	viewChild,
 } from "@angular/core";
-import { LucideAngularModule, X } from "lucide-angular";
+import { SystemIconComponent } from "@/common/components/icon";
 import { AppService } from "@/services";
 
 @Component({
@@ -30,7 +30,7 @@ import { AppService } from "@/services";
 			</h3>
              @if(!disableClose()){
              <button class="btn btn-sm btn-square btn-ghost" (click)="onClose()" [disabled]="actionInProgress()">
-                <lucide-angular [img]="CancelIcon" class="size-4" />
+                <i gurl-icon [icon]="'Cancel'" [className]="'size-4'" ></i>
              </button>
              }
         </div>
@@ -71,7 +71,7 @@ import { AppService } from "@/services";
       <button (click)="onClose()" [disabled]="actionInProgress()">close</button>
     </div>
   `,
-	imports: [NgClass, LucideAngularModule],
+	imports: [NgClass, SystemIconComponent],
 })
 export class DefaultWorkspaceModal implements AfterViewInit {
 	@HostBinding("class")
@@ -91,7 +91,6 @@ export class DefaultWorkspaceModal implements AfterViewInit {
 		this.firstInputEl()?.nativeElement.focus();
 	}
 
-	protected readonly CancelIcon = X;
 	private readonly appSvc = inject(AppService);
 
 	private readonly firstInputEl =

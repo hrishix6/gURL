@@ -1,7 +1,9 @@
 package clientconfig
 
 import (
+	"fmt"
 	"gurl/shared/models"
+	"gurl/web/internal/config"
 	"gurl/web/internal/httpx"
 	webModels "gurl/web/internal/models"
 	"gurl/web/storage"
@@ -17,16 +19,19 @@ type ClientConfigController struct {
 
 func NewClientConfigController(
 	appVersion string,
-	enbleDemoLogins bool,
+	appConfig *config.WebApplicationConfig,
 	storage *storage.WebStorage,
 ) *ClientConfigController {
 
 	clientCfg := &models.GurlClientConfig{
-		ApiBaseURL:  "/api/v1",
-		AuthBaseURL: "/auth",
-		AppVersion:  appVersion,
-		Mode:        "web",
-		DemoEnabled: enbleDemoLogins,
+		ApiBaseURL:     "/api/v1",
+		AuthBaseURL:    "/auth",
+		AppVersion:     appVersion,
+		Mode:           "web",
+		DemoEnabled:    appConfig.AuthConfig.EnableDemo,
+		Env:            appConfig.Env,
+		Deployment:     appConfig.Deployment,
+		MockSrvBaseURL: fmt.Sprintf("%s/mocksvc", appConfig.BackendURL),
 	}
 
 	return &ClientConfigController{

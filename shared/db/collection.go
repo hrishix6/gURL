@@ -2,6 +2,8 @@ package db
 
 import (
 	"context"
+	"crypto/rand"
+	"fmt"
 	"gurl/shared/models"
 	"gurl/shared/utils"
 
@@ -10,7 +12,10 @@ import (
 
 type Collection struct {
 	BaseEntity
-	Name        string    `gorm:"column:name"`
+	Name              string `gorm:"column:name"`
+	MockServerKey     string `gorm:"column:mock_server_key"`
+	MockServerEnabled bool   `gorm:"column:mock_server_enabled;default:false"`
+
 	WorkspaceId string    `gorm:"column:workspace_id;not null"`
 	Workspace   Workspace `gorm:"foreignKey:WorkspaceId;"`
 	UserId      string    `gorm:"column:user_id;not null"`
@@ -33,14 +38,29 @@ func (c *Collection) BeforeDelete(tx *gorm.DB) error {
 		}
 	}
 
+	var mocks []Mock
+
+	if err := tx.Where("collection_id = ? and user_id = ?", c.Id, c.UserId).Find(&mocks).Error; err != nil {
+		return err
+	}
+
+	for _, m := range mocks {
+
+		if err := tx.Delete(&m).Error; err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
 func (c *Collection) ToCollectionDTO() *models.CollectionDTO {
 
 	o := &models.CollectionDTO{
-		Id:   c.Id,
-		Name: c.Name,
+		Id:                c.Id,
+		Name:              c.Name,
+		MockServerEnabled: c.MockServerEnabled,
+		MockServerKey:     c.MockServerKey,
 	}
 
 	return o
@@ -67,16 +87,35 @@ func (cr *CollectionRepository) AddCollection(ctx context.Context, dto models.Cr
 	})
 }
 
-func (cr *CollectionRepository) GetAllCollections(ctx context.Context, workspaceId string) ([]models.CollectionDTO, error) {
+func (rr *CollectionRepository) GetCollectionById(ctx context.Context, id string) (*models.CollectionDTO, error) {
+	user := utils.UserIdFromContext(ctx)
+
+	var r Collection
+
+	err := rr.db.Where(&Collection{
+		BaseEntity: BaseEntity{
+			Id: id,
+		},
+		UserId: user,
+	}).First(&r).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &models.CollectionDTO{
+		Id:   r.Id,
+		Name: r.Name,
+	}, nil
+}
+
+func (cr *CollectionRepository) GetAllCollections(ctx context.Context, query models.CollectionsQueryDTO) ([]models.CollectionDTO, error) {
 
 	user := utils.UserIdFromContext(ctx)
 
 	var records []Collection
 
-	tx := cr.db.Where(&Collection{
-		WorkspaceId: workspaceId,
-		UserId:      user,
-	}).Find(&records)
+	tx := cr.db.Where("workspace_id = ? AND user_id = ?", query.WorkspaceId, user).Find(&records)
 
 	if tx.Error != nil {
 		return []models.CollectionDTO{}, tx.Error
@@ -149,4 +188,77 @@ func (cr *CollectionRepository) FindCollectionById(ctx context.Context, id strin
 
 func (cr *CollectionRepository) FindCollectionCountByName(ctx context.Context, name string) (int64, error) {
 	return gorm.G[Collection](cr.db).Where("name = ? AND user_id = ?", name, utils.UserIdFromContext(ctx)).Count(ctx, "id")
+}
+
+func (cr *CollectionRepository) CreateMockServer(ctx context.Context, id string) (*models.CollectionDTO, error) {
+
+	user := utils.UserIdFromContext(ctx)
+
+	c, err := gorm.G[Collection](cr.db).Where("id = ? AND user_id = ?", id, user).First(ctx)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if c.MockServerKey != "" {
+		return c.ToCollectionDTO(), nil
+	}
+
+	key := make([]byte, 32)
+
+	rand.Read(key)
+
+	c.MockServerKey = fmt.Sprintf("%x", key)
+	c.MockServerEnabled = true
+
+	err = cr.db.Save(&c).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return c.ToCollectionDTO(), nil
+}
+
+func (cr *CollectionRepository) UpdateMockServer(ctx context.Context, id string, flag bool) (*models.CollectionDTO, error) {
+
+	user := utils.UserIdFromContext(ctx)
+
+	c, err := gorm.G[Collection](cr.db).Where("id = ? AND user_id = ?", id, user).First(ctx)
+
+	if err != nil {
+		return nil, err
+	}
+
+	c.MockServerEnabled = flag
+
+	err = cr.db.Save(&c).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return c.ToCollectionDTO(), nil
+}
+
+func (cr *CollectionRepository) DeleteMockServer(ctx context.Context, id string) error {
+
+	user := utils.UserIdFromContext(ctx)
+
+	c, err := gorm.G[Collection](cr.db).Where("id = ? AND user_id = ?", id, user).First(ctx)
+
+	if err != nil {
+		return err
+	}
+
+	c.MockServerKey = ""
+	c.MockServerEnabled = false
+
+	err = cr.db.Save(&c).Error
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

@@ -1,15 +1,7 @@
 import { NgClass } from "@angular/common";
 import { Component, input, output } from "@angular/core";
-import {
-	Building,
-	Check,
-	ChevronsUpDown,
-	Container,
-	Layers,
-	LucideAngularModule,
-	RadioTower,
-} from "lucide-angular";
 import type { DropDownItem } from "@/types";
+import { SystemIconComponent } from "./icon";
 
 @Component({
 	selector: `gurl-dropdown`,
@@ -27,20 +19,21 @@ import type { DropDownItem } from "@/types";
                 }">
                     @switch(icon()) {
                       @case('workspace') {
-                        <lucide-angular [img]="WorkspaceIcon" class="size-4 mr-0.5" />
+                        <i gurl-icon [icon]="'Workspace'" [className]="'size-4 mr-0.5'" ></i>
                       }
                       @case("env") {
-                        <lucide-angular [img]="EnvironmentIcon" class="size-4 mr-0.5" />
+                        
+                        <i gurl-icon [icon]="'Environment'" [className]="'size-4 mr-0.5'" ></i>
                       }
                       @case("collection") {
-                        <lucide-angular [img]="CollectionIcon" class="size-4 mr-0.5" />
+                        <i gurl-icon [icon]="'Collection'" [className]="'size-4 mr-0.5'" ></i>
                       }
                       @case("req") {
-                        <lucide-angular [img]="ReqIcon" class="size-4 mr-0.5" />
+                        <i gurl-icon [icon]="'Request'" [className]="'size-4 mr-0.5'" ></i>
                       }
                     }
                     {{activeItem().displayName}}
-                    <lucide-angular [img]="DropdownIcon" class="size-4 ml-0.5" />
+                    <i gurl-icon [icon]="'Dropdown'" [className]="'size-4 ml-0.5'" ></i>
             </button>
         }@else{
             <div class="dropdown dropdown-{{direction()}} dropdown-{{align()}}">
@@ -56,20 +49,20 @@ import type { DropDownItem } from "@/types";
                 }">
                     @switch(icon()) {
                       @case('workspace') {
-                        <lucide-angular [img]="WorkspaceIcon" class="size-4 mr-0.5" />
+                        <i gurl-icon [icon]="'Workspace'" [className]="'size-4 mr-0.5'" ></i>
                       }
                       @case("env") {
-                        <lucide-angular [img]="EnvironmentIcon" class="size-4 mr-0.5" />
+                         <i gurl-icon [icon]="'Environment'" [className]="'size-4 mr-0.5'" ></i>
                       }
                       @case("collection") {
-                        <lucide-angular [img]="CollectionIcon" class="size-4 mr-0.5" />
+                        <i gurl-icon [icon]="'Collection'" [className]="'size-4 mr-0.5'" ></i>
                       }
                       @case("req") {
-                        <lucide-angular [img]="ReqIcon" class="size-4 mr-0.5" />
+                         <i gurl-icon [icon]="'Request'" [className]="'size-4 mr-0.5'" ></i>
                       }
                     }
                     {{activeItem().displayName}}
-                    <lucide-angular [img]="DropdownIcon" class="size-4 ml-0.5" />
+                    <i gurl-icon [icon]="'Dropdown'" [className]="'size-4 ml-0.5'" ></i>
                 </button>
               <div class="max-h-96 overflow-y-auto dropdown-content ">
               <ul
@@ -89,7 +82,7 @@ import type { DropDownItem } from "@/types";
                     >
                       {{ item.displayName }}
                       @if(item.id == activeItem().id) {
-                      <lucide-angular [img]="CheckedIcon" class="size-4 ml-auto" />
+                       <i gurl-icon [icon]="'Tick'" [className]="'size-4 ml-auto'" ></i>
                       }
                     </button>
                   </li>
@@ -100,7 +93,7 @@ import type { DropDownItem } from "@/types";
           </div>
         }
     `,
-	imports: [LucideAngularModule, NgClass],
+	imports: [NgClass, SystemIconComponent],
 })
 export class GurlDropdown<T> {
 	items = input.required<readonly DropDownItem<T>[]>();
@@ -113,13 +106,6 @@ export class GurlDropdown<T> {
 	disabled = input<boolean>(false);
 	primary = input<boolean>(true);
 	onItemSelection = output<T>();
-
-	protected readonly DropdownIcon = ChevronsUpDown;
-	protected readonly CheckedIcon = Check;
-	protected readonly CollectionIcon = Layers;
-	protected readonly WorkspaceIcon = Building;
-	protected readonly EnvironmentIcon = Container;
-	protected readonly ReqIcon = RadioTower;
 
 	protected handleItemSelection(id: T) {
 		if (this.disabled()) {

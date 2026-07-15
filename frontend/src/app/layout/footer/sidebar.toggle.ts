@@ -1,9 +1,6 @@
 import { Component, HostBinding, inject } from "@angular/core";
-import {
-	LucideAngularModule,
-	PanelRightClose,
-	PanelRightOpen,
-} from "lucide-angular";
+import { SystemIconComponent } from "@/common/components/icon";
+import { TooltipDirective } from "@/common/components/tooltip";
 import { AppService } from "@/services";
 
 /**
@@ -16,32 +13,35 @@ import { AppService } from "@/services";
     <button
       class="hidden xl:inline-flex btn btn-square btn-sm"
       (click)="appSvc.toggleDesktopSidebar()"
+      gurlTooltip
+      [tooltip]="appSvc.isDesktopSidebarOpen()? 'Close sidebar':'Open sidebar'"
     >
         @if(appSvc.isDesktopSidebarOpen()){
-        <lucide-angular [img]="ShrinkSidebarIcon" class="size-5" />
+          <i gurl-icon [icon]="'OpenSidebar'" [className]="'size-5'" ></i>
         }@else {
-        <lucide-angular [img]="ExpandSidebarIcon" class="size-5" />
+          <i gurl-icon [icon]="'CloseSidebar'" [className]="'size-5'" ></i>
         }
     </button>
 
     <button
       class="xl:hidden btn btn-square btn-sm drawer-button"
       (click)="appSvc.toggleMobileSidebar()"
+      gurlTooltip
+      [tooltip]="appSvc.isMobileSidebarOpen()? 'Close sidebar':'Open sidebar'"
     >
         @if(appSvc.isMobileSidebarOpen()){
-        <lucide-angular [img]="ShrinkSidebarIcon" class="size-5" />
+          <i gurl-icon [icon]="'OpenSidebar'" [className]="'size-5'" ></i>
         } @else {
-        <lucide-angular [img]="ExpandSidebarIcon" class="size-5" />
+        
+        <i gurl-icon [icon]="'CloseSidebar'" [className]="'size-5'" ></i>
         }
     </button>
   `,
-	imports: [LucideAngularModule],
+	imports: [SystemIconComponent, TooltipDirective],
 })
 export class GurlSidebarToggle {
 	@HostBinding("class")
 	def = "flex items-center justify-center";
 
-	protected readonly ExpandSidebarIcon = PanelRightClose;
-	protected readonly ShrinkSidebarIcon = PanelRightOpen;
 	protected readonly appSvc = inject(AppService);
 }

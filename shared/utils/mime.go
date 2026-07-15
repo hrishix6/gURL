@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"gurl/shared/models"
 	"strings"
+
+	"github.com/wailsapp/mimetype"
 )
 
 func LoadMimeDb(r []byte) (map[string]models.MimeData, error) {
@@ -26,4 +28,9 @@ func NormalizeContentType(ctype string) string {
 	}
 
 	return strings.TrimSpace(ctype)
+}
+
+func DetectMimeType(path string) (*mimetype.MIME, error) {
+	mimetype.SetLimit(512)
+	return mimetype.DetectFile(path)
 }

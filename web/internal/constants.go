@@ -9,7 +9,6 @@ const (
 	MAX_WEB_TEMP_FILE_BYES      = 100_000_000
 	SAVED_RESPONSES_LOCATION    = "saved"
 	TEMP_RESPONSES_LOCATION     = "tmp"
-	TEMP_UPLOADS_LOCATION       = "uploads"
 	JWT_EXPIRY_HOURS            = 24
 	MAGIC_LINK_EXPIRY_MINS      = 10
 	DEMO_USER_ID_PREFIX         = "gurl_demo_user"

@@ -22,15 +22,27 @@ type ReqExampleDTO struct {
 	LimitExceeded  bool  `json:"limitExceeded"`
 	ResponseTffbMs int64 `json:"responseTffbMs"`
 	ResponseDlMs   int64 `json:"responseDlMs"`
+
+	//for breadcrumbs
+	RequestInfo    *DraftRequestInfo    `json:"requestInfo"`
+	CollectionInfo *DraftCollectionInfo `json:"collectionInfo"`
 }
 
 type ReqExampleLightDTO struct {
-	Id        string `json:"id"`
-	RequestId string `json:"requestId"`
-	Name      string `json:"name"`
+	Id           string `json:"id"`
+	RequestId    string `json:"requestId"`
+	Method       string `json:"method"`
+	Name         string `json:"name"`
+	CollectionId string `json:"collectionId"`
+	Url          string `json:"url"`
 }
 
 type AddRequestExampleDTO struct {
 	Example        ReqExampleDTO           `json:"example"`
 	RenderMetadata SavedResponseRenderMeta `json:"metadata"`
+}
+
+type ReqExampleQueryDTO struct {
+	WorkspaceId  string `json:"workspaceId"`
+	CollectionId string `json:"collectionId"`
 }

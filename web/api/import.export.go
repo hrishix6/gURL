@@ -26,7 +26,7 @@ func (api *Api) ImportCollection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = api.exporter.ImportCollection(r.Context(), dto)
+	importedId, err := api.exporter.ImportCollection(r.Context(), dto)
 
 	if err != nil {
 		log.Printf("[api/ImportCollection] error:%v \n", err)
@@ -39,7 +39,7 @@ func (api *Api) ImportCollection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	api.Ok(w, api.WrapSuccessResponse(r, nil))
+	api.Ok(w, api.WrapSuccessResponse(r, importedId))
 }
 
 func (api *Api) ImportEnvironment(w http.ResponseWriter, r *http.Request) {
@@ -59,7 +59,7 @@ func (api *Api) ImportEnvironment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = api.exporter.ImportEnvironment(r.Context(), dto)
+	_, err = api.exporter.ImportEnvironment(r.Context(), dto)
 
 	if err != nil {
 		log.Printf("[api/ImportEnvironment] error:%v \n", err)

@@ -1,7 +1,6 @@
 import { computed, Injectable, inject, signal } from "@angular/core";
 import { Router } from "@angular/router";
-import { environment } from "@src/environments/environment";
-import { loadConfig } from "@/app.config";
+import { getAppConfig, loadConfig } from "@/app.config";
 import { AlertService, AppService, RestClient } from "@/services";
 import type { LoginRequestDTO, RegisterDTO, UserInfo } from "@/types";
 
@@ -25,13 +24,20 @@ export class UserAuthService {
 	async tryLogin(p: LoginRequestDTO) {
 		let loginCode = "";
 		try {
+			const appConfig = getAppConfig();
 			const loginResponse = await this.restClient.authPost<string>("login", p);
 
 			if (!loginResponse.success) {
 				throw new Error(`error from backend: ${loginResponse.error.message}`);
 			}
 
-			if (environment.env === "dev") {
+			if (appConfig.env === "DEV") {
+				const magicLink = loginResponse.data;
+				window.location.href = magicLink;
+				return;
+			}
+
+			if (appConfig.deployment === "private") {
 				const magicLink = loginResponse.data;
 				window.location.href = magicLink;
 				return;
@@ -62,10 +68,10 @@ export class UserAuthService {
 
 	async logout() {
 		try {
-			await this.restClient.authPost("logout", undefined);
 			this._isLoggedIn.set(false);
 			this._userInfo.set(null);
 			this.appSvc.clean();
+			await this.restClient.authPost("logout", undefined);
 			return true;
 		} catch (error) {
 			console.error(error);

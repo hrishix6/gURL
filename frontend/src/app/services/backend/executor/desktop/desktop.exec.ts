@@ -1,5 +1,6 @@
 import {
 	CancelReq,
+	GetInterpolatedReq,
 	GetSavedResponsesSrc,
 	ParseCookieRaw,
 	SendHttpReq,
@@ -29,7 +30,14 @@ export class DesktopHttpExecutor implements HttpExecutor {
 	parseCookieRaw(arg1: string): Promise<Array<models.GurlKeyValItem>> {
 		return ParseCookieRaw(arg1);
 	}
-	sendHttpReq(arg1: models.GurlReq): Promise<models.GurlRes> {
-		return SendHttpReq(arg1);
+	sendHttpReq(arg1: models.GurlReq, envId: string): Promise<models.GurlRes> {
+		return SendHttpReq(arg1, envId);
+	}
+
+	getInterpolatedReq(
+		r: models.GurlReq,
+		envId: string,
+	): Promise<models.GurlReq> {
+		return GetInterpolatedReq(r, envId);
 	}
 }

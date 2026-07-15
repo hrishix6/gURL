@@ -41,8 +41,10 @@ export class DesktopEnvRepository implements EnvironmentRepository {
 		return AddFreshEnvDraft(arg1);
 	}
 
-	getEnvironments(workspace: string): Promise<Array<models.EnvironmentDTO>> {
-		return GetEnvironments(workspace);
+	getEnvironments(
+		q: models.EnvsQueryDTO,
+	): Promise<Array<models.EnvironmentDTO>> {
+		return GetEnvironments(q);
 	}
 
 	findEnvDraft(arg1: string): Promise<models.EnvironmentDraftDTO> {

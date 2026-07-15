@@ -20,11 +20,25 @@ export class WebCollectionRepository implements CollectionRepository {
 		return WebCollectionRepository.webCollectionRepo;
 	}
 
+	async getCollectionById(
+		id: string,
+	): Promise<models.CollectionDTO | undefined | null> {
+		const result = await this.restClient.get<models.CollectionDTO>(
+			`${this._baseURL}/${id}`,
+		);
+
+		if (!result.success) {
+			throw new Error("failed to get collection by id");
+		}
+
+		return result.data;
+	}
+
 	async getAllCollections(
-		workspace: string,
+		q: models.CollectionsQueryDTO,
 	): Promise<Array<models.CollectionDTO> | null | undefined> {
 		const query = new URLSearchParams({
-			workspace_id: workspace,
+			...q,
 		});
 
 		const collectionsResponse = await this.restClient.get<
@@ -60,6 +74,7 @@ export class WebCollectionRepository implements CollectionRepository {
 
 		return result.data;
 	}
+
 	async deleteCollection(id: string): Promise<void> {
 		const result = await this.restClient.delete<void>(`${this._baseURL}/${id}`);
 
@@ -69,17 +84,7 @@ export class WebCollectionRepository implements CollectionRepository {
 
 		return result.data;
 	}
-	async deleteDraftsUnderCollection(id: string): Promise<void> {
-		const result = await this.restClient.delete<void>(
-			`${this._baseURL}/${id}/drafts`,
-		);
 
-		if (!result.success) {
-			throw new Error("Failed to delete drafts under collection");
-		}
-
-		return result.data;
-	}
 	async renameCollection(id: string, name: string): Promise<void> {
 		const result = await this.restClient.post<void>(
 			`${this._baseURL}/${id}/rename`,
@@ -88,6 +93,41 @@ export class WebCollectionRepository implements CollectionRepository {
 
 		if (!result.success) {
 			throw new Error("Failed to rename collection");
+		}
+
+		return result.data;
+	}
+
+	async createMockServer(
+		query: models.CreateMockServerDTO,
+	): Promise<models.CollectionDTO> {
+		const result = await this.restClient.post<models.CollectionDTO>(
+			`${this._baseURL}/${query.collectionId}/mockserver`,
+			{},
+		);
+
+		if (!result.success) {
+			throw new Error("failed to create mocks server");
+		}
+
+		return result.data;
+	}
+	async updateMockServer(
+		id: string,
+		flag: boolean,
+	): Promise<models.CollectionDTO> {
+		let url = `${this._baseURL}/${id}/mockserver`;
+
+		if (flag) {
+			url += "/enable";
+		} else {
+			url += "/disable";
+		}
+
+		const result = await this.restClient.patch<models.CollectionDTO>(url, {});
+
+		if (!result.success) {
+			throw new Error(`failed to ${flag ? "enable" : "disable"} mocks server`);
 		}
 
 		return result.data;

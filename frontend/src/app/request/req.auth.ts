@@ -1,8 +1,8 @@
-import { Component, HostBinding, inject } from "@angular/core";
-import { Ban, LucideAngularModule } from "lucide-angular";
+import { Component, inject } from "@angular/core";
 import { GurlHighlightedInput } from "@/common/components/highlighted.input";
+import { SystemIconComponent } from "@/common/components/icon";
 import { REQ_AUTH_TYPES } from "@/constants";
-import { FormService } from "@/services";
+import { AppService, FormService } from "@/services";
 
 @Component({
 	selector: "gurl-req-auth",
@@ -11,7 +11,8 @@ import { FormService } from "@/services";
         @switch (f.auth.activeAuth().id) {
             @case("no_auth") {
                 <div class="absolute top-0 left-0 w-full h-full flex items-center justify-center opacity-10">
-                    <lucide-angular [img]="NoneIcon" class="size-16 -z-10" />
+               
+                     <i gurl-icon [icon]="'Empty'" [className]="'size-16 -z-10'" ></i>
                 </div>
             }
             @case("basic") {
@@ -29,6 +30,8 @@ import { FormService } from "@/services";
                         <legend class="fieldset-legend">User</legend>
                         <div gurl-highlighted-input
                         [placeHolder]="'name'"
+                        [extractTokensFn]="f.reqFormExtractTokensCB"
+                        [activeEnvSub]="appSvc.activeEnvChange$"
                         [disabled]="false"
                         [readonly]="f.tabType() === 'req_example'"
                         [text]="f.auth.basicAuth().username"
@@ -40,6 +43,8 @@ import { FormService } from "@/services";
                         <legend class="fieldset-legend">Password</legend>
                         <div gurl-highlighted-input
                         [placeHolder]="'password'"
+                        [activeEnvSub]="appSvc.activeEnvChange$"
+                        [extractTokensFn]="f.reqFormExtractTokensCB"
                         [disabled]="false"
                         [readonly]="f.tabType() === 'req_example'"
                         [text]="f.auth.basicAuth().password"
@@ -54,7 +59,9 @@ import { FormService } from "@/services";
                 <fieldset class="fieldset">
                             <legend class="fieldset-legend">Token</legend>
                             <div gurl-highlighted-input
+                                [activeEnvSub]="appSvc.activeEnvChange$"
                                 [placeHolder]="'token'"
+                                [extractTokensFn]="f.reqFormExtractTokensCB"
                                 [disabled]="false"
                                 [readonly]="f.tabType() === 'req_example'"
                                 [text]="f.auth.tokenAuth().token"
@@ -67,6 +74,8 @@ import { FormService } from "@/services";
                     <fieldset class="fieldset">
                             <legend class="fieldset-legend">Key</legend>
                             <div gurl-highlighted-input
+                                [extractTokensFn]="f.reqFormExtractTokensCB"
+                                [activeEnvSub]="appSvc.activeEnvChange$"
                                 [placeHolder]="'key'"
                                 [disabled]="false"
                                 [readonly]="f.tabType() === 'req_example'"
@@ -79,6 +88,8 @@ import { FormService } from "@/services";
                             <legend class="fieldset-legend">Value</legend>
                             <div gurl-highlighted-input
                             [placeHolder]="'value'"
+                            [activeEnvSub]="appSvc.activeEnvChange$"
+                            [extractTokensFn]="f.reqFormExtractTokensCB"
                             [disabled]="f.auth.apiKey().key == ''"
                             [readonly]="f.tabType() === 'req_example'"
                             [text]="f.auth.apiKey().value"
@@ -91,17 +102,12 @@ import { FormService } from "@/services";
         }
      </div>
     `,
-	imports: [LucideAngularModule, GurlHighlightedInput],
+	imports: [GurlHighlightedInput, SystemIconComponent],
 })
 export class RequestAuth {
-	@HostBinding("class")
-	defaultClass = "flex-1 flex flex-col overflow-hidden";
-
-	protected readonly NoneIcon = Ban;
 	protected readonly reqAuthTypes = REQ_AUTH_TYPES;
-
 	protected readonly f = inject(FormService);
-
+	protected readonly appSvc = inject(AppService);
 	protected handleTokenInput(e: Event) {
 		const target = e.target as HTMLTextAreaElement;
 		this.f.updateTokenAuth("token", target.value);

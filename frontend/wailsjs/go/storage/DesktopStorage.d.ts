@@ -24,35 +24,59 @@ export function ClearCollection(arg1:string):Promise<void>;
 
 export function CopyEnvironment(arg1:string,arg2:models.CopyEnvironmentDTO):Promise<void>;
 
+export function CopyMockWithId(arg1:string):Promise<models.MockLightDTO>;
+
+export function CreateAndStartMockServer(arg1:models.CreateMockServerDTO):Promise<models.CollectionDTO>;
+
+export function CreateFreshMockDraft(arg1:models.AddDraftDTO):Promise<void>;
+
+export function CreateMockDraftFromMock(arg1:string,arg2:models.AddDraftDTO):Promise<void>;
+
+export function CreateMockFromExample(arg1:string,arg2:models.CreateMockDTO):Promise<models.MockLightDTO>;
+
 export function CreateWorkspace(arg1:models.CreateWorkspaceDTO):Promise<void>;
 
 export function DeleteCollection(arg1:string):Promise<void>;
 
-export function DeleteDraftsUnderCollection(arg1:string):Promise<void>;
-
 export function DeleteEnvDraftsUnderEnv(arg1:string):Promise<void>;
+
+export function DeleteMockById(arg1:string):Promise<void>;
+
+export function DeleteMockDraftById(arg1:string):Promise<void>;
+
+export function DeleteMockServer(arg1:string):Promise<void>;
 
 export function DeleteReqExample(arg1:string):Promise<void>;
 
-export function DeleteRequestDrafts(arg1:string):Promise<void>;
-
 export function DeleteSavedReq(arg1:string):Promise<void>;
+
+export function DownloadResponseFile(arg1:models.DownloadTmpFileDTO):Promise<void>;
 
 export function FindDraftById(arg1:string):Promise<models.RequestDraftDTO>;
 
 export function FindEnvDraft(arg1:string):Promise<models.EnvironmentDraftDTO>;
 
-export function GetAllCollections(arg1:string):Promise<Array<models.CollectionDTO>>;
+export function GetAllCollections(arg1:models.CollectionsQueryDTO):Promise<Array<models.CollectionDTO>>;
 
 export function GetAllWorkspaces():Promise<Array<models.WorkspaceLightDTO>>;
 
-export function GetEnvironments(arg1:string):Promise<Array<models.EnvironmentDTO>>;
+export function GetCollectionById(arg1:string):Promise<models.CollectionDTO>;
+
+export function GetEnvironments(arg1:models.EnvsQueryDTO):Promise<Array<models.EnvironmentDTO>>;
+
+export function GetMockById(arg1:string):Promise<models.MockLightDTO>;
+
+export function GetMockDraftById(arg1:string):Promise<models.MockDraftDTO>;
+
+export function GetMocks(arg1:models.MockQueryDTO):Promise<Array<models.MockLightDTO>>;
 
 export function GetReqExampleById(arg1:string):Promise<models.ReqExampleDTO>;
 
-export function GetReqExamples(arg1:string):Promise<Array<models.ReqExampleLightDTO>>;
+export function GetReqExamples(arg1:models.ReqExampleQueryDTO):Promise<Array<models.ReqExampleLightDTO>>;
 
-export function GetSavedRequests(arg1:string):Promise<Array<models.RequestLightDTO>>;
+export function GetSavedRequestById(arg1:string):Promise<models.RequestLightDTO>;
+
+export function GetSavedRequests(arg1:models.ReqQueryDTO):Promise<Array<models.RequestLightDTO>>;
 
 export function GetUIState():Promise<models.UIStateDTO>;
 
@@ -66,17 +90,21 @@ export function RemoveEnvDraft(arg1:string):Promise<void>;
 
 export function RenameCollection(arg1:string,arg2:string):Promise<void>;
 
-export function SaveDraftAsRequest(arg1:string,arg2:models.SaveDraftAsReqDTO):Promise<void>;
+export function SaveDraftAsRequest(arg1:string,arg2:models.SaveDraftAsReqDTO):Promise<models.RequestDraftDTO>;
 
 export function SaveEnvDraftAsEnv(arg1:string,arg2:models.SaveEnvDraftAsEnvDTO):Promise<void>;
 
-export function SaveFile(arg1:models.DownloadTmpFileDTO):Promise<void>;
+export function SaveMockDraftAsMock(arg1:string,arg2:models.SaveMockDraftAsMock):Promise<models.MockDraftDTO>;
 
-export function SaveRequestCopy(arg1:string,arg2:models.SaveRequestCopyDTO):Promise<void>;
+export function SaveRequestCopy(arg1:string,arg2:models.SaveRequestCopyDTO):Promise<string>;
 
 export function UpdateDraftFields(arg1:string,arg2:models.UpdateDraftFieldsDTO):Promise<void>;
 
 export function UpdateEnvDraftData(arg1:string,arg2:models.UpdateEnvDraftDataDTO):Promise<void>;
+
+export function UpdateMockDraftFields(arg1:string,arg2:models.UpdateMockDraftFields):Promise<void>;
+
+export function UpdateMockServer(arg1:string,arg2:boolean):Promise<models.CollectionDTO>;
 
 export function UpdateUIState(arg1:models.UpdateUIStateDTO):Promise<void>;
 

@@ -26,6 +26,10 @@
 			"recommended": true,
 			"complexity": {
 				"useLiteralKeys": "off"
+			},
+			"suspicious": {
+				"noAssignInExpressions": "warn",
+				"noExplicitAny": "off"
 			}
 		}
 	},

@@ -19,7 +19,7 @@ export class WebFileRepository implements FileRepository {
 		return WebFileRepository.webFileRepo;
 	}
 
-	async saveFile(dto: models.DownloadTmpFileDTO): Promise<void> {
+	async downloadResponseFile(dto: models.DownloadTmpFileDTO): Promise<void> {
 		const blob = await this.restClient.downloadFilePost(
 			"exec/tmp/download",
 			dto,

@@ -1,14 +1,7 @@
 import { Component, HostBinding, inject, input } from "@angular/core";
 import type { models } from "@wailsjs/go/models";
-import {
-	ArrowDownFromLine,
-	ArrowUpFromLine,
-	Eye,
-	EyeOff,
-	LucideAngularModule,
-	Timer,
-	TriangleAlert,
-} from "lucide-angular";
+import { SystemIconComponent } from "@/common/components/icon";
+import { TooltipDirective } from "@/common/components/tooltip";
 import { FormService } from "@/services";
 import { ResStats } from "./res.stats";
 
@@ -33,12 +26,20 @@ import { ResStats } from "./res.stats";
                           <span class="text-xs">Raw</span>
                     </label> 
                   }
-                  
                 }
+
+                @case("res_body") {
+                  @if(["json", "xml"].includes(formSvc.res()?.body?.html5Element || "")){
+                    <button class="ml-auto btn btn-square btn-sm btn-soft" gurlTooltip [tooltip]="'Format'" (click)="handleTextFormatting()">
+                        <i gurl-icon [icon]="'Format'" [className]="'size-4'"></i>
+                    </button>
+                  }
+                }
+              
         }
       </div>
     `,
-	imports: [LucideAngularModule, ResStats],
+	imports: [ResStats, SystemIconComponent, TooltipDirective],
 })
 export class ResFooter {
 	@HostBinding("class")
@@ -47,10 +48,8 @@ export class ResFooter {
 	data = input.required<models.GurlRes>();
 
 	protected readonly formSvc = inject(FormService);
-	protected readonly UploadIcon = ArrowUpFromLine;
-	protected readonly DownloadSizeIcon = ArrowDownFromLine;
-	protected readonly AlertIcon = TriangleAlert;
-	protected readonly TimerIcon = Timer;
-	protected readonly PreviewOpenIcon = Eye;
-	protected readonly PreviewCloseIcon = EyeOff;
+
+	handleTextFormatting() {
+		this.formSvc.formatResponseText$.next();
+	}
 }

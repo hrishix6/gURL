@@ -3,6 +3,7 @@ import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import type { models } from "@wailsjs/go/models";
 import { nanoid } from "nanoid";
 import { debounceTime, Subject } from "rxjs";
+import { keyValToBulkEditText } from "@/common/utils/text";
 import { extractTokens } from "@/common/utils/tokens";
 import { QID_PLACEHOLDER, REQ_METHODS } from "@/constants";
 import { getReqRepository } from "@/services";
@@ -210,12 +211,8 @@ export class UrlService {
 	}
 
 	public bulkQueryParamText = computed(() => {
-		return this._queryParams().reduce((prev, curr) => {
-			if (curr.id !== QID_PLACEHOLDER) {
-				prev += `${curr.enabled === "on" ? "" : "#"}${curr.key}:${curr.val}\n`;
-			}
-			return prev;
-		}, "");
+		const items = this._queryParams();
+		return keyValToBulkEditText(items, QID_PLACEHOLDER);
 	});
 
 	public queryParams = computed(() => this._queryParams());

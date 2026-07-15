@@ -1,12 +1,6 @@
 import { Component, HostBinding, inject, input } from "@angular/core";
 import type { models } from "@wailsjs/go/models";
-import {
-	ArrowDownFromLine,
-	ArrowUpFromLine,
-	LucideAngularModule,
-	Timer,
-	TriangleAlert,
-} from "lucide-angular";
+import { SystemIconComponent } from "@/common/components/icon";
 import { BytesPipe } from "@/common/pipes/bytes.pipe";
 import { FormService } from "@/services";
 
@@ -25,22 +19,22 @@ import { FormService } from "@/services";
     </div>
      <section class="flex items-center">
           <div class="flex gap-1 items-center px-2 text-xs opacity-60">
-              <lucide-angular [img]="UploadIcon"  class="size-4"/>
+              <i gurl-icon [icon]="'DataUploaded'" [className]="'size-4'" ></i>
               {{data().uploadSize | bytes}} 
           </div>
           |
           <div class="flex gap-1 items-center px-2 text-xs opacity-60">
-              <lucide-angular [img]="DownloadSizeIcon"  class="size-4"/>
+              <i gurl-icon [icon]="'DataDownloaded'" [className]="'size-4'" ></i>
               {{data().size | bytes}}
           </div>
           |
           <div class="flex gap-1 items-center px-2 text-xs opacity-60">
-                <lucide-angular [img]="TimerIcon"  class="size-4"/>
+                <i gurl-icon [icon]="'Timer'" [className]="'size-4'" ></i>
                 TFFB : {{data().ttfbMs}}ms
           </div>
     </section>
   `,
-	imports: [LucideAngularModule, BytesPipe],
+	imports: [BytesPipe, SystemIconComponent],
 })
 export class ResStats {
 	@HostBinding("class")
@@ -48,8 +42,4 @@ export class ResStats {
 
 	data = input.required<models.GurlRes>();
 	protected readonly formSvc = inject(FormService);
-	protected readonly UploadIcon = ArrowUpFromLine;
-	protected readonly DownloadSizeIcon = ArrowDownFromLine;
-	protected readonly AlertIcon = TriangleAlert;
-	protected readonly TimerIcon = Timer;
 }

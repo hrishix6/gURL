@@ -3,18 +3,27 @@ import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import type { models } from "@wailsjs/go/models";
 import { nanoid } from "nanoid";
 import { debounceTime, Subject } from "rxjs";
+import { keyValToBulkEditText } from "@/common/utils/text";
 import { HID_PLACEHOLDER } from "@/constants";
-import { getReqRepository } from "@/services";
 
 export class HeadersService {
-	private draftId = "";
 	private destroyRef: DestroyRef;
-	private reqRepo = getReqRepository();
+	private readonly dbSyncFn: (v: models.GurlKeyValItem[]) => void;
 
 	public init(data: models.RequestDraftDTO) {
-		const { id, headers } = data;
-		this.draftId = id;
+		const { headers } = data;
+		this._headers.set([
+			...JSON.parse(headers),
+			{
+				id: HID_PLACEHOLDER,
+				key: "",
+				val: "",
+				enabled: "on",
+			},
+		]);
+	}
 
+	public initMock(headers: string) {
 		this._headers.set([
 			...JSON.parse(headers),
 			{
@@ -27,9 +36,7 @@ export class HeadersService {
 	}
 
 	public initExample(data: models.ReqExampleDTO) {
-		const { id, headers } = data;
-		this.draftId = id;
-
+		const { headers } = data;
 		this._headers.set([...JSON.parse(headers)]);
 	}
 
@@ -59,12 +66,7 @@ export class HeadersService {
 	}
 
 	public bulkHeadersText = computed(() => {
-		return this._headers().reduce((prev, curr) => {
-			if (curr.id !== HID_PLACEHOLDER) {
-				prev += `${curr.enabled === "on" ? "" : "#"}${curr.key}:${curr.val}\n`;
-			}
-			return prev;
-		}, "");
+		return keyValToBulkEditText(this._headers(), HID_PLACEHOLDER);
 	});
 
 	public _bulkUpdateHeadersParams(items: models.GurlKeyValItem[]) {
@@ -145,20 +147,18 @@ export class HeadersService {
 		return this._headers().filter((x) => x.id !== HID_PLACEHOLDER);
 	}
 
-	constructor(destroyRef: DestroyRef) {
+	constructor(
+		destroyRef: DestroyRef,
+		dbSyncFn: (v: models.GurlKeyValItem[]) => void,
+	) {
 		this.destroyRef = destroyRef;
+		this.dbSyncFn = dbSyncFn;
 		this.headersDbSync$
 			.pipe(takeUntilDestroyed(this.destroyRef), debounceTime(500))
 			.subscribe({
 				next: (v) => {
 					const payload = v.filter((x) => x.id !== HID_PLACEHOLDER);
-					this.reqRepo
-						.updatereqDraftFields(this.draftId, {
-							headersJson: JSON.stringify(payload),
-						})
-						.then(() => {
-							console.log(`[${this.draftId}] headers updated in SQlite`);
-						});
+					this.dbSyncFn(payload);
 				},
 			});
 	}

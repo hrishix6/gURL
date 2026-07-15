@@ -1,11 +1,7 @@
 import { NgClass } from "@angular/common";
 import { Component, HostBinding, inject } from "@angular/core";
-import {
-	CircleAlert,
-	HardDriveDownload,
-	LucideAngularModule,
-} from "lucide-angular";
 import { PdfViewerModule } from "ng2-pdf-viewer";
+import { SystemIconComponent } from "@/common/components/icon";
 import { BytesPipe } from "@/common/pipes/bytes.pipe";
 import { SafePipe } from "@/common/pipes/safe.html.pipe";
 import { DL_LIMIT_BYTES } from "@/constants";
@@ -18,7 +14,7 @@ import { ResponseTextPreview } from "./text.preview";
     @if(formSvc.res()?.limitExceeded){
         <div class="flex-1 flex items-center rounded-box justify-center shadow-md border-2 border-base-100">
                 <div class="flex flex-col gap-2 items-center">
-                    <lucide-angular [img]="ErroredReqIcon" class="size-16" />
+                    <i gurl-icon [icon]="'Failed'" [className]="'size-16'" ></i>
                     <span class="text-lg">
                         @if(formSvc.res()?.sizeNotReported){
                             Server did not report Content-Length, download stopped after reaching limit {{ MAX_DL_LIMIT | bytes}}
@@ -31,7 +27,7 @@ import { ResponseTextPreview } from "./text.preview";
     }
     @else {
         @if(formSvc.res()?.body?.canRender){
-            <div class="flex-1 flex relative overflow-auto shadow-md border-2 border-base-100 rounded-box">
+            <div class="flex-1 flex relative overflow-auto shadow-md rounded-box">
                  <div [ngClass]="{
                     'flex-1 flex': true,
                  }">
@@ -79,8 +75,28 @@ import { ResponseTextPreview } from "./text.preview";
                         <!-- TEXT -->
                         @case("text") {
                             <div [ngClass]="{
-                                'flex-1 flex text-lg': true,
-                            }" gurl-res-text-preview [src]="formSvc.res()?.body?.src"></div>
+                                'flex-1 flex': true,
+                            }" 
+                            gurl-res-text-preview
+                            [mode]="'plaintext'"
+                            ></div>
+                        }
+
+                        @case("xml") {
+                            <div [ngClass]="{
+                                'flex-1 flex': true,
+                            }" 
+                            gurl-res-text-preview 
+                            [mode]="'xml'"
+                            ></div>
+                        }
+                        @case("json") {
+                            <div [ngClass]="{
+                                'flex-1 flex': true,
+                            }" 
+                            gurl-res-text-preview 
+                            [mode]="'json'"
+                            ></div>
                         }
                     }
                  </div>
@@ -90,7 +106,7 @@ import { ResponseTextPreview } from "./text.preview";
             <div class="flex-1 flex items-center rounded-box justify-center shadow-md border-2 border-base-100">
                 @if(formSvc.res()?.size){
                     <button class="btn xl:btn-lg btn-soft btn-primary" (click)="formSvc.saveToFile()">
-                        <lucide-angular [img]="DownloadIcon"  class="size-5 xl:size-6"/>
+                        <i gurl-icon [icon]="'Export'" [className]="'size-5 xl:size-6'" ></i>
                         Download {{formSvc.res()?.body?.extension}}
                     </button>
                 }@else {
@@ -101,20 +117,17 @@ import { ResponseTextPreview } from "./text.preview";
     }
     `,
 	imports: [
-		LucideAngularModule,
 		NgClass,
 		SafePipe,
 		ResponseTextPreview,
 		BytesPipe,
 		PdfViewerModule,
+		SystemIconComponent,
 	],
 })
 export class ResPreview {
 	@HostBinding("class")
 	def = "flex-1 flex overflow-hidden";
-
-	protected readonly DownloadIcon = HardDriveDownload;
-	protected readonly ErroredReqIcon = CircleAlert;
 	protected readonly formSvc = inject(FormService);
 	protected readonly MAX_DL_LIMIT = DL_LIMIT_BYTES;
 }

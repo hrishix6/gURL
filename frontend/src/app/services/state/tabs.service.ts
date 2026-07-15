@@ -12,16 +12,25 @@ import { debounceTime, Subject } from "rxjs";
 import {
 	AlertService,
 	getEnvRepository,
+	getReqMocksRepository,
 	getReqRepository,
 	getWorkspaceRepository,
 } from "@/services";
-import { type ApplicationTab, AppTabType, type ReqHistoryItem } from "@/types";
+import {
+	type ApplicationTab,
+	AppTabType,
+	type Crumb,
+	type CrumbInfo,
+	CrumbType,
+	type ReqHistoryItem,
+} from "@/types";
 
 @Injectable({
 	providedIn: "root",
 })
 export class TabsService {
 	private reqRepo = getReqRepository();
+	private mockRepo = getReqMocksRepository();
 	private alertSvc = inject(AlertService);
 	private envRepo = getEnvRepository();
 	private workspaceRepo = getWorkspaceRepository();
@@ -32,17 +41,136 @@ export class TabsService {
 	public destoyRef = inject(DestroyRef);
 	private tabChanges$ = new Subject<ApplicationTab[]>();
 	public activeTabChanges$ = new Subject<string>();
-	private reqChanges$ = new Subject<string>();
-	private envDraftrmDbSync$ = new Subject<string>();
+	private reqDraftDeleted$ = new Subject<string>();
+	private envDraftDeleted$ = new Subject<string>();
+	private mockDraftDeleted$ = new Subject<string>();
 	public tabCount = computed(() => this._openTabs().length);
 	public closeReqTabEvent$ = new Subject<ApplicationTab>();
+	public closeMockTabEvent$ = new Subject<ApplicationTab>();
 	public closeEnvTabEvent$ = new Subject<ApplicationTab>();
-	public refreshNotifier = new Subject<AppTabType>();
+	public collectionDeleteNotifier = new Subject<string>();
+	public clearCollectionNotifier = new Subject<string>();
+	public requestDeleteNotifier = new Subject<string>();
+	public mockDeleteNotifier = new Subject<string>();
+	public environmentDeleteNotifier = new Subject<string>();
 
 	private _workspaceId = signal<string>("");
+
 	public setWorkspaceId(id: string) {
 		this._workspaceId.set(id);
 	}
+
+	//#region bread-crumbs
+
+	private _crumbs = signal<Crumb[]>([]);
+	public crumbs = computed(() => this._crumbs());
+
+	private getReqCrumbs(crumbInfo: CrumbInfo) {
+		const crumbs: Crumb[] = [];
+
+		if (crumbInfo.collection) {
+			crumbs.push({
+				name: crumbInfo.collection,
+				type: CrumbType.Collections,
+			});
+		}
+
+		if (crumbInfo.request) {
+			crumbs.push({
+				name: crumbInfo.request,
+				type: CrumbType.Req,
+			});
+		}
+
+		//orphan req draft
+		if (!crumbs.length) {
+			crumbs.push({
+				type: CrumbType.Req,
+				name: crumbInfo.entityName,
+			});
+		}
+
+		return crumbs;
+	}
+
+	private getEnvCrumbs(crumbInfo: CrumbInfo) {
+		return [
+			{
+				name: crumbInfo.entityName,
+				type: CrumbType.Env,
+			},
+		];
+	}
+
+	private getReqExampleCrumbs(crumbInfo: CrumbInfo) {
+		const crumbs: Crumb[] = [];
+
+		if (crumbInfo.collection) {
+			crumbs.push({
+				name: crumbInfo.collection,
+				type: CrumbType.Collections,
+			});
+		}
+
+		if (crumbInfo.request) {
+			crumbs.push({
+				name: crumbInfo.request,
+				type: CrumbType.Req,
+			});
+		}
+
+		crumbs.push({
+			name: crumbInfo.entityName,
+			type: CrumbType.ReqExample,
+		});
+
+		return crumbs;
+	}
+
+	private getMockCrumbs(crumbInfo: CrumbInfo) {
+		const crumbs: Crumb[] = [];
+
+		if (crumbInfo.mockServer) {
+			crumbs.push({
+				name: crumbInfo.mockServer,
+				type: CrumbType.MockServer,
+			});
+		}
+
+		crumbs.push({
+			type: CrumbType.Mock,
+			name: crumbInfo.entityName,
+		});
+
+		return crumbs;
+	}
+
+	public setCrumbs(crumbInfo: CrumbInfo, tabType: AppTabType) {
+		switch (tabType) {
+			case AppTabType.Env: {
+				this._crumbs.set(this.getEnvCrumbs(crumbInfo));
+				break;
+			}
+			case AppTabType.Req: {
+				this._crumbs.set(this.getReqCrumbs(crumbInfo));
+				break;
+			}
+			case AppTabType.ReqExample: {
+				this._crumbs.set(this.getReqExampleCrumbs(crumbInfo));
+				break;
+			}
+			case AppTabType.Mock: {
+				this._crumbs.set(this.getMockCrumbs(crumbInfo));
+				break;
+			}
+			default: {
+				this._crumbs.set([]);
+				break;
+			}
+		}
+	}
+
+	//#endregion bread-crumbs
 
 	constructor() {
 		this.tabChanges$
@@ -62,7 +190,7 @@ export class TabsService {
 				},
 			});
 
-		this.reqChanges$.pipe(takeUntilDestroyed(this.destoyRef)).subscribe({
+		this.reqDraftDeleted$.pipe(takeUntilDestroyed(this.destoyRef)).subscribe({
 			next: (v) => {
 				this.reqRepo
 					.removeDraft(v)
@@ -75,7 +203,7 @@ export class TabsService {
 			},
 		});
 
-		this.envDraftrmDbSync$.pipe(takeUntilDestroyed(this.destoyRef)).subscribe({
+		this.envDraftDeleted$.pipe(takeUntilDestroyed(this.destoyRef)).subscribe({
 			next: (v) => {
 				this.envRepo
 					.removeEnvDraft(v)
@@ -84,6 +212,19 @@ export class TabsService {
 					})
 					.catch((_err) => {
 						console.log(`failed to delete env draft with id ${v} from db`);
+					});
+			},
+		});
+
+		this.mockDraftDeleted$.pipe(takeUntilDestroyed(this.destoyRef)).subscribe({
+			next: (v) => {
+				this.mockRepo
+					.deleteMockDraftById(v)
+					.then(() => {
+						console.log(`mock draft with id ${v} is deleted from db`);
+					})
+					.catch((_err) => {
+						console.log(`failed to delete mock draft with id ${v} from db`);
 					});
 			},
 		});
@@ -142,7 +283,7 @@ export class TabsService {
 			const newTab: ApplicationTab = {
 				id: nanoid(),
 				name: item.name,
-				tag: "REQ_EXAMPLE",
+				tag: item.method,
 				entityId: item.id,
 				entityType: AppTabType.ReqExample,
 				isModified: false,
@@ -251,7 +392,7 @@ export class TabsService {
 
 	public async createTabFromHistory(item: ReqHistoryItem) {
 		try {
-			const newDraft: models.RequestDraftDTO = {
+			const newDraft: Partial<models.RequestDraftDTO> = {
 				id: nanoid(),
 				url: item.url,
 				method: item.method,
@@ -275,13 +416,13 @@ export class TabsService {
 				workspace_id: this._workspaceId(),
 			};
 
-			await this.reqRepo.addDraft(newDraft);
+			await this.reqRepo.addDraft(newDraft as models.RequestDraftDTO);
 
 			const newTab: ApplicationTab = {
 				id: nanoid(),
 				name: item.url,
 				tag: item.method,
-				entityId: newDraft.id,
+				entityId: newDraft.id!,
 				entityType: AppTabType.Req,
 				isModified: false,
 			};
@@ -329,6 +470,88 @@ export class TabsService {
 		}
 	}
 
+	public async createMockTabFromSaved(item: models.MockLightDTO) {
+		try {
+			const newDraft: models.AddDraftDTO = {
+				id: nanoid(),
+				workspace_id: this._workspaceId(),
+			};
+
+			console.dir(newDraft);
+
+			await this.mockRepo.createMockDraftFromMock(item.id, newDraft);
+
+			const newTab: ApplicationTab = {
+				id: nanoid(),
+				name: item.name,
+				tag: item.method,
+				entityId: newDraft.id,
+				entityType: AppTabType.Mock,
+				isModified: false,
+			};
+
+			this._openTabs.update((prev) => {
+				const copy = [...prev, newTab];
+				this.tabChanges$.next(copy);
+				return copy;
+			});
+
+			this.setActiveTab(newTab.id);
+		} catch (error) {
+			console.error(error);
+			this.alertSvc.addAlert("Failed to open mock", "error");
+		}
+	}
+
+	public async createFreshMockTab() {
+		try {
+			const newDraft: models.AddDraftDTO = {
+				id: nanoid(),
+				workspace_id: this._workspaceId(),
+			};
+
+			const newTab: ApplicationTab = {
+				id: nanoid(),
+				entityId: newDraft.id,
+				entityType: AppTabType.Mock,
+				name: "New Mock",
+				tag: "GET",
+				isModified: false,
+			};
+
+			await this.mockRepo.createFreshMockDraft(newDraft);
+
+			this._openTabs.update((prev) => {
+				const copy = [...prev, newTab];
+				this.tabChanges$.next(copy);
+				return copy;
+			});
+
+			this.setActiveTab(newTab.id);
+		} catch (error) {
+			console.error(error);
+		}
+	}
+
+	public async createMockTab() {
+		const newTab: ApplicationTab = {
+			id: nanoid(),
+			entityId: nanoid(),
+			entityType: AppTabType.Mock,
+			name: "New Mock",
+			tag: "GET",
+			isModified: false,
+		};
+
+		this._openTabs.update((prev) => {
+			const copy = [...prev, newTab];
+			this.tabChanges$.next(copy);
+			return copy;
+		});
+
+		this.setActiveTab(newTab.id);
+	}
+
 	public emitTabCloseEvent(tabId: string) {
 		const tab = this._openTabs().find((x) => x.id === tabId);
 
@@ -342,10 +565,17 @@ export class TabsService {
 
 		if (tab.entityType === AppTabType.Env) {
 			this.closeEnvTabEvent$.next(tab);
+			return;
 		}
 
 		if (tab.entityType === AppTabType.Req) {
 			this.closeReqTabEvent$.next(tab);
+			return;
+		}
+
+		if (tab.entityType === AppTabType.Mock) {
+			this.closeMockTabEvent$.next(tab);
+			return;
 		}
 
 		if (tab.entityType === AppTabType.ReqExample) {
@@ -380,11 +610,15 @@ export class TabsService {
 			}
 
 			if (tabType === AppTabType.Req) {
-				this.reqChanges$.next(prev[i].entityId);
+				this.reqDraftDeleted$.next(prev[i].entityId);
 			}
 
 			if (tabType === AppTabType.Env) {
-				this.envDraftrmDbSync$.next(prev[i].entityId);
+				this.envDraftDeleted$.next(prev[i].entityId);
+			}
+
+			if (tabType === AppTabType.Mock) {
+				this.mockDraftDeleted$.next(prev[i].entityId);
 			}
 
 			const copy = prev.filter((x) => x.id !== id);

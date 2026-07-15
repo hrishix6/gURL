@@ -64,14 +64,6 @@ func main() {
 
 	log.Printf("[Gurl] tmp location: %s \n", appCfg.BaseTmpDir)
 
-	if webTmpDir, err := utils.InitWebTempDir(baseDataDir, internal.TEMP_UPLOADS_LOCATION); err != nil {
-		log.Fatalf("unable to initialize web uploads directory : %v", err)
-	} else {
-		appCfg.BaseUploadsDir = webTmpDir
-	}
-
-	log.Printf("[Gurl] Web uploads tmp location: %s \n", appCfg.BaseUploadsDir)
-
 	if savedResponsesDir, err := utils.InitSavedResponsesDir(baseDataDir, internal.SAVED_RESPONSES_LOCATION); err != nil {
 		log.Fatalf("unable to initialize saved responses directory : %v", err)
 	} else {

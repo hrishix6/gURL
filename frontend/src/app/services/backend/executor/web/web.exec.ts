@@ -68,10 +68,16 @@ export class WebHttpExecutor implements HttpExecutor {
 		return result.data;
 	}
 
-	async sendHttpReq(arg1: models.GurlReq): Promise<models.GurlRes> {
+	async sendHttpReq(
+		arg1: models.GurlReq,
+		envId: string,
+	): Promise<models.GurlRes> {
 		const result = await this.restClient.post<models.GurlRes>(
 			this._execBasePath,
-			arg1,
+			{
+				req: arg1,
+				envId: envId,
+			},
 			undefined,
 			true,
 		);
@@ -80,6 +86,27 @@ export class WebHttpExecutor implements HttpExecutor {
 			throw new Error(
 				"received invalid execute http req response from backend",
 			);
+		}
+
+		return result.data;
+	}
+
+	async getInterpolatedReq(
+		r: models.GurlReq,
+		envId: string,
+	): Promise<models.GurlReq> {
+		const result = await this.restClient.post<models.GurlReq>(
+			`${this._execBasePath}/interpolate`,
+			{
+				req: r,
+				envId: envId,
+			},
+			undefined,
+			true,
+		);
+
+		if (!result.success) {
+			throw new Error("received invalid response");
 		}
 
 		return result.data;

@@ -1,25 +1,45 @@
-import { Component, HostBinding, inject, input } from "@angular/core";
+import { Component, HostBinding, inject, input, signal } from "@angular/core";
+import { SystemIconComponent } from "@/common/components/icon";
+import { SidebarContentDirective } from "@/common/directives/sidebar.content";
 import { AppService } from "@/services";
 import { GurlCollections } from "./collections/collection.sidebar";
 import { GurlEnvironments } from "./environments/environments.sidebar";
 import { GurlReqHistory } from "./history/history.sidebar";
+import { GurlMockServers } from "./mock-servers/mock.servers.sidebar";
 
 @Component({
 	selector: `aside[gurl-sidebar]`,
 	template: `
-      @switch (appSvc.appSidebarContent()) { 
-		@case ("history") {
-      		<gurl-history />
-     	} 
-	  	@case("collections"){
-      		<gurl-collections />
-      	} 
-       @case("environments"){
-       		<gurl-environments />
-        }
-    }
+	@if(appSvc.appSidebarContent() !== 'user-settings'){
+	<div class="px-2 pt-2">
+      <label class="input input-ghost w-full input-primary bg-base-300">
+        <i gurl-icon [icon]="'Search'" [className]="'size-4'" ></i>
+        <input
+          type="search"
+          required
+          placeholder="Search"
+          [value]="searchInput()"
+          (input)="handleInput($event)"
+        />
+      </label>
+    </div>
+	}
+	<gurl-history sidebar-content [active]="appSvc.appSidebarContent() === 'history'"  />
+	<gurl-collections  sidebar-content [active]="appSvc.appSidebarContent() === 'collections'"/>
+	<gurl-environments sidebar-content [active]="appSvc.appSidebarContent() === 'environments'"/>
+	<gurl-mock-servers sidebar-content [active]="appSvc.appSidebarContent() === 'mock-servers'" />
+	<div sidebar-content [active]="appSvc.appSidebarContent() === 'user-settings'">
+		TODO: User Settings
+	</div>
   `,
-	imports: [GurlCollections, GurlReqHistory, GurlEnvironments],
+	imports: [
+		GurlCollections,
+		GurlReqHistory,
+		GurlEnvironments,
+		GurlMockServers,
+		SystemIconComponent,
+		SidebarContentDirective,
+	],
 })
 export class Sidebar {
 	mode = input.required<"mobile" | "desktop">();
@@ -37,4 +57,12 @@ export class Sidebar {
 	}
 
 	protected readonly appSvc = inject(AppService);
+
+	protected searchInput = signal<string>("");
+
+	protected handleInput(e: Event) {
+		const target = e.target as HTMLInputElement;
+		this.searchInput.set(target.value);
+		this.appSvc.searchKeyChanges$.next(target.value);
+	}
 }
