@@ -32,7 +32,7 @@ services:
     volumes:
       - ./appData:/usr/local/src/gURL
     ports:
-      - "8080:80"
+      - "4000:80"
 
 volumes:
   gurl-web-private-db:
