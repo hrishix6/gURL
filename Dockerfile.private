@@ -16,7 +16,7 @@ COPY --chown=node:node  frontend/public ./public
 COPY --chown=node:node  frontend/src ./src
 COPY --chown=node:node  frontend/wailsjs ./wailsjs
 
-RUN pnpm run web-prod
+RUN pnpm run web:prod
 
 FROM golang:1.25-alpine AS backend
 
