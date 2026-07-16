@@ -4,6 +4,7 @@ services:
   db:
     container_name: gurl-web-db
     image: ${POSTGRES_IMAGE}
+    restart: unless-stopped
     healthcheck:
       test: [ 'CMD-SHELL', 'pg_isready -U postgres' ]
       interval: 5s
@@ -23,6 +24,7 @@ services:
       db:
         condition: service_healthy
     container_name: gurl-web-container
+    restart: unless-stopped
     image: gurl-web 
     build:
       context: .
