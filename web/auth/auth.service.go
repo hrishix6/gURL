@@ -32,6 +32,7 @@ var (
 
 type AuthService struct {
 	mode              string
+	deployment        string
 	issuer            string
 	audience          string
 	sessionCookieName string
@@ -70,6 +71,7 @@ func NewAuthService(
 		exporter:          exporter,
 		mailer:            mailer,
 		cfg:               appCfg.AuthConfig,
+		deployment:        appCfg.Deployment,
 	}
 }
 
@@ -287,7 +289,9 @@ func (authSvc *AuthService) TryLogin(ctx context.Context, baseURL *url.URL, dto 
 	log.Printf("magic link generated : %s", magicLink)
 
 	if authSvc.mode == "prod" {
-		go authSvc.mailer.SendMagicLink(existingUser.Email, magicLink)
+		if authSvc.deployment == "public" {
+			go authSvc.mailer.SendMagicLink(existingUser.Email, magicLink)
+		}
 	}
 
 	return magicLink
