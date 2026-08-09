@@ -290,6 +290,7 @@ func (authSvc *AuthService) TryLogin(ctx context.Context, baseURL *url.URL, dto 
 
 	if authSvc.mode == "prod" {
 		if authSvc.deployment == "public" {
+			log.Printf("sending magic link to email %s\n", dto.Email)
 			go authSvc.mailer.SendMagicLink(existingUser.Email, magicLink)
 		}
 	}

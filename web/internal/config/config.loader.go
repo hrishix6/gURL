@@ -170,7 +170,7 @@ func LoadWebAppConfig(path string) WebApplicationConfig {
 	var errors []string
 
 	if cfg.Deployment == "" {
-		cfg.Deployment = "public"
+		cfg.Deployment = "private"
 	}
 
 	if cfg.EmailConfig == nil {
